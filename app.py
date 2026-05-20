@@ -94,6 +94,10 @@ SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "").strip()
 SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY", "").strip()
 SUPABASE_PRODUCT_IMAGE_BUCKET = os.getenv("SUPABASE_PRODUCT_IMAGE_BUCKET", "product-images").strip() or "product-images"
 SUPABASE_DOCUMENT_BUCKET = os.getenv("SUPABASE_DOCUMENT_BUCKET", "petopia-documents").strip() or "petopia-documents"
+try:
+    LOW_STOCK_THRESHOLD = max(int(os.getenv("PETOPIA_LOW_STOCK_THRESHOLD", "5") or 5), 0)
+except ValueError:
+    LOW_STOCK_THRESHOLD = 5
 
 # Gmail SMTP Configuration
 GMAIL_USER = os.getenv("GMAIL_USER", "petopia922@gmail.com")
@@ -473,7 +477,7 @@ def inject_notifications():
         cursor.close()
     except Exception:
         notifs = []
-    return dict(notifications=notifs)
+    return dict(notifications=notifs, low_stock_threshold=LOW_STOCK_THRESHOLD)
 
 
 def _notification_message(text):
@@ -541,6 +545,112 @@ def notify_seller_product_status(seller_id, product_id, product_name, status_lab
         cursor=cursor,
         commit=False if cursor else True,
     )
+
+
+def notify_seller_low_stock(seller_id, product_id, product_name, remaining_stock, threshold, cursor=None):
+    if not seller_id:
+        return False
+    return create_notification(
+        "low_stock_seller",
+        (
+            f"[seller:{seller_id}] Low stock alert: \"{product_name}\" has "
+            f"{remaining_stock} item(s) remaining. Restock threshold: {threshold}."
+        ),
+        f"/seller?product_id={product_id}#products",
+        cursor=cursor,
+        commit=False if cursor else True,
+    )
+
+
+def decrement_ordered_stock(item, cursor):
+    """Atomically reduce stock for one checkout item and alert on threshold crossing."""
+    quantity = int(item.get("quantity") or 0)
+    if quantity <= 0:
+        raise ValueError("Invalid order quantity.")
+
+    product_id = item.get("product_id")
+    variant_id = item.get("variant_id")
+
+    if variant_id:
+        cursor.execute(
+            """
+            SELECT pv.stock AS variant_stock,
+                   p.id AS product_id,
+                   p.name,
+                   p.seller_id,
+                   COALESCE(variant_totals.total_stock, pv.stock, 0) AS product_stock
+            FROM product_variants pv
+            JOIN products p ON p.id = pv.product_id
+            LEFT JOIN (
+                SELECT product_id, SUM(stock) AS total_stock
+                FROM product_variants
+                GROUP BY product_id
+            ) AS variant_totals ON variant_totals.product_id = p.id
+            WHERE pv.id = %s
+            FOR UPDATE OF pv, p
+            """,
+            (variant_id,),
+        )
+        row = cursor.fetchone()
+        if not row or int(row.get("variant_stock") or 0) < quantity:
+            raise ValueError("Insufficient stock. A variant is no longer available in the quantity you selected.")
+
+        previous_product_stock = int(row.get("product_stock") or 0)
+        threshold = LOW_STOCK_THRESHOLD
+        cursor.execute(
+            "UPDATE product_variants SET stock = stock - %s WHERE id = %s",
+            (quantity, variant_id),
+        )
+        cursor.execute(
+            "SELECT COALESCE(SUM(stock), 0) AS real_stock FROM product_variants WHERE product_id = %s",
+            (row["product_id"],),
+        )
+        stock_row = cursor.fetchone() or {}
+        new_product_stock = int(stock_row.get("real_stock") or 0)
+        cursor.execute(
+            "UPDATE products SET stock = %s WHERE id = %s",
+            (new_product_stock, row["product_id"]),
+        )
+        if previous_product_stock > threshold and new_product_stock <= threshold:
+            notify_seller_low_stock(
+                row.get("seller_id"),
+                row.get("product_id"),
+                row.get("name"),
+                new_product_stock,
+                threshold,
+                cursor=cursor,
+            )
+        return
+
+    cursor.execute(
+        """
+        SELECT id, name, stock, seller_id
+        FROM products
+        WHERE id = %s
+        FOR UPDATE
+        """,
+        (product_id,),
+    )
+    row = cursor.fetchone()
+    if not row or int(row.get("stock") or 0) < quantity:
+        raise ValueError("Insufficient stock. A product is no longer available in the quantity you selected.")
+
+    previous_stock = int(row.get("stock") or 0)
+    threshold = LOW_STOCK_THRESHOLD
+    new_stock = previous_stock - quantity
+    cursor.execute(
+        "UPDATE products SET stock = stock - %s WHERE id = %s",
+        (quantity, product_id),
+    )
+    if previous_stock > threshold and new_stock <= threshold:
+        notify_seller_low_stock(
+            row.get("seller_id"),
+            row.get("id"),
+            row.get("name"),
+            new_stock,
+            threshold,
+            cursor=cursor,
+        )
 
 
 def notify_rider_order_completed(order_id, cursor=None):
@@ -913,6 +1023,7 @@ def ensure_order_schema_extensions():
             except Exception:
                 pass
         db.commit()
+
         # Ensure notifications table has a target_url column; create table if missing
         try:
             c.execute("SHOW TABLES LIKE 'notifications'")
@@ -3375,6 +3486,8 @@ def product_detail(product_id):
 
     cursor.execute("SELECT * FROM product_variants WHERE product_id=%s", (product_id,))
     variants = cursor.fetchall()
+    if product and variants:
+        product["stock"] = sum(int(v.get("stock") or 0) for v in variants)
 
     user = None
     if 'user_id' in session:
@@ -3468,6 +3581,8 @@ def api_product(product_id):
 
     cursor.execute("SELECT id, color, size, price, stock, weight_kg FROM product_variants WHERE product_id=%s", (product_id,))
     variants = cursor.fetchall()
+    if variants:
+        product["stock"] = sum(int(v.get("stock") or 0) for v in variants)
 
     # attach image URL
     if product.get('image'):
@@ -3504,42 +3619,70 @@ def add_to_cart():
         # Return JSON instead of redirect
         return {"status": "not_logged_in", "login_url": url_for("loginreg", next=request.referrer)}
 
-    data = request.json
+    data = request.get_json(silent=True) or {}
     product_id = data.get("product_id")
     variant_id = data.get("variant_id")
     qty = data.get("quantity")
+
+    try:
+        product_id = int(product_id)
+        qty = int(qty)
+    except (TypeError, ValueError):
+        return {"status": "error", "message": "Invalid product or quantity"}, 400
+
+    if qty <= 0:
+        return {"status": "error", "message": "Invalid quantity"}, 400
+
+    if variant_id in (None, "", 0, "0"):
+        variant_id = None
+    else:
+        try:
+            variant_id = int(variant_id)
+        except (TypeError, ValueError):
+            return {"status": "error", "message": "Invalid variant"}, 400
 
     cursor = db.cursor(dictionary=True)
 
     # Check stock availability
     if variant_id:
-        cursor.execute("SELECT stock FROM product_variants WHERE id=%s", (variant_id,))
+        cursor.execute("SELECT stock FROM product_variants WHERE id=%s AND product_id=%s", (variant_id, product_id))
         variant = cursor.fetchone()
         if not variant or variant["stock"] < qty:
             cursor.close()
             return {"status": "error", "message": "Insufficient stock for this variant"}, 400
     else:
+        cursor.execute("SELECT COUNT(*) AS cnt FROM product_variants WHERE product_id=%s", (product_id,))
+        variant_count = cursor.fetchone()
+        if int((variant_count or {}).get("cnt") or 0) > 0:
+            cursor.close()
+            return {"status": "error", "message": "Please choose an available item option"}, 400
         cursor.execute("SELECT stock FROM products WHERE id=%s", (product_id,))
         product = cursor.fetchone()
         if not product or product["stock"] < qty:
             cursor.close()
             return {"status": "error", "message": "Insufficient stock for this product"}, 400
 
-    cursor.execute("""
-        SELECT id, quantity FROM cart
-        WHERE user_id=%s AND product_id=%s AND variant_id=%s
-    """, (session["user_id"], product_id, variant_id))
+    if variant_id is None:
+        cursor.execute("""
+            SELECT id, quantity FROM cart
+            WHERE user_id=%s AND product_id=%s AND variant_id IS NULL
+        """, (session["user_id"], product_id))
+    else:
+        cursor.execute("""
+            SELECT id, quantity FROM cart
+            WHERE user_id=%s AND product_id=%s AND variant_id=%s
+        """, (session["user_id"], product_id, variant_id))
     existing = cursor.fetchone()
 
     if existing:
         new_qty = existing["quantity"] + qty
         # Check if new quantity exceeds available stock
         if variant_id:
-            cursor.execute("SELECT stock FROM product_variants WHERE id=%s", (variant_id,))
+            cursor.execute("SELECT stock FROM product_variants WHERE id=%s AND product_id=%s", (variant_id, product_id))
             variant = cursor.fetchone()
-            if variant["stock"] < new_qty:
+            if not variant or variant["stock"] < new_qty:
                 cursor.close()
-                return {"status": "error", "message": f"Cannot add more. Only {variant['stock']} in stock"}, 400
+                return {"status": "error", "message": f"Cannot add more. Only {(variant or {}).get('stock', 0)} in stock"}, 400
         else:
             cursor.execute("SELECT stock FROM products WHERE id=%s", (product_id,))
             product = cursor.fetchone()
@@ -4228,11 +4371,21 @@ def place_order():
             IFNULL(pv.price, p.price) AS price,
             c.quantity,
             p.seller_id,
-            IFNULL(pv.weight_kg, 0) AS weight_kg
+            IFNULL(pv.weight_kg, 0) AS weight_kg,
+            a.barangay_name AS seller_barangay,
+            a.city_name AS seller_city,
+            a.province_name AS seller_province,
+            a.region_name AS seller_region
         FROM cart c
         JOIN products p ON c.product_id = p.id
         LEFT JOIN product_variants pv ON c.variant_id = pv.id
         LEFT JOIN sellers s ON s.user_id = p.seller_id
+        LEFT JOIN addresses a ON a.user_id = p.seller_id AND 
+             (a.is_default = 1 OR a.id = (
+                 SELECT id FROM addresses 
+                 WHERE user_id = p.seller_id 
+                 ORDER BY is_default DESC, created_at ASC LIMIT 1
+             ))
         WHERE c.user_id = %s
     """, (user_id,))
     rows = cursor.fetchall()
@@ -4253,6 +4406,11 @@ def place_order():
                 cursor.close()
                 return jsonify({"error": f"Insufficient stock. A variant is no longer available in the quantity you selected."}), 409
         else:
+            cursor.execute("SELECT COUNT(*) AS cnt FROM product_variants WHERE product_id=%s", (item["product_id"],))
+            variant_count = cursor.fetchone()
+            if int((variant_count or {}).get("cnt") or 0) > 0:
+                cursor.close()
+                return jsonify({"error": "Please remove this item from your cart and choose an available item option again."}), 409
             cursor.execute("SELECT stock FROM products WHERE id=%s", (item["product_id"],))
             product = cursor.fetchone()
             if not product or product["stock"] < item["quantity"]:
@@ -4359,19 +4517,27 @@ def place_order():
                 VALUES (%s, %s, %s, %s, %s, %s)
             """, (order_id, item["product_id"], item["variant_id"], item["quantity"], item["price"], seller_snapshot))
 
-        # Reduce stock
+        # Reduce stock and alert the seller if the product crosses its threshold.
         for item in items:
-            if item["variant_id"]:
-                cursor.execute("UPDATE product_variants SET stock = stock - %s WHERE id = %s", (item["quantity"], item["variant_id"]))
-            else:
-                cursor.execute("UPDATE products SET stock = stock - %s WHERE id = %s", (item["quantity"], item["product_id"]))
+            try:
+                decrement_ordered_stock(item, cursor)
+            except ValueError as exc:
+                db.rollback()
+                cursor.close()
+                return jsonify({"error": str(exc)}), 409
 
     # Clear only the items that were ordered from cart
     for item in filtered_rows:
-        cursor.execute(
-            "DELETE FROM cart WHERE user_id = %s AND product_id = %s AND variant_id = %s",
-            (user_id, item["product_id"], item["variant_id"])
-        )
+        if item["variant_id"]:
+            cursor.execute(
+                "DELETE FROM cart WHERE user_id = %s AND product_id = %s AND variant_id = %s",
+                (user_id, item["product_id"], item["variant_id"])
+            )
+        else:
+            cursor.execute(
+                "DELETE FROM cart WHERE user_id = %s AND product_id = %s AND variant_id IS NULL",
+                (user_id, item["product_id"])
+            )
     db.commit()
 
     session.pop("checkout_items", None)
@@ -4935,8 +5101,18 @@ def seller():
     cursor.execute("SELECT * FROM addresses WHERE user_id=%s ORDER BY id DESC", (user_id,))
     addresses = cursor.fetchall()
 
-    # Fetch products
-    cursor.execute("SELECT * FROM products WHERE seller_id=%s ORDER BY created_at DESC", (user_id,))
+    # Fetch products with real stock from variants when variants exist.
+    cursor.execute("""
+        SELECT p.*, COALESCE(variant_stock.real_stock, p.stock, 0) AS real_stock
+        FROM products p
+        LEFT JOIN (
+            SELECT product_id, SUM(stock) AS real_stock
+            FROM product_variants
+            GROUP BY product_id
+        ) AS variant_stock ON variant_stock.product_id = p.id
+        WHERE p.seller_id=%s
+        ORDER BY p.created_at DESC
+    """, (user_id,))
     products = cursor.fetchall()
 
     # Fetch product variants
@@ -4955,6 +5131,12 @@ def seller():
     variants_dict = {}
     for v in variants:
         variants_dict.setdefault(v['product_id'], []).append(v)
+    for p in products:
+        product_variants = variants_dict.get(p['id'], [])
+        if product_variants:
+            p['real_stock'] = sum(int(v.get('stock') or 0) for v in product_variants)
+        if p.get('real_stock') is None:
+            p['real_stock'] = p.get('stock') or 0
 
     # Fetch orders for this seller's products, including vehicle assigned by system
     orders = []
@@ -6079,7 +6261,17 @@ def mark_return_pickup_requested():
 def get_products():
     user_id = session.get("user_id")
     cursor = db.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM products WHERE seller_id=%s ORDER BY created_at DESC", (user_id,))
+    cursor.execute("""
+        SELECT p.*, COALESCE(variant_stock.real_stock, p.stock, 0) AS real_stock
+        FROM products p
+        LEFT JOIN (
+            SELECT product_id, SUM(stock) AS real_stock
+            FROM product_variants
+            GROUP BY product_id
+        ) AS variant_stock ON variant_stock.product_id = p.id
+        WHERE p.seller_id=%s
+        ORDER BY p.created_at DESC
+    """, (user_id,))
     products = cursor.fetchall()
 
     # Fetch variants
@@ -6099,6 +6291,10 @@ def get_products():
     # Merge variants with products
     for p in products:
         p['variants'] = variants_dict.get(p['id'], [])
+        if p['variants']:
+            p['real_stock'] = sum(int(v.get('stock') or 0) for v in p['variants'])
+        if p.get('real_stock') is None:
+            p['real_stock'] = p.get('stock') or 0
 
     cursor.close()
     return jsonify(products)
@@ -7411,8 +7607,8 @@ def add_product():
                 VALUES (%s, %s, %s, %s, %s, %s, %s)
             """, (product_id, color, size, price, stock, v_image_filename, variant_weight))
 
-    # Update main product stock if variants exist
-    if total_variant_stock > 0:
+    # Keep product-level stock in sync with variants, including when all variants are 0.
+    if variant_mode in ("single", "double"):
         cursor.execute("UPDATE products SET stock = %s WHERE id = %s", (total_variant_stock, product_id))
 
     db.commit()
@@ -7835,11 +8031,13 @@ def edit_product():
 
         total_variant_stock += stock_val
 
-    final_stock = total_variant_stock if total_variant_stock > 0 else int(stock or product.get("stock", 0))
+    final_stock = total_variant_stock if max_len > 0 else int(stock or product.get("stock", 0))
 
     # --- Update main product ---
     cursor.execute("""
-        UPDATE products SET name=%s, category=%s, description=%s, price=%s, stock=%s, image=%s, status=%s
+        UPDATE products
+        SET name=%s, category=%s, description=%s, price=%s, stock=%s,
+            image=%s, status=%s
         WHERE id=%s AND seller_id=%s
     """, (name, category, description, price, final_stock, image_path, new_status, product_id, user_id))
 

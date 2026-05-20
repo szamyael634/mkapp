@@ -729,7 +729,16 @@
                       <td>{{ product.name }}</td>
                       <td>{{ product.category or '-' }}</td>
                       <td>₱{{ product.price }}</td>
-                      <td>{{ product.stock }}</td>
+                      {% set row_variants = variants.get(product.id, []) %}
+                      {% set row_stock = (row_variants | sum(attribute='stock')) if row_variants else product.real_stock %}
+                      <td>
+                        <span class="{% if (row_stock|int) <= (low_stock_threshold|int) %}text-red-600 font-semibold{% endif %}">
+                          {{ row_stock }}
+                        </span>
+                        {% if (row_stock|int) <= (low_stock_threshold|int) %}
+                          <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-red-100 text-red-700">Low</span>
+                        {% endif %}
+                      </td>
 
                       <!-- Variants Column -->
                       <td>
@@ -771,7 +780,7 @@
                         data-category="{{ product.category }}"
                         data-description="{{ product.description }}"
                         data-price="{{ product.price }}"
-                        data-stock="{{ product.stock }}"
+                        data-stock="{{ row_stock }}"
                         data-variants='{{ variants.get(product.id, []) | tojson }}'>
                         Edit
                       </button>
@@ -2707,7 +2716,7 @@ function openEditModal(button) {
   if (window.tinymce && tinymce.get("editDescription")) {
     tinymce.get("editDescription").setContent(description || "");
   } else {
-    document.getElementById("editDescription").value = description;
+  document.getElementById("editDescription").value = description;
   }
   document.getElementById("editPrice").value = price;
   document.getElementById("editStock").value = stock;

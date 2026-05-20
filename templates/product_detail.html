@@ -248,11 +248,11 @@
 
     <!-- Options -->
     <div id="dropdown-options" class="hidden absolute w-full mt-1 border border-gray-300 rounded-lg bg-white z-50 max-h-60 overflow-auto shadow-lg">
-      <div class="px-3 py-2 hover:bg-amber-100 cursor-pointer" data-id="" data-price="">
+      <div class="px-3 py-2 text-gray-400" data-placeholder="true">
         <div class="font-medium text-gray-400">Select item</div>
       </div>
       {% for v in sorted_variants %}
-      <div class="px-3 py-2 {% if v.stock > 0 %}hover:bg-amber-100 cursor-pointer{% else %}bg-gray-100 text-gray-400 cursor-not-allowed{% endif %}" data-id="{{ v.id }}" data-price="{{ v.price }}" {% if v.stock == 0 %}onclick="return false"{% endif %}>
+      <div class="variant-option px-3 py-2 {% if v.stock > 0 %}hover:bg-amber-100 cursor-pointer{% else %}bg-gray-100 text-gray-400 cursor-not-allowed{% endif %}" data-id="{{ v.id }}" data-price="{{ v.price }}" data-stock="{{ v.stock }}">
         <div class="font-medium">
           {% if v.color %}{{ v.color }}{% endif %}{% if v.size %} - {{ v.size }}{% endif %} - ₱{{ "%.2f"|format(v.price) }}
         </div>
@@ -278,10 +278,13 @@
   </div>
 
   <!-- Add to Cart Button -->
-  <button id="add-to-cart-btn" class="flex items-center gap-2 {% if has_stock %}bg-amber-500 text-white hover:bg-amber-600{% else %}bg-gray-300 text-gray-500 cursor-not-allowed{% endif %} px-6 py-3 rounded-lg transition" {% if not has_stock %}disabled{% endif %}
+  <button id="add-to-cart-btn" class="flex items-center gap-2 {% if has_stock %}bg-amber-500 text-white hover:bg-amber-600{% else %}bg-gray-300 text-gray-500 cursor-not-allowed{% endif %} px-6 py-3 rounded-lg transition" {% if not has_stock %}disabled{% endif %}>
     <i class="bx bx-cart-add text-xl"></i> Add to Cart
   </button>
 </div>
+<p id="stock-status" class="mt-3 text-sm text-gray-500">
+  {% if has_stock %}Choose an item to see available stock.{% else %}Out of stock{% endif %}
+</p>
 {% endif %}
 </div>
 
@@ -350,7 +353,7 @@
                 <div class="flex items-center gap-3">
                   <div class="w-12 text-sm text-gray-700">{{ star }}★</div>
                   <div class="flex-1 bg-gray-200 rounded-full h-3 overflow-hidden">
-                    <div class="bg-amber-500 h-3 rounded-full" style="width: {{ '%0.1f' % pct }}%"></div>
+                    <div class="bg-amber-500 h-3 rounded-full rating-breakdown-bar" data-rating-pct="{{ '%0.1f' % pct }}"></div>
                   </div>
                   <div class="w-12 text-sm text-gray-600 text-right">{{ cnt }}</div>
                 </div>
@@ -446,9 +449,22 @@
   tabRev.addEventListener('click', showRev);
 </script>
 
+<div
+  id="product-context"
+  class="hidden"
+  data-product-id="{{ product.id }}"
+  data-product-category="{{ product.category | e }}"
+></div>
+
 <script>
-  const CURRENT_PRODUCT_ID = {{ product.id | tojson }};
-  const CURRENT_PRODUCT_CATEGORY = {{ product.category | tojson }};
+  document.querySelectorAll('.rating-breakdown-bar').forEach((bar) => {
+    const pct = Math.max(0, Math.min(100, Number(bar.dataset.ratingPct) || 0));
+    bar.style.width = `${pct}%`;
+  });
+
+  const productContext = document.getElementById('product-context');
+  const CURRENT_PRODUCT_ID = Number(productContext?.dataset.productId || 0);
+  const CURRENT_PRODUCT_CATEGORY = productContext?.dataset.productCategory || '';
 
   function renderSmallStars(rating){
     const r = Math.round(Number(rating) || 0);
@@ -785,16 +801,44 @@
 const dropdown = document.getElementById('custom-dropdown');
 const selected = document.getElementById('selected-variant');
 const options = document.getElementById('dropdown-options');
+const stockStatus = document.getElementById('stock-status');
+const qtyInput = document.getElementById('quantity');
+const btnMinus = document.getElementById('qty-minus');
+const btnPlus = document.getElementById('qty-plus');
+const addToCartBtn = document.getElementById('add-to-cart-btn');
 
 // Toggle dropdown
-selected.addEventListener('click', e => {
+selected?.addEventListener('click', e => {
   e.stopPropagation();
+  if (!options) return;
   options.classList.toggle('hidden');
 });
 
-// Select variant (only changes the text, not the main price)
-options.querySelectorAll('div[data-id]').forEach(option => {
+function setVariantStockLimit(stock) {
+  if (!qtyInput) return;
+  const maxStock = Math.max(0, Number(stock) || 0);
+  qtyInput.max = String(maxStock);
+  qtyInput.disabled = maxStock <= 0;
+  if (maxStock <= 0) {
+    qtyInput.value = '1';
+  } else {
+    qtyInput.value = String(Math.min(Math.max(parseInt(qtyInput.value, 10) || 1, 1), maxStock));
+  }
+  if (stockStatus) {
+    stockStatus.textContent = maxStock > 0 ? `${maxStock} items available` : 'Out of stock';
+    stockStatus.classList.toggle('text-red-500', maxStock <= 0);
+  }
+}
+
+// Select variant, but never allow out-of-stock or placeholder rows to become selected.
+options?.querySelectorAll('.variant-option').forEach(option => {
     option.addEventListener('click', () => {
+        const stock = Number(option.dataset.stock) || 0;
+        if (stock <= 0) {
+            alert('This item is out of stock.');
+            options.classList.add('hidden');
+            return;
+        }
 
         document.querySelectorAll('.selected-option')
             .forEach(e => e.classList.remove('selected-option'));
@@ -802,29 +846,30 @@ options.querySelectorAll('div[data-id]').forEach(option => {
         option.classList.add('selected-option');
 
         selected.innerHTML = option.innerHTML + ' <i class="bx bx-chevron-down"></i>';
+        setVariantStockLimit(stock);
         options.classList.add('hidden');
     });
 });
 
 // Close dropdown if clicked outside
 window.addEventListener('click', e => {
-  if (!dropdown.contains(e.target)) options.classList.add('hidden');
+  if (dropdown && options && !dropdown.contains(e.target)) options.classList.add('hidden');
 });
-</script>
 
-<script>
-const qtyInput = document.getElementById('quantity');
-const btnMinus = document.getElementById('qty-minus');
-const btnPlus = document.getElementById('qty-plus');
-
-btnMinus.addEventListener('click', () => {
+btnMinus?.addEventListener('click', () => {
   let current = parseInt(qtyInput.value) || 1;
   if (current > 1) qtyInput.value = current - 1;
 });
 
-btnPlus.addEventListener('click', () => {
+btnPlus?.addEventListener('click', () => {
   let current = parseInt(qtyInput.value) || 1;
-  qtyInput.value = current + 1;
+  const max = parseInt(qtyInput.max, 10) || current + 1;
+  qtyInput.value = Math.min(current + 1, max);
+});
+
+qtyInput?.addEventListener('change', () => {
+  const max = parseInt(qtyInput.max, 10) || 1;
+  qtyInput.value = Math.min(Math.max(parseInt(qtyInput.value, 10) || 1, 1), max);
 });
 </script>
 
@@ -846,16 +891,23 @@ btnPlus.addEventListener('click', () => {
 </script>
 
 <script>
-document.getElementById("add-to-cart-btn").addEventListener("click", async () => {
+addToCartBtn?.addEventListener("click", async () => {
 
     const selectedOption = document.querySelector("#dropdown-options .selected-option");
-    if (!selectedOption) {
-        alert("Please choose a variant before adding to cart.");
+    const variantId = selectedOption?.dataset.id;
+    const selectedStock = Number(selectedOption?.dataset.stock) || 0;
+    const quantity = parseInt(document.getElementById("quantity").value, 10) || 1;
+
+    if (!variantId) {
+        alert("Please choose an item before adding to cart.");
         return;
     }
 
-    const variantId = selectedOption.dataset.id;
-    const quantity = parseInt(document.getElementById("quantity").value);
+    if (selectedStock <= 0 || quantity > selectedStock) {
+        alert("This item is out of stock.");
+        return;
+    }
+
     const productId = Number("{{ product.id }}");
 
     const response = await fetch("/add_to_cart", {
