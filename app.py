@@ -42,6 +42,8 @@ import math
 import re
 import os
 import sys
+import psycopg2
+sys.modules['psycopg2-binary'] = psycopg2
 import mimetypes
 import requests
 import base64
