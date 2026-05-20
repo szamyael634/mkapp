@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Product Ratings | Petopia</title>
+	<script src="https://cdn.tailwindcss.com"></script>
+	<link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
+	<link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='image/petopia-favicon.svg') }}" />
+</head>
+<body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col">
+	<header class="flex items-center justify-between px-6 py-4 bg-white shadow-md sticky top-0 z-50">
+		<a href="{{ url_for('homepage') }}" class="flex items-center">
+			<img src="{{ url_for('static', filename='image/petopia-logo.png') }}" alt="Petopia" class="h-24 w-auto max-w-none" />
+		</a>
+		<span class="text-lg font-semibold text-green-700">Order #{{ order_id }} Ratings</span>
+		<a href="{{ url_for('orders') }}" class="bg-green-600 text-white px-4 py-2 rounded-full shadow hover:bg-green-700 transition font-semibold">Back to Orders</a>
+	</header>
+	<main class="flex-1 px-6 py-10 max-w-4xl mx-auto w-full min-h-[120vh]">
+		<div class="bg-white rounded-2xl shadow-lg p-8 border border-gray-200">
+			<h2 class="text-3xl font-bold mb-8 text-green-700 flex items-center gap-2">
+				<i class="bx bx-star text-yellow-500 text-4xl"></i> Product Ratings
+			</h2>
+			{% if ratings and ratings|length > 0 %}
+				<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+					{% for r in ratings %}
+					<div class="bg-gray-50 rounded-xl shadow p-6 flex flex-col gap-3 border border-gray-100">
+						<div class="flex items-center gap-3 mb-2">
+							<img src="{{ media_url(r.product_image, 'image/dog.webp') }}" class="w-16 h-16 rounded-lg object-cover border" alt="Product Image" />
+							<span class="font-semibold text-gray-700">{{ r.product_name if r.product_name else r.product_id }}</span>
+						</div>
+						<div class="flex items-center gap-2">
+							<span class="font-semibold">Rating:</span>
+							<span class="text-yellow-500 text-xl font-bold">
+								{% for i in range(1, 6) %}
+									<i class="bx bxs-star {% if i <= r.rating %}text-yellow-400{% else %}text-gray-300{% endif %}"></i>
+								{% endfor %}
+							</span>
+							<span class="ml-2 text-gray-600 text-sm">({{ r.rating }}/5)</span>
+						</div>
+						<div>
+							<span class="font-semibold">Comment:</span>
+							<span class="italic text-gray-700">{{ r.comment if r.comment else 'No comment.' }}</span>
+						</div>
+						<div class="text-xs text-gray-400">Rated on: {{ r.created_at }}</div>
+					</div>
+					{% endfor %}
+				</div>
+			{% else %}
+				<div class="text-center py-10 text-gray-400">
+					<i class="bx bx-info-circle text-4xl mb-2"></i>
+					<p>No ratings found for this order.</p>
+				</div>
+			{% endif %}
+		</div>
+	</main>
+</body>
+</html>

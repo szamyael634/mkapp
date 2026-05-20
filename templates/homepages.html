@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Petopia</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css"rel="stylesheet"/>
+    <link rel="stylesheet" href="https://unpkg.com/lucide-static/font/lucide.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>  
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='image/petopia-favicon.svg') }}" />
+    <style>
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .animate-fadeInUp {
+        animation: fadeInUp 1s ease forwards;
+      }
+
+      .delay-150 {
+        animation-delay: 0.15s;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      /* Spinner for quantity updates and add button */
+      .qty-spinner {
+        display: inline-block;
+        width: 18px;
+        height: 18px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-top-color: #fff;
+        border-radius: 50%;
+        animation: spin 1.5s linear infinite;
+        vertical-align: middle;
+      }
+
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+    </style>
+  </head>
+
+  <body class="bg-gray-50 text-gray-800 font-sans">
+    <!-- Top Bar -->
+    <header
+      class="flex items-center justify-between px-6 md:px-20 py-4 bg-white shadow-md sticky top-0 z-50"
+    >
+      <!-- Logo -->
+      <a href="{{ url_for('homepage') }}" class="flex items-center">
+        <img src="{{ url_for('static', filename='image/petopia-logo.png') }}" alt="Petopia" class="h-24 w-auto max-w-none" />
+      </a>
+
+      <!-- Search Bar -->
+      <div class="hidden md:flex items-center w-1/2">
+        <div class="w-full relative">
+          <input
+            id="main-search-input"
+            type="text"
+            autocomplete="off"
+            placeholder="Search for products, brands..."
+            class="w-full px-4 py-2.5 pr-14 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-amber-500 transition"
+          />
+          <button
+            id="main-search-btn"
+            type="button"
+            class="absolute right-1.5 top-1/2 -translate-y-1/2 bg-amber-500 text-white w-10 h-10 rounded-full hover:bg-amber-600 transition flex items-center justify-center shadow-md hover:shadow-lg"
+          >
+            <i class="fas fa-paw text-sm"></i>
+          </button>
+        </div>
+        <!-- Suggestions will be injected here by JS -->
+      </div>
+  <script src="{{ url_for('static', filename='search.js') }}"></script>
+
+      <!-- Icons -->
+      <div class="flex items-center gap-6 text-2xl relative">
+        <!--  Cart Button -->
+        <button id="cart-btn" class="hover:text-amber-600 relative">
+          <i class="bx bx-cart-add"></i>
+          <span
+            id="cart-count"
+            class="absolute -top-2 -right-2 bg-amber-500 text-white text-xs px-1.5 py-0.5 rounded-full hidden"
+          ></span>
+        </button>
+
+        <!-- 🔔 Notifications (customer) -->
+        <div class="relative">
+          <button id="cust-notif-btn" class="text-2xl relative">
+            <i class="bx bxs-bell"></i>
+            {% set cust_unread = notifications|selectattr('is_read', 'equalto', False)|list|length if notifications else 0 %}
+            {% if cust_unread > 0 %}
+              <span class="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">{{ cust_unread }}</span>
+            {% endif %}
+          </button>
+          <div id="cust-notif-dropdown" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-gray-100 z-50">
+            <div class="p-4 border-b flex items-center justify-between">
+              <div class="font-semibold text-gray-700">Notifications</div>
+              <form method="post" action="{{ url_for('mark_all_notifications_read') }}">
+                <button type="submit" class="text-xs text-blue-600 hover:underline">Mark all as read</button>
+              </form>
+            </div>
+            <ul class="max-h-80 overflow-y-auto">
+              {% for notif in notifications|sort(attribute='created_at', reverse=True) %}
+                <li data-notif-id="{{ notif.id }}" data-target="{{ notif.target_url or '#' }}" class="px-4 py-3 border-b last:border-b-0 {{ 'bg-amber-50' if not notif.is_read else '' }} flex items-center justify-between gap-2 cursor-pointer">
+                  <div>
+                    <div class="text-sm text-gray-800">{{ notif.message }}</div>
+                    <div class="text-xs text-gray-400 mt-1">{{ notif.created_at.strftime('%b %d, %Y %I:%M %p') }}</div>
+                  </div>
+                  {% if not notif.is_read %}
+                    <form class="mark-notif-form" method="post" action="{{ url_for('mark_notification_read') }}">
+                      <input type="hidden" name="notification_id" value="{{ notif.id }}">
+                      <button type="submit" class="text-xs text-blue-600 hover:underline ml-2">Mark as read</button>
+                    </form>
+                  {% endif %}
+                </li>
+              {% else %}
+                <li class="px-4 py-3 text-gray-500 text-sm">No notifications.</li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+
+        <!-- 👤 User -->
+      <div class="relative text-2xl" id="user-btn-container">
+        {% if user %}
+          <button id="user-btn" class="flex items-center gap-2 hover:text-amber-600">
+            {% if user.profile_pic %}
+              <img
+                src="{{ media_url(user.profile_pic, 'image/default-avatar.png') }}"
+                alt="Profile"
+                class="w-10 h-10 rounded-full object-cover border-2 border-amber-400 profile-pic"
+              />
+            {% else %}
+              <i class="bx bx-user-circle text-3xl"></i>
+            {% endif %}
+          </button>
+
+    <!-- Dropdown Menu -->
+    <div
+      id="user-pane"
+      class="hidden absolute right-0 top-12 w-48 bg-white rounded-xl shadow-xl border border-gray-100 p-4 z-50"
+    >
+      <p class="text-sm text-gray-700 mb-2">
+        <strong>{{ user.fullname }}</strong>
+      </p>
+      <hr class="my-2" />
+
+      <a href="{{ url_for('settings') }}"
+        class="flex items-center gap-3 text-sm text-gray-700 hover:bg-gray-100 px-2 py-1 rounded">
+        <i class="icon-settings text-lg"></i> Settings
+      </a>
+
+      <a href="{{ url_for('orders') }}"
+        class="flex items-center gap-3 text-sm text-gray-700 hover:bg-gray-100 px-2 py-1 rounded">
+        <i class="icon-package text-lg"></i> Orders
+      </a>
+
+      <a href="{{ url_for('wishlist') }}"
+        class="flex items-center gap-3 text-sm text-gray-700 hover:bg-gray-100 px-2 py-1 rounded">
+        <i class="icon-heart text-lg"></i> Wishlist
+      </a>
+
+      <a href="{{ url_for('logout') }}"
+        class="flex items-center gap-3 text-sm text-red-600 hover:bg-red-50 px-2 py-1 rounded pt-1">
+        <i class="icon-log-out text-lg"></i> Logout
+      </a>
+    </div>
+
+
+  {% else %}
+    <!-- If user NOT logged in, show Login button instead of profile icon -->
+    <a href="{{ url_for('loginreg') }}" class="bg-amber-500 text-white px-3 py-1 text-sm rounded-full hover:bg-amber-600 transition shadow-sm font-medium ">
+      Login
+    </a>
+  {% endif %}
+</div>
+    </header>
+    <script>
+      (function(){
+        const notifDropdown = document.getElementById('cust-notif-dropdown');
+        if (!notifDropdown) return;
+        notifDropdown.addEventListener('click', async (ev) => {
+          const li = ev.target.closest('li[data-notif-id]');
+          if (!li) return;
+          if (ev.target.closest('form.mark-notif-form')) return;
+          const notifId = li.getAttribute('data-notif-id');
+          const target = li.getAttribute('data-target');
+          if (notifId) {
+            try {
+              await fetch("{{ url_for('mark_notification_read') }}", { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' }, body: 'notification_id=' + encodeURIComponent(notifId) });
+            } catch (e) {}
+          }
+          if (target && target !== '#') {
+            window.location.href = target;
+          }
+        });
+      })();
+    </script>
+
+    <!-- Category Navigation -->
+    <nav class="bg-amber-100 py-3 shadow-inner">
+  <ul class="flex flex-wrap justify-center gap-6 font-medium text-amber-700">
+    <li><a href="{{ url_for('products_page', category='Dog') }}" class="hover:text-amber-900">Dog</a></li>
+    <li><a href="{{ url_for('products_page', category='Cat') }}" class="hover:text-amber-900">Cat</a></li>
+    <li><a href="{{ url_for('products_page', category='Fish') }}" class="hover:text-amber-900">Fish</a></li>
+    <li><a href="{{ url_for('products_page', category='Bird') }}" class="hover:text-amber-900">Bird</a></li>
+    <li><a href="{{ url_for('products_page', category='Grooming') }}" class="hover:text-amber-900">Grooming</a></li>
+    <li><a href="{{ url_for('products_page', category='Pet Health') }}" class="hover:text-amber-900">Pet Health</a></li>
+  </ul>
+</nav>
+
+    <!-- Hero Banner -->
+    <section class="relative w-full h-[80vh] overflow-hidden" id="hero-section">
+      <!-- Hero Images -->
+      <div
+        id="hero-slides"
+        class="absolute inset-0 transition-all duration-700 ease-in-out"
+      >
+        <div
+          class="hero-slide absolute inset-0 bg-cover bg-center opacity-100"
+          style="background-image: url('/static/image/homepage.jpg')"
+        ></div>
+        <div
+          class="hero-slide absolute inset-0 bg-cover bg-center opacity-0"
+          style="background-image: url('/static/image/pet2.jpg')"
+        ></div>
+        <div
+          class="hero-slide absolute inset-0 bg-cover bg-center opacity-0"
+          style="background-image: url('/static/image/pet3.jpg')"
+        ></div>
+      </div>
+
+      <!-- Overlay -->
+      <div class="absolute inset-0 bg-black/50"></div>
+
+      <!-- Text Content -->
+      <div class="relative z-10 text-center text-white p-6 top-60">
+        <h1 class="text-4xl md:text-5xl font-bold mb-3 animate-fadeInUp">
+          Where Every Pet Finds Joy
+        </h1>
+        <p class="text-lg mb-6 animate-fadeInUp delay-150">
+          Explore curated essentials designed to keep your pets happy, healthy,
+          and full of life.
+        </p>
+        {% if user %}
+          <!-- If logged in, scroll to featured products -->
+          <a href="#featured-products">
+              <button
+                class="bg-amber-500 text-white px-6 py-2 rounded-lg font-medium shadow-md"
+              >
+                Shop Now
+              </button>
+          </a>
+        {% else %}
+          <!-- If NOT logged in, go to login/register page -->
+          <a href="{{ url_for('loginreg') }}">
+              <button
+                class="bg-amber-500 text-white px-6 py-2 rounded-lg font-medium shadow-md"
+              >
+                Shop Now
+              </button>
+          </a>
+        {% endif %}
+      </div>
+    </section>
+
+    <!-- Featured Deals -->
+    <section id="featured-products" class="py-16 px-6 text-center">
+      <h2 class="text-3xl font-semibold mb-10 text-amber-700">
+        Shop for your pet
+      </h2>
+
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-6xl mx-auto">
+        <a href="{{ url_for('products_page', category='Dog') }}" class="group bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition cursor-pointer">
+          <img
+            src="static/image/dog.webp"
+            alt="Dog"
+            class="w-full h-48 object-cover group-hover:scale-105 transition duration-300"
+          />
+          <p class="py-3 font-medium text-gray-700">Dog Supplies</p>
+        </a>
+        <a href="{{ url_for('products_page', category='Cat') }}" class="group bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition cursor-pointer">
+          <img
+            src="static/image/cat.jpg"
+            alt="Cat"
+            class="w-full h-48 object-cover group-hover:scale-105 transition duration-300"
+          />
+          <p class="py-3 font-medium text-gray-700">Cat Supplies</p>
+        </a>
+        <a href="{{ url_for('products_page', category='Fish') }}" class="group bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition cursor-pointer">
+          <img
+            src="static/image/fish.jpg"
+            alt="Fish"
+            class="w-full h-48 object-cover group-hover:scale-105 transition duration-300"
+          />
+          <p class="py-3 font-medium text-gray-700">Aquariums & Fish</p>
+        </a>
+        <a href="{{ url_for('products_page', category='Bird') }}" class="group bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition cursor-pointer">
+          <img
+            src="static/image/bird.jpg"
+            alt="Bird"
+            class="w-full h-48 object-cover group-hover:scale-105 transition duration-300"
+          />
+          <p class="py-3 font-medium text-gray-700">Bird Supplies</p>
+        </a>
+      </div>
+    </section>
+
+    <!-- Recommended / Random Products (rotates every minute) -->
+    <section id="recommended-products" class="py-12 px-6">
+      <div class="max-w-6xl mx-auto">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-2xl font-semibold text-amber-700">Recommended For You</h3>
+          <small class="text-sm text-gray-500">Refreshing every 30 seconds</small>
+        </div>
+        <div id="recommended-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-6"></div>
+      </div>
+    </section>
+
+  
+
+    
+
+    <!-- Info Section -->
+    <section class="bg-amber-50 py-16 px-6 text-center min-h-[120vh]">
+      <h2 class="text-3xl font-semibold text-amber-700 mb-4">
+        Why Shop With Us?
+      </h2>
+      <p class="max-w-3xl mx-auto text-gray-600 text-lg">
+        We provide the best pet products at great prices. Fast delivery, trusted
+        quality, and a wide selection of items for dogs, cats, birds, and more.
+      </p>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-gray-300 py-10">
+      <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 px-6">
+        <div>
+          <h4 class="font-semibold text-white mb-3">Customer Service</h4>
+          <ul class="space-y-2">
+            <li><a href="#" class="hover:text-white">Help</a></li>
+            <li><a href="#" class="hover:text-white">Delivery</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="font-semibold text-white mb-3">Company</h4>
+          <ul class="space-y-2">
+            <li><a href="#" class="hover:text-white">About Us</a></li>
+            <li><a href="#" class="hover:text-white">Contact</a></li>
+            <li><a href="#" class="hover:text-white">Careers</a></li>
+            <li><a href="#" class="hover:text-white">Legal Info</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="font-semibold text-white mb-3">Follow Us</h4>
+          <div class="flex items-center gap-4">
+            <a href="#" aria-label="Facebook" class="text-white hover:text-amber-300 text-2xl">
+              <i class="bx bxl-facebook-square"></i>
+            </a>
+            <a href="#" aria-label="Instagram" class="text-white hover:text-amber-300 text-2xl">
+              <i class="bx bxl-instagram"></i>
+            </a>
+            <a href="#" aria-label="Twitter" class="text-white hover:text-amber-300 text-2xl">
+              <i class="bx bxl-twitter"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+      <p class="text-center text-sm text-gray-400 mt-10">
+        © 2025 Petopia. Inspired by Zooplus.
+      </p>
+    </footer>
+
+    <!-- Logout Confirmation Modal -->
+    <div
+      id="logout-modal"
+      class="fixed inset-0 bg-black/40 hidden z-[100] flex items-center justify-center"
+    >
+      <div
+        class="bg-white rounded-xl p-6 w-[90%] max-w-sm text-center shadow-lg transform scale-95 opacity-0 transition-all duration-300"
+      >
+        <i class="bx bx-log-out text-5xl text-amber-500 mb-3"></i>
+        <h2 class="text-xl font-semibold mb-2">Confirm Logout</h2>
+        <p class="text-gray-600 mb-6">
+          Are you sure you want to log out of your account?
+        </p>
+
+        <div class="flex justify-center gap-3">
+          <button
+            id="cancel-logout"
+            class="px-5 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition"
+          >
+            Cancel
+          </button>
+          <a
+            href="{{ url_for('logout') }}"
+            id="confirm-logout"
+            class="px-5 py-2 rounded-lg bg-amber-500 text-white hover:bg-amber-600 transition"
+          >
+            Yes, Logout
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add to cart Function -->
+    <script>
+  const cartBtn = document.getElementById("cart-btn");
+  const cartCount = document.getElementById("cart-count");
+
+  // Redirect to cart page on click
+  cartBtn.addEventListener("click", () => {
+    window.location.href = "/cart";
+  });
+
+  // Function to update cart count from backend
+  async function updateCartCount() {
+    try {
+      const response = await fetch("/cart_count");
+      const data = await response.json();
+
+      if (data.count > 0) {
+        cartCount.textContent = data.count;
+        cartCount.classList.remove("hidden");
+      } else {
+        cartCount.classList.add("hidden");
+      }
+    } catch (error) {
+      console.error("Failed to update cart count:", error);
+    }
+  }
+
+  // Update count on page load
+  updateCartCount();
+    </script>
+
+    <script>
+      const userBtn = document.getElementById("user-btn");
+      const userPane = document.getElementById("user-pane");
+
+      // Toggle user pane
+      userBtn?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        userPane.classList.toggle("hidden");
+      });
+
+      // Close user pane if clicked outside
+      window.addEventListener("click", (e) => {
+        if (!userPane.contains(e.target) && !userBtn.contains(e.target)) {
+          userPane.classList.add("hidden");
+        }
+      });
+      // Customer notifications dropdown toggle
+      const custNotifBtn = document.getElementById('cust-notif-btn');
+      const custNotifDropdown = document.getElementById('cust-notif-dropdown');
+      custNotifBtn?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        custNotifDropdown.classList.toggle('hidden');
+      });
+      window.addEventListener('click', (e) => {
+        if (custNotifDropdown && !custNotifDropdown.classList.contains('hidden')) {
+          custNotifDropdown.classList.add('hidden');
+        }
+      });
+    </script>
+
+    <!-- Animation Script -->
+    <script>
+      const slides = document.querySelectorAll(".hero-slide");
+      let currentSlide = 0;
+
+      function showNextSlide() {
+        slides[currentSlide].classList.remove("opacity-100");
+        slides[currentSlide].classList.add("opacity-0");
+
+        currentSlide = (currentSlide + 1) % slides.length;
+
+        slides[currentSlide].classList.remove("opacity-0");
+        slides[currentSlide].classList.add("opacity-100");
+      }
+
+      setInterval(showNextSlide, 5000); // Change every 5 seconds
+    </script>
+
+
+    <!-- Recommended products script: fetch every 30s and render cards -->
+    <script>
+      const recommendedContainer = document.getElementById('recommended-container');
+
+      function renderRecommended(items) {
+        if (!recommendedContainer) return;
+        recommendedContainer.innerHTML = '';
+        (items.slice(0, 5)).forEach(p => {
+          const div = document.createElement('div');
+            div.className = 'group bg-white rounded-xl overflow-hidden shadow-md transition';
+          div.innerHTML = `
+            <a href="/product/${p.id}" class="block">
+              <img src="${p.image_url}" alt="${(p.name||'Product').replace(/"/g,'') }" class="w-full h-44 object-cover" />
+            </a>
+            <div class="p-3 text-left">
+              <a href="/product/${p.id}" class="font-medium text-gray-700 truncate hover:text-amber-600">${p.name}</a>
+              <p class="text-amber-600 font-semibold">₱${p.price.toFixed(2)}</p>
+              <div class="mt-1 flex items-center gap-2 text-sm">
+                <div class="flex items-center" style="line-height:0">
+                  ${renderStars(p.rating)}
+                </div>
+                <div class="text-gray-500">${p.rating ? p.rating.toFixed(1) : '0.0'} (${p.rating_count || 0})</div>
+              </div>
+              <div class="mt-3">
+                <a href="/product/${p.id}" class="inline-block bg-amber-500 text-white px-3 py-1 rounded-full text-sm">View</a>
+                <button onclick="openRecommendModal(${p.id})" class="ml-2 inline-block bg-white border border-amber-500 text-amber-600 px-3 py-1 rounded-full text-sm">Add</button>
+              </div>
+            </div>
+          `;
+          recommendedContainer.appendChild(div);
+        });
+      }
+
+      function renderStars(rating){
+        const r = Math.round(Number(rating) || 0);
+        let s = '';
+        for(let i=0;i<r;i++) s += '<i class="bx bxs-star text-amber-400"></i>';
+        for(let i=r;i<5;i++) s += '<i class="bx bx-star text-gray-300"></i>';
+        return `<span class="flex items-center gap-1">${s}</span>`;
+      }
+
+      async function fetchRecommended() {
+        try {
+          const res = await fetch('/random_products');
+          if (!res.ok) throw new Error('Failed to load');
+          const data = await res.json();
+          renderRecommended(data);
+        } catch (e) {
+          console.error('Failed to fetch recommended products', e);
+        }
+      }
+
+      // Initial fetch
+      fetchRecommended();
+      // Refresh every 30 seconds
+      setInterval(fetchRecommended, 30000);
+
+      // Open modal to show product details and variants before adding to cart
+      function createRecommendModalIfNeeded() {
+        if (document.getElementById('recommend-modal')) return;
+        const modal = document.createElement('div');
+        modal.id = 'recommend-modal';
+        modal.className = 'fixed inset-0 bg-black/50 hidden items-center justify-center z-50';
+        modal.innerHTML = `
+          <div class="bg-white rounded-2xl p-6 w-[95%] max-w-2xl shadow-2xl">
+            <div class="flex gap-4">
+              <img id="rec-img" src="" alt="" class="w-40 h-40 object-cover rounded-lg" />
+              <div class="flex-1">
+                <h3 id="rec-title" class="text-lg font-semibold"></h3>
+                <p id="rec-price" class="text-amber-600 font-semibold mt-2"></p>
+                <div id="rec-rating" class="mt-2 text-sm text-gray-600"></div>
+                <div class="mt-4" id="rec-variants-wrap">
+                  <label class="block text-sm font-medium mb-2">Choose Variant</label>
+                  <div class="relative" id="rec-variant-dropdown">
+                    <button id="rec-dropdown-btn" class="w-full text-left border border-gray-200 rounded-lg px-3 py-2 flex items-center justify-between bg-white hover:bg-gray-50">
+                      <span id="rec-dropdown-text" class="text-sm text-gray-700">Select variant</span>
+                      <i class="bx bx-chevron-down text-gray-400"></i>
+                    </button>
+                    <div id="rec-dropdown-options" class="hidden absolute w-full mt-1 border border-gray-300 rounded-lg bg-white z-50 max-h-52 overflow-auto shadow-lg"></div>
+                    <input type="hidden" id="rec-selected-variant" value="" />
+                  </div>
+                </div>
+                <div class="mt-4 flex gap-3 items-center">
+                  <div class="flex items-center border border-gray-300 rounded-lg overflow-hidden">
+                    <button id="rec-qty-minus" class="bg-gray-100 text-gray-700 px-3 py-2 text-lg hover:bg-gray-200 transition">−</button>
+                    <input id="rec-qty" type="number" min="1" value="1" class="w-20 text-center border-x border-gray-200 focus:outline-none focus:ring-0 appearance-none" />
+                    <button id="rec-qty-plus" class="bg-gray-100 text-gray-700 px-3 py-2 text-lg hover:bg-gray-200 transition">+</button>
+                  </div>
+                  <button id="rec-add-btn" class="flex items-center gap-2 bg-amber-500 text-white px-4 py-2 rounded shadow-md hover:bg-amber-600"> <span id="rec-add-spinner" class="qty-spinner hidden" aria-hidden="true"></span> <i class='bx bx-cart-add text-lg'></i> Add</button>
+                  <button id="rec-cancel-btn" class="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300">Cancel</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(modal);
+
+        // events
+        modal.addEventListener('click', (e) => {
+          if (e.target === modal) closeRecommendModal();
+        });
+        modal.querySelector('#rec-cancel-btn').addEventListener('click', closeRecommendModal);
+        // variant dropdown toggle
+        modal.querySelector('#rec-dropdown-btn').addEventListener('click', (e) => {
+          e.stopPropagation();
+          const opts = modal.querySelector('#rec-dropdown-options');
+          opts.classList.toggle('hidden');
+        });
+        // close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+          const opts = modal.querySelector('#rec-dropdown-options');
+          if(opts && !opts.classList.contains('hidden') && !modal.contains(e.target)){
+            opts.classList.add('hidden');
+          }
+        });
+        // quantity plus/minus
+        modal.querySelector('#rec-qty-minus').addEventListener('click', () => {
+          const q = modal.querySelector('#rec-qty');
+          let val = parseInt(q.value || '1', 10);
+          if(val > 1) q.value = val - 1;
+        });
+        modal.querySelector('#rec-qty-plus').addEventListener('click', () => {
+          const q = modal.querySelector('#rec-qty');
+          let val = parseInt(q.value || '1', 10);
+          const max = parseInt(q.max || '0', 10);
+          if (max > 0) {
+            if (val < max) q.value = val + 1;
+          } else {
+            q.value = val + 1;
+          }
+        });
+        // keyboard: esc closes modal
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape') closeRecommendModal();
+        });
+      }
+
+      function showRecommendModal() {
+        createRecommendModalIfNeeded();
+        const m = document.getElementById('recommend-modal');
+        m.classList.remove('hidden');
+        m.classList.add('flex');
+      }
+
+      function closeRecommendModal() {
+        const m = document.getElementById('recommend-modal');
+        if (!m) return;
+        m.classList.add('hidden');
+        m.classList.remove('flex');
+      }
+
+      async function openRecommendModal(productId) {
+        try {
+          const res = await fetch(`/api/product/${productId}`);
+          if (!res.ok) throw new Error('Failed to load product');
+          const data = await res.json();
+          if (!data.success) throw new Error('Product not found');
+
+          createRecommendModalIfNeeded();
+          const modal = document.getElementById('recommend-modal');
+          document.getElementById('rec-img').src = data.product.image_url;
+          document.getElementById('rec-title').textContent = data.product.name;
+          document.getElementById('rec-price').textContent = `₱${Number(data.product.price || 0).toFixed(2)}`;
+          document.getElementById('rec-rating').innerHTML = `${renderStars(data.product.rating)} <span class="ml-2 text-gray-500 text-sm">${data.product.rating.toFixed(1)} (${data.product.rating_count})</span>`;
+
+          const wrap = modal.querySelector('#rec-variants-wrap');
+          const dropdown = modal.querySelector('#rec-dropdown-options');
+          const dropdownText = modal.querySelector('#rec-dropdown-text');
+          const selectedInput = modal.querySelector('#rec-selected-variant');
+          dropdown.innerHTML = '';
+          if (data.variants && data.variants.length > 0) {
+            wrap.style.display = 'block';
+            dropdownText.textContent = '-- Select variant --';
+            selectedInput.value = '';
+            data.variants.forEach(v => {
+              const div = document.createElement('div');
+              const label = `${v.color || ''}${v.color && v.size ? ' / ' : ''}${v.size || ''}` || `Variant ${v.id}`;
+              div.className = `px-3 py-2 ${v.stock > 0 ? 'hover:bg-amber-100 cursor-pointer' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`;
+              div.dataset.id = v.id;
+              div.dataset.price = v.price || data.product.price || 0;
+              div.dataset.stock = v.stock || 0;
+              div.innerHTML = `
+                <div class="font-medium">${label} — ₱${Number(div.dataset.price).toFixed(2)}</div>
+                <div class="text-sm ${v.stock > 0 ? 'text-gray-500' : 'text-red-500 font-semibold'}">${v.stock > 0 ? 'Stock: ' + v.stock : 'Out of Stock'}</div>
+              `;
+              if (v.stock > 0) {
+                div.addEventListener('click', function (e) {
+                  e.stopPropagation();
+                  // mark selected
+                  Array.from(dropdown.children).forEach(ch => ch.classList.remove('bg-amber-50'));
+                  this.classList.add('bg-amber-50');
+                  selectedInput.value = this.dataset.id;
+                  const labelText = this.querySelector('.font-medium').textContent;
+                  dropdownText.textContent = labelText;
+                  dropdown.classList.add('hidden');
+                  const addBtn = modal.querySelector('#rec-add-btn');
+                  if (addBtn) { addBtn.disabled = false; addBtn.classList.remove('opacity-60', 'cursor-not-allowed'); }
+                  // update modal price to selected variant price
+                  const price = Number(this.dataset.price || 0).toFixed(2);
+                  document.getElementById('rec-price').textContent = `₱${price}`;
+                  // update qty max according to stock
+                  const qEl = modal.querySelector('#rec-qty');
+                  if (qEl) {
+                    const max = Number(this.dataset.stock || 0);
+                    qEl.max = max;
+                    if (parseInt(qEl.value || '1', 10) > max) qEl.value = max || 1;
+                  }
+                });
+              }
+              dropdown.appendChild(div);
+            });
+            // Enable auto-select if only one available variant exists
+            const availableVariants = data.variants.filter(v => v.stock > 0);
+            if (availableVariants.length === 1) {
+              const auto = availableVariants[0];
+              const firstChild = Array.from(dropdown.children).find(c => c.dataset && c.dataset.id == auto.id);
+              if (firstChild) {
+                // simulate click to select
+                firstChild.click();
+              }
+            }
+            // If no available variants, disable add button and show out-of-stock message
+            if (availableVariants.length === 0) {
+              const addBtn = modal.querySelector('#rec-add-btn');
+              if (addBtn) { addBtn.disabled = true; addBtn.classList.add('opacity-60', 'cursor-not-allowed'); }
+              dropdownText.textContent = 'Out of Stock';
+            }
+          } else {
+            // hide variant selector when none
+            wrap.style.display = 'none';
+            selectedInput.value = '';
+          }
+
+          // bind add action
+          const addBtn = modal.querySelector('#rec-add-btn');
+          addBtn.onclick = async () => {
+            const qty = parseInt(modal.querySelector('#rec-qty').value) || 1;
+            let variantVal = modal.querySelector('#rec-selected-variant')?.value || null;
+            if (data.variants && data.variants.length > 0) {
+              if (!variantVal) {
+                alert('Please select a variant first');
+                return;
+              }
+            } else {
+              variantVal = null;
+            }
+
+            try {
+              const spinner = modal.querySelector('#rec-add-spinner');
+              if (spinner) spinner.classList.remove('hidden');
+              addBtn.disabled = true;
+              addBtn.classList.add('opacity-60', 'cursor-not-allowed');
+
+              const resp = await fetch('/add_to_cart', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ product_id: productId, variant_id: variantVal, quantity: qty })
+              });
+              const j = await resp.json();
+              if (j.status === 'not_logged_in') {
+                window.location.href = j.login_url;
+                return;
+              }
+              await updateCartCount();
+              if (spinner) spinner.classList.add('hidden');
+              addBtn.disabled = false;
+              addBtn.classList.remove('opacity-60', 'cursor-not-allowed');
+              closeRecommendModal();
+            } catch (err) {
+              console.error(err);
+              alert('Failed to add to cart');
+              if (spinner) spinner.classList.add('hidden');
+              addBtn.disabled = false;
+              addBtn.classList.remove('opacity-60', 'cursor-not-allowed');
+            }
+          };
+
+          showRecommendModal();
+        } catch (err) {
+          console.error(err);
+          alert('Failed to load product details');
+        }
+      }
+
+      // initial fetch and poll every minute
+      fetchRecommended();
+      setInterval(fetchRecommended, 60 * 1000);
+    </script>
+
+    <!-- Logout Modal Script -->
+    <script>
+      const logoutLinks = document.querySelectorAll(
+        "a[href='{{ url_for('logout') }}']:not(#confirm-logout)"
+      );
+      const modal = document.getElementById("logout-modal");
+      const modalBox = modal.querySelector("div");
+      const cancelBtn = document.getElementById("cancel-logout");
+      const confirmBtn = document.getElementById("confirm-logout");
+
+      // Show modal on logout link click (excluding modal button)
+      logoutLinks.forEach((link) => {
+        link.addEventListener("click", (e) => {
+          e.preventDefault();
+          modal.classList.remove("hidden");
+          setTimeout(() => {
+            modalBox.classList.remove("opacity-0", "scale-95");
+            modalBox.classList.add("opacity-100", "scale-100");
+          }, 10);
+        });
+      });
+
+      // Hide modal on cancel
+      cancelBtn.addEventListener("click", () => {
+        modalBox.classList.remove("opacity-100", "scale-100");
+        modalBox.classList.add("opacity-0", "scale-95");
+        setTimeout(() => modal.classList.add("hidden"), 200);
+      });
+
+      // Hide modal when clicking outside the box
+      modal.addEventListener("click", (e) => {
+        if (e.target === modal) cancelBtn.click();
+      });
+
+      // Proceed with logout when confirmed
+      confirmBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        window.location.href = confirmBtn.href;
+      });
+    </script>
+
+    <!-- Hover Animation -->
+    <style>
+      .profile-pic {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+      .profile-pic:hover {
+        transform: scale(1.05);
+        box-shadow: 0 0 6px rgba(251, 191, 36, 0.6); /* amber glow */
+      }
+    </style>
+
+  </body>
+</html>

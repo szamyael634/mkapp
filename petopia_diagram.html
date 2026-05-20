@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Petopia System Diagram</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+            margin: 0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .diagram-container {
+            background: #fafafa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            overflow-x: auto;
+        }
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #5568d3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🐾 Petopia E-Commerce System Architecture</h1>
+        
+        <div class="controls">
+            <button onclick="downloadImage()">📥 Download as Image</button>
+            <button onclick="printDiagram()">🖨️ Print</button>
+        </div>
+
+        <div class="diagram-container">
+            <div class="mermaid" id="mainDiagram">
+graph TB
+    subgraph Users["👥 User Types"]
+        Customer["👤 Customer<br/>Browse & Order"]
+        Seller["🏪 Seller<br/>Manage Products"]
+        Rider["🚗 Rider<br/>Deliver Orders"]
+        Admin["👨‍💼 Admin<br/>System Control"]
+    end
+
+    subgraph Platform["🌐 Platform Core"]
+        API["🔌 Flask API<br/>Backend"]
+        DB["🗄️ MySQL Database<br/>All Data"]
+        Auth["🔐 Authentication<br/>Login System"]
+    end
+
+    subgraph Features["✨ Key Features"]
+        Products["📦 Products<br/>Catalog & Inventory"]
+        Orders["📋 Orders<br/>Creation & Tracking"]
+        Delivery["🚗 Delivery<br/>Assignment & Tracking"]
+        Ratings["⭐ Ratings<br/>Products & Riders"]
+        Earnings["💰 Earnings<br/>Calculate & Reports"]
+    end
+
+    subgraph Database["🗄️ Database Tables"]
+        Users_Table["users<br/>Customers, Sellers, Riders"]
+        Products_Table["products<br/>Item Details"]
+        Orders_Table["orders<br/>Order Info"]
+        OrderItems["order_items<br/>Items in Orders"]
+        OrderRiders["order_riders<br/>Rider Assignment"]
+        Ratings_Table["ratings<br/>User Ratings"]
+        ProductRatings["product_ratings<br/>Product Reviews"]
+        Addresses["addresses<br/>Delivery Locations"]
+        Income["income/earnings<br/>Payment Records"]
+    end
+
+    subgraph Workflows["🔄 Main Workflows"]
+        CustomerFlow["1️⃣ Customer: Browse → Add to Cart → Checkout → Deliver → Rate"]
+        SellerFlow["2️⃣ Seller: Confirm Order → Prepare → Ready for Pickup → Earnings"]
+        RiderFlow["3️⃣ Rider: View Orders → Accept → Pickup → Deliver → Get Rating"]
+        AdminFlow["4️⃣ Admin: Manage Users → Track Orders → View Analytics"]
+    end
+
+    Customer -->|Uses| API
+    Seller -->|Uses| API
+    Rider -->|Uses| API
+    Admin -->|Uses| API
+    
+    API -->|Stores/Retrieves| DB
+    Auth -->|Secures| API
+    
+    API -->|Manages| Products
+    API -->|Manages| Orders
+    API -->|Manages| Delivery
+    API -->|Manages| Ratings
+    API -->|Manages| Earnings
+    
+    Products -->|Stored in| Products_Table
+    Orders -->|Stored in| Orders_Table
+    Orders -->|Contains| OrderItems
+    Delivery -->|Uses| OrderRiders
+    Ratings -->|Stored in| Ratings_Table
+    Ratings -->|Stored in| ProductRatings
+    Earnings -->|Recorded in| Income
+    
+    DB -->|Contains| Users_Table
+    DB -->|Contains| Products_Table
+    DB -->|Contains| Orders_Table
+    DB -->|Contains| OrderItems
+    DB -->|Contains| OrderRiders
+    DB -->|Contains| Ratings_Table
+    DB -->|Contains| ProductRatings
+    DB -->|Contains| Addresses
+    DB -->|Contains| Income
+    
+    CustomerFlow -->|Implements| API
+    SellerFlow -->|Implements| API
+    RiderFlow -->|Implements| API
+    AdminFlow -->|Implements| API
+
+    style Users fill:#e3f2fd
+    style Platform fill:#f3e5f5
+    style Features fill:#e8f5e9
+    style Database fill:#fff3e0
+    style Workflows fill:#fce4ec
+            </div>
+        </div>
+
+        <div class="diagram-container">
+            <h2>📊 Order Processing Flow</h2>
+            <div class="mermaid" id="orderFlow">
+graph LR
+    A["👤 Customer<br/>Places Order"] --> B["⏳ Pending<br/>Seller Review"]
+    B --> C{"✓ Seller<br/>Confirms?"}
+    C -->|Reject| D["❌ Order<br/>Cancelled"]
+    C -->|Accept| E["✅ Confirmed<br/>Ready to Ship"]
+    E --> F["🚗 Rider<br/>Assigned"]
+    F --> G["📍 Pickup<br/>from Seller"]
+    G --> H["🛵 In<br/>Transit"]
+    H --> I["📦 Delivered<br/>to Customer"]
+    I --> J["⭐ Customer<br/>Rates Order"]
+    J --> K["⭐ Customer<br/>Rates Rider"]
+    K --> L["✨ Order<br/>Complete"]
+    
+    style A fill:#c8e6c9
+    style E fill:#c8e6c9
+    style I fill:#c8e6c9
+    style L fill:#c8e6c9
+    style D fill:#ffcdd2
+    style J fill:#bbdefb
+    style K fill:#bbdefb
+            </div>
+        </div>
+
+        <div class="diagram-container">
+            <h2>💰 Earnings & Rider Rating System</h2>
+            <div class="mermaid" id="earningsFlow">
+graph TB
+    A["📦 Order<br/>Delivered"] --> B["💰 Rider<br/>Earns Income"]
+    A --> C["⭐ Customer<br/>Rates Rider"]
+    
+    B --> D["📊 Earnings<br/>Stored in DB"]
+    D --> E["📈 Monthly<br/>Report"]
+    E --> F["🎯 Performance<br/>Metrics"]
+    
+    C --> G["⭐ Rating<br/>Stored"]
+    G --> H["📊 Avg Rating<br/>Calculated"]
+    H --> I["🎯 Rider<br/>Performance"]
+    
+    F --> J["📱 Rider<br/>Dashboard"]
+    I --> J
+    
+    J --> K["✅ Ratings<br/>Display in History"]
+    J --> L["📈 Reports<br/>View"]
+    
+    style A fill:#fff9c4
+    style B fill:#c8e6c9
+    style C fill:#bbdefb
+    style J fill:#f0f4c3
+            </div>
+        </div>
+    </div>
+
+    <script>
+        mermaid.initialize({ startOnLoad: true, theme: 'default' });
+        
+        function downloadImage() {
+            alert('📸 To save as image:\n1. Right-click on the diagram\n2. Select "Save image as..."\n3. Choose location and format (PNG/SVG)');
+        }
+        
+        function printDiagram() {
+            window.print();
+        }
+    </script>
+</body>
+</html>

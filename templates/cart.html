@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Petopia | My Cart</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://unpkg.com/lucide-static/font/lucide.css">  
+  <link
+      href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css"
+      rel="stylesheet"
+    />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='image/petopia-favicon.svg') }}" />
+    <style>
+      html {
+        scrollbar-gutter: stable;
+        overflow-y: scroll;
+      }
+
+      /* small spinner for quantity updates */
+      .qty-spinner {
+        display: inline-block;
+        width: 18px;
+        height: 18px;
+        border: 2px solid rgba(0,0,0,0.12);
+        border-top-color: #f59e0b; /* amber-500 */
+        border-radius: 9999px;
+        animation: spin 1.5s linear infinite;
+        vertical-align: middle;
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="flex items-center justify-between px-6 md:px-20 py-4 bg-white shadow-md sticky top-0 z-50">
+
+    <a href="{{ url_for('homepage') }}" class="flex items-center">
+      <img src="{{ url_for('static', filename='image/petopia-logo.png') }}" alt="Petopia" class="h-24 w-auto max-w-none" />
+    </a>
+
+    <div class="hidden md:flex items-center w-1/2">
+      <div class="w-full relative">
+        <input id="main-search-input" type="text" autocomplete="off" placeholder="Search for products, brands..." class="w-full px-4 py-2.5 pr-14 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-amber-500 transition">
+        <button id="main-search-btn" type="button" class="absolute right-1.5 top-1/2 -translate-y-1/2 bg-amber-500 text-white w-10 h-10 rounded-full hover:bg-amber-600 transition flex items-center justify-center shadow-md hover:shadow-lg">
+          <i class="fas fa-paw text-sm"></i>
+        </button>
+      </div>
+    </div>
+    <script src="{{ url_for('static', filename='search.js') }}"></script>
+    </div>
+
+    <div class="flex items-center gap-6 text-2xl">
+
+
+  <button id="cart-btn" class="hover:text-amber-600 relative">
+    <i class="bx bx-cart-add"></i>
+    <span
+      id="cart-count"
+      class="absolute -top-2 -right-2 bg-amber-500 text-white text-xs px-1.5 py-0.5 rounded-full hidden"
+    ></span>
+  </button>
+
+  <!-- 🔔 Notifications (customer) -->
+  <div class="relative">
+    <button id="cust-notif-btn" class="text-2xl relative">
+      <i class="bx bxs-bell"></i>
+      {% set cust_unread = notifications|selectattr('is_read', 'equalto', False)|list|length if notifications else 0 %}
+      {% if cust_unread > 0 %}
+        <span class="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">{{ cust_unread }}</span>
+      {% endif %}
+    </button>
+    <div id="cust-notif-dropdown" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-gray-100 z-50">
+      <div class="p-4 border-b flex items-center justify-between">
+        <div class="font-semibold text-gray-700">Notifications</div>
+        <form method="post" action="{{ url_for('mark_all_notifications_read') }}">
+          <button type="submit" class="text-xs text-blue-600 hover:underline">Mark all as read</button>
+        </form>
+      </div>
+      <ul class="max-h-80 overflow-y-auto divide-y">
+        {% for notif in notifications|sort(attribute='created_at', reverse=True) %}
+          <li data-notif-id="{{ notif.id }}" data-target="{{ notif.target_url or '#' }}" class="px-4 py-3 border-b last:border-b-0 {{ 'bg-amber-50' if not notif.is_read else '' }} flex items-center justify-between gap-2 cursor-pointer">
+            <div>
+              <div class="text-sm text-gray-800">{{ notif.message }}</div>
+              <div class="text-xs text-gray-400 mt-1">{{ notif.created_at.strftime('%b %d, %Y %I:%M %p') }}</div>
+            </div>
+            {% if not notif.is_read %}
+              <form class="mark-notif-form" method="post" action="{{ url_for('mark_notification_read') }}">
+                <input type="hidden" name="notification_id" value="{{ notif.id }}">
+                <button type="submit" class="text-xs text-blue-600 hover:underline">Mark as read</button>
+              </form>
+            {% endif %}
+          </li>
+        {% else %}
+          <li class="px-4 py-3 text-gray-500 text-sm">No notifications.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+      <div class="relative text-2xl" id="user-btn-container">
+  {% if user %}
+    <button id="user-btn" class="flex items-center gap-2 hover:text-amber-600">
+      {% if user.profile_pic %}
+        <img
+          src="{{ media_url(user.profile_pic, 'image/default-avatar.png') }}"
+          alt="Profile"
+          class="w-10 h-10 rounded-full object-cover border-2 border-amber-400 profile-pic"
+        />
+      {% else %}
+        <i class="bx bx-user-circle text-3xl"></i>
+      {% endif %}
+    </button>
+
+    <!-- Dropdown Menu -->
+        <div
+      id="user-pane"
+      class="hidden absolute right-0 top-12 w-48 bg-white rounded-xl shadow-xl border border-gray-100 p-4 z-50"
+    >
+      <p class="text-sm text-gray-700 mb-2">
+        <strong>{{ user.fullname }}</strong>
+      </p>
+      <hr class="my-2" />
+
+      <a href="{{ url_for('settings') }}"
+        class="flex items-center gap-3 text-sm text-gray-700 hover:bg-gray-100 px-2 py-1 rounded">
+        <i class="icon-settings text-lg"></i> Settings
+      </a>
+
+      <a href="{{ url_for('orders') }}"
+        class="flex items-center gap-3 text-sm text-gray-700 hover:bg-gray-100 px-2 py-1 rounded">
+        <i class="icon-package text-lg"></i> Orders
+      </a>
+
+      <a href="{{ url_for('wishlist') }}"
+        class="flex items-center gap-3 text-sm text-gray-700 hover:bg-gray-100 px-2 py-1 rounded">
+        <i class="icon-heart text-lg"></i> Wishlist
+      </a>
+
+       <a href="{{ url_for('logout') }}"
+        class="flex items-center gap-3 text-sm text-red-600 hover:bg-red-50 px-2 py-1 rounded pt-1">
+        <i class="icon-log-out text-lg"></i> Logout
+      </a>
+    </div>
+
+  {% else %}
+    <!-- If user NOT logged in, show Login button instead of profile icon -->
+    <a href="{{ url_for('loginreg') }}" class="bg-amber-500 text-white px-3 py-1 text-sm rounded-full hover:bg-amber-600 transition shadow-sm font-medium">
+      Login
+    </a>
+  {% endif %}
+</div>
+    </div>
+  </header>
+  <script>
+    (function(){
+      const notifDropdown = document.getElementById('cust-notif-dropdown');
+      if (!notifDropdown) return;
+      notifDropdown.addEventListener('click', async (ev) => {
+        const li = ev.target.closest('li[data-notif-id]');
+        if (!li) return;
+        if (ev.target.closest('form.mark-notif-form')) return;
+        const notifId = li.getAttribute('data-notif-id');
+        const target = li.getAttribute('data-target');
+        if (notifId) {
+          try {
+            await fetch("{{ url_for('mark_notification_read') }}", { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' }, body: 'notification_id=' + encodeURIComponent(notifId) });
+          } catch (e) {}
+        }
+        if (target && target !== '#') {
+          window.location.href = target;
+        }
+      });
+    })();
+  </script>
+
+  <!-- Category Navigation -->
+<nav class="bg-amber-100 py-3 shadow-inner">
+  <ul class="flex flex-wrap justify-center gap-6 font-medium text-amber-700">
+    <li><a href="{{ url_for('products_page', category='Dog') }}" class="hover:text-amber-900">Dog</a></li>
+    <li><a href="{{ url_for('products_page', category='Cat') }}" class="hover:text-amber-900">Cat</a></li>
+    <li><a href="{{ url_for('products_page', category='Fish') }}" class="hover:text-amber-900">Fish</a></li>
+    <li><a href="{{ url_for('products_page', category='Bird') }}" class="hover:text-amber-900">Bird</a></li>
+    <li><a href="{{ url_for('products_page', category='Grooming') }}" class="hover:text-amber-900">Grooming</a></li>
+    <li><a href="{{ url_for('products_page', category='Pet Health') }}" class="hover:text-amber-900">Pet Health</a></li>
+  </ul>
+</nav>
+
+  <!-- Cart Section -->
+  <main class="flex-1 px-6 py-10 max-w-6xl mx-auto w-full min-h-[120vh]">
+    {% if cart_by_shop %}
+    <div class="flex items-center gap-2 mb-4">
+      <input type="checkbox" id="select-all-global">
+      <label for="select-all-global" class="text-gray-700 font-medium">Select All Products</label>
+    </div>
+    <div class="grid lg:grid-cols-3 gap-8">
+      <!-- Cart Items -->
+      <div class="lg:col-span-2 space-y-8">
+  {% for shop, items in cart_by_shop.items() %}
+  <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition space-y-4">
+    <div class="bg-gray-100 p-3 rounded-lg font-semibold text-gray-700 mb-2 flex items-center justify-between">
+    {{ shop }}
+
+    <label class="flex items-center gap-2 text-sm font-normal">
+        <input type="checkbox" class="shop-select-all" data-shop="{{ shop }}">
+        <span>Select All</span>
+    </label>
+    </div>
+    
+    {% for item in items %}
+      <div class="flex items-center justify-between gap-4 py-3">
+        <input type="checkbox" 
+       class="cart-check flex-none" 
+       data-shop="{{ shop }}"
+       data-product-id="{{ item.product_id }}" 
+       data-variant-id="{{ item.variant_id if item.variant_id else 0 }}"
+       data-price="{{ item.price }}"  
+       data-qty="{{ item.quantity }}"
+       data-seller-id="{{ item.seller_id }}"> 
+
+        <!-- fixed image box -->
+        <a href="{{ url_for('product_detail', product_id=item.product_id) }}" class="flex-none w-20 h-20 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
+          <img src="{{ media_url(item.product_image, 'image/dog.webp') }}" alt="{{ item.product_name }}" class="w-full h-full object-cover" />
+        </a>
+
+        <!-- product info: truncates to keep layout stable -->
+        <div class="flex-1 min-w-0 px-2">
+          <h2 class="font-semibold text-gray-800 truncate">
+            <a href="{{ url_for('product_detail', product_id=item.product_id) }}" class="hover:text-amber-600">{{ item.product_name }}</a>
+          </h2>
+          {% if item.color or item.size %}
+            <p class="text-gray-500 text-sm truncate">
+              {% if item.color %}Color: {{ item.color }}{% endif %}
+              {% if item.size %} | Size: {{ item.size }}{% endif %}
+            </p>
+          {% endif %}
+          <p class="text-amber-600 font-semibold mt-1">₱{{ '%.2f'|format(item.price) }}</p>
+        </div>
+
+        <!-- fixed-width quantity column -->
+        <div class="flex-none w-40 flex items-center justify-center gap-3">
+          <button class="bg-gray-200 px-3 py-1 rounded-lg text-lg hover:bg-gray-300 qty-btn" 
+        data-action="-1"
+        data-product="{{ item.product_id }}"
+        data-variant="{{ item.variant_id if item.variant_id else '' }}">
+          −
+        </button>
+
+        <span class="text-lg font-semibold w-8 text-center" 
+              id="qty-{{ item.product_id }}-{{ item.variant_id if item.variant_id else 0 }}">
+          {{ item.quantity }}
+        </span>
+
+        <button class="bg-gray-200 px-3 py-1 rounded-lg text-lg hover:bg-gray-300 qty-btn" 
+                data-action="1"
+                data-product="{{ item.product_id }}"
+                data-variant="{{ item.variant_id if item.variant_id else '' }}">
+          +
+        </button>
+        </div>
+
+        <button class="text-red-500 hover:text-red-600 text-xl ml-4 remove-btn flex-none"
+                data-product-id="{{ item.product_id }}"
+                data-variant-id="{{ item.variant_id if item.variant_id else 0 }}">
+          <i class='bx bx-trash'></i>
+        </button>
+      </div>
+    {% endfor %}
+  </div>
+{% endfor %}
+</div>
+
+      <!-- Order Summary -->
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 lg:sticky lg:top-24 self-start max-h-[70vh] overflow-auto lg:z-10">
+        <h2 class="text-xl font-semibold mb-4 text-gray-700">Order Summary</h2>
+        <div class="space-y-3 text-sm">
+          <div class="flex justify-between text-gray-600">
+    <span>Subtotal</span>
+    <span id="summary-subtotal">₱0.00</span>
+</div>
+<div class="flex justify-between text-gray-600">
+    <span>Shipping</span>
+    <span id="summary-shipping">₱{{ total_shipping | round(2) }}</span>
+</div>
+<div class="flex justify-between font-semibold text-gray-800 border-t border-gray-200 pt-3">
+    <span>Total</span>
+    <span id="summary-total" class="text-amber-600">₱{{ total | round(2) }}</span>
+</div>
+        </div>
+        <button id="checkout-btn" 
+                class="mt-6 w-full bg-gray-400 text-white py-3 rounded-lg font-medium shadow-md transition cursor-not-allowed"
+                disabled>
+          Proceed to Checkout
+        </button>
+      </div>
+    </div>
+    {% else %}
+    <!-- Empty Cart Message -->
+    <div class="grid lg:grid-cols-3 gap-8 items-center">
+      <div class="lg:col-span-3 bg-white p-12 rounded-xl shadow-sm border border-gray-100 text-center">
+        <div class="text-6xl">🛒</div>
+        <h2 class="text-2xl font-semibold mt-4 text-gray-800">Your shopping cart is empty</h2>
+        <p class="text-gray-600 mt-2">Looks like you haven't added any items yet. Start exploring our products!</p>
+        <div class="mt-6 flex justify-center gap-3">
+          <a href="{{ url_for('products_page', category='Dog') }}" class="px-5 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition">Continue Shopping</a>
+          <a href="{{ url_for('homepage') }}" class="px-5 py-2 border border-gray-200 rounded-lg hover:bg-gray-50">Back to Home</a>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </main>
+
+
+  <!-- Remove Confirmation Modal -->
+<div id="remove-modal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 transition-opacity duration-300 opacity-0">
+  <div class="bg-white rounded-3xl p-6 w-80 shadow-2xl transform scale-90 transition-transform duration-300">
+    <div class="flex flex-col items-center">
+      <!-- Warning Icon -->
+      <div class="bg-red-100 text-red-600 w-16 h-16 flex items-center justify-center rounded-full mb-4">
+        <i class="bx bx-trash text-3xl"></i>
+      </div>
+      <h2 class="text-xl font-semibold text-gray-800 mb-2 text-center">Remove Item</h2>
+      <p class="text-gray-600 mb-6 text-center">Are you sure you want to remove this item from your cart?</p>
+      <div class="flex justify-center gap-4 w-full">
+        <button id="cancel-remove" class="flex-1 px-4 py-2 rounded-xl border border-gray-300 hover:bg-gray-100 shadow-sm transition">
+          Cancel
+        </button>
+        <button id="confirm-remove" class="flex-1 px-4 py-2 rounded-xl bg-red-500 text-white hover:bg-red-600 shadow-md transition">
+          Remove
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Footer -->
+<footer class="bg-gray-800 text-gray-300 py-10 mt-16">
+  <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 px-6">
+    <div>
+      <h4 class="font-semibold text-white mb-3">Customer Service</h4>
+      <ul class="space-y-2">
+        <li><a href="#" class="hover:text-white">Help</a></li>
+        <li><a href="#" class="hover:text-white">Delivery</a></li>
+
+      </ul>
+    </div>
+    <div>
+      <h4 class="font-semibold text-white mb-3">Company</h4>
+      <ul class="space-y-2">
+        <li><a href="#" class="hover:text-white">About Us</a></li>
+        <li><a href="#" class="hover:text-white">Contact</a></li>
+        <li><a href="#" class="hover:text-white">Careers</a></li>
+        <li><a href="#" class="hover:text-white">Legal Info</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4 class="font-semibold text-white mb-3">Follow Us</h4>
+      <div class="flex items-center gap-4">
+        <a href="#" aria-label="Facebook" class="text-white hover:text-amber-300 text-2xl">
+          <i class="bx bxl-facebook-square"></i>
+        </a>
+        <a href="#" aria-label="Instagram" class="text-white hover:text-amber-300 text-2xl">
+          <i class="bx bxl-instagram"></i>
+        </a>
+        <a href="#" aria-label="Twitter" class="text-white hover:text-amber-300 text-2xl">
+          <i class="bx bxl-twitter"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+  <p class="text-center text-sm text-gray-400 mt-10">© 2025 Petopia</p>
+</footer>
+
+<!-- Logout Confirmation Modal -->
+    <div
+      id="logout-modal"
+      class="fixed inset-0 bg-black/40 hidden z-[100] flex items-center justify-center"
+    >
+      <div
+        class="bg-white rounded-xl p-6 w-[90%] max-w-sm text-center shadow-lg transform scale-95 opacity-0 transition-all duration-300"
+      >
+        <i class="bx bx-log-out text-5xl text-amber-500 mb-3"></i>
+        <h2 class="text-xl font-semibold mb-2">Confirm Logout</h2>
+        <p class="text-gray-600 mb-6">
+          Are you sure you want to log out of your account?
+        </p>
+
+        <div class="flex justify-center gap-3">
+          <button
+            id="cancel-logout"
+            class="px-5 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition"
+          >
+            Cancel
+          </button>
+          <a
+            href="{{ url_for('logout') }}"
+            id="confirm-logout"
+            class="px-5 py-2 rounded-lg bg-amber-500 text-white hover:bg-amber-600 transition"
+          >
+            Yes, Logout
+          </a>
+        </div>
+      </div>
+    </div>
+
+<script>
+    const SHIPPING_BY_SHOP = {{ shipping_by_shop | tojson }};
+</script>
+
+<!-- Logout Modal Script -->
+    <script>
+      const logoutLinks = document.querySelectorAll(
+        "a[href='{{ url_for('logout') }}']:not(#confirm-logout)"
+      );
+      const modals = document.getElementById("logout-modal");
+      const modalBox = modals.querySelector("div");
+      const cancelBtn = document.getElementById("cancel-logout");
+      const confirmBtn = document.getElementById("confirm-logout");
+
+      // Show modal on logout link click (excluding modal button)
+      logoutLinks.forEach((link) => {
+        link.addEventListener("click", (e) => {
+          e.preventDefault();
+          modals.classList.remove("hidden");
+          setTimeout(() => {
+            modalBox.classList.remove("opacity-0", "scale-95");
+            modalBox.classList.add("opacity-100", "scale-100");
+          }, 10);
+        });
+      });
+
+      // Hide modal on cancel
+      cancelBtn.addEventListener("click", () => {
+        modalBox.classList.remove("opacity-100", "scale-100");
+        modalBox.classList.add("opacity-0", "scale-95");
+        setTimeout(() => modals.classList.add("hidden"), 200);
+      });
+
+      // Hide modal when clicking outside the box
+      modals.addEventListener("click", (e) => {
+        if (e.target === modal) cancelBtn.click();
+      });
+
+      // Proceed with logout when confirmed
+      confirmBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        window.location.href = confirmBtn.href;
+      });
+    </script>
+
+<script>
+document.querySelectorAll('.qty-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const productId = btn.dataset.product;
+    const variantId = btn.dataset.variant || null;
+    const delta = parseInt(btn.dataset.action);
+    updateQuantity(btn, delta, productId, variantId);
+  });
+});
+</script>
+
+  <script>
+  const cartBtn = document.getElementById("cart-btn");
+  const cartCount = document.getElementById("cart-count");
+
+  // Redirect to cart page on click
+  cartBtn.addEventListener("click", () => {
+    window.location.href = "/cart";
+  });
+
+  // Function to update cart count from backend
+  async function updateCartCount() {
+    try {
+      const response = await fetch("/cart_count");
+      const data = await response.json();
+
+      if (data.count > 0) {
+        cartCount.textContent = data.count;
+        cartCount.classList.remove("hidden");
+      } else {
+        cartCount.classList.add("hidden");
+      }
+    } catch (error) {
+      console.error("Failed to update cart count:", error);
+    }
+  }
+
+  // Update count on page load
+  updateCartCount();
+    </script>
+
+    <script>
+      const userBtn = document.getElementById("user-btn");
+      const userPane = document.getElementById("user-pane");
+
+      // Toggle user pane
+      userBtn?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        userPane.classList.toggle("hidden");
+      });
+
+      // Close user pane if clicked outside
+      window.addEventListener("click", (e) => {
+        if (!userPane.contains(e.target) && !userBtn.contains(e.target)) {
+          userPane.classList.add("hidden");
+        }
+      });
+    </script>
+
+    <script>
+async function updateQuantity(button, change, productId, variantId) {
+  const span = button.parentElement.querySelector('span');
+  const originalText = span.textContent.trim();
+  const current = parseInt(originalText) || 0;
+  let updated = current + change;
+  if (updated < 1) updated = 1;
+
+  // show spinner in place of number
+  span.dataset.prev = originalText;
+  span.innerHTML = '<span class="qty-spinner" aria-hidden="true"></span>';
+
+  // disable related +/- buttons for this product to avoid double clicks
+  const relatedBtns = Array.from(document.querySelectorAll(`.qty-btn[data-product='${productId}'][data-variant='${variantId || ''}']`));
+  relatedBtns.forEach(b => b.disabled = true);
+
+  const minDisplayMs = 1000; // ensure spinner visible at least this long (ms)
+  const startTime = Date.now();
+
+  try {
+    const response = await fetch('/update_cart_quantity', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        product_id: productId,
+        variant_id: variantId,
+        quantity: updated
+      })
+    });
+
+    const data = await response.json();
+    const elapsed = Date.now() - startTime;
+    const wait = Math.max(0, minDisplayMs - elapsed);
+
+    if (data.success) {
+      setTimeout(() => {
+        // show updated number
+        span.textContent = updated;
+        // update checkbox dataset for summary calculation
+        const checkbox = document.querySelector(`.cart-check[data-product-id="${productId}"][data-variant-id="${variantId || 0}"]`);
+        if (checkbox) checkbox.dataset.qty = updated;
+        // refresh summary and cart count without full reload
+        updateSummary();
+        updateCartCount();
+        // re-enable buttons
+        relatedBtns.forEach(b => b.disabled = false);
+      }, wait);
+    } else {
+      setTimeout(() => {
+        // revert
+        span.textContent = span.dataset.prev || originalText;
+        const errorMsg = data.error || 'Failed to update quantity';
+        alert(errorMsg);
+        relatedBtns.forEach(b => b.disabled = false);
+      }, wait);
+    }
+  } catch (err) {
+    console.error(err);
+    const elapsed2 = Date.now() - startTime;
+    const wait2 = Math.max(0, minDisplayMs - elapsed2);
+    setTimeout(() => {
+      span.textContent = span.dataset.prev || originalText;
+      alert('Error updating quantity');
+      relatedBtns.forEach(b => b.disabled = false);
+    }, wait2);
+  }
+}
+    </script>
+
+    <script>
+function updateSummary() {
+    let subtotal = 0;
+    let selectedShops = new Set();
+
+    const checkboxes = document.querySelectorAll(".cart-check:checked");
+
+    // Calculate subtotal + detect which shops should add shipping
+    checkboxes.forEach(chk => {
+        const price = parseFloat(chk.dataset.price);
+        const qty = parseInt(chk.dataset.qty);
+        subtotal += price * qty;
+
+        selectedShops.add(chk.dataset.shop);
+    });
+
+    // Sum shipping fees for selected shops only
+    let shipping = 0;
+    selectedShops.forEach(shop => {
+        if (SHIPPING_BY_SHOP[shop]) {
+            shipping += SHIPPING_BY_SHOP[shop];
+        }
+    });
+
+    let total = subtotal + shipping;
+
+    // Update UI
+    document.getElementById("summary-subtotal").textContent = "₱" + subtotal.toFixed(2);
+    document.getElementById("summary-shipping").textContent = "₱" + shipping.toFixed(2);
+    document.getElementById("summary-total").textContent = "₱" + total.toFixed(2);
+
+    // Handle checkout button
+    const checkoutBtn = document.getElementById("checkout-btn");
+    if (checkboxes.length > 0) {
+        checkoutBtn.disabled = false;
+        checkoutBtn.classList.remove("bg-gray-400", "cursor-not-allowed");
+        checkoutBtn.classList.add("bg-amber-500", "hover:bg-amber-600");
+    } else {
+        checkoutBtn.disabled = true;
+        checkoutBtn.classList.add("bg-gray-400", "cursor-not-allowed");
+        checkoutBtn.classList.remove("bg-amber-500", "hover:bg-amber-600");
+    }
+}
+
+/* ---------------------------
+   GLOBAL SELECT ALL
+--------------------------- */
+const selectAllGlobalElement = document.getElementById("select-all-global");
+if (selectAllGlobalElement) {
+  selectAllGlobalElement.addEventListener("change", function () {
+    const checked = this.checked;
+
+    document.querySelectorAll(".cart-check").forEach(chk => {
+        chk.checked = checked;
+    });
+
+    document.querySelectorAll(".shop-select-all").forEach(shopChk => {
+        shopChk.checked = checked;
+    });
+
+    updateSummary();
+  });
+}
+
+/* ---------------------------
+   PER SHOP SELECT ALL
+--------------------------- */
+document.querySelectorAll(".shop-select-all").forEach(shopSelect => {
+    shopSelect.addEventListener("change", function () {
+        let shopName = this.dataset.shop;
+        let checked = this.checked;
+
+        document.querySelectorAll(`.cart-check[data-shop="${shopName}"]`)
+            .forEach(chk => chk.checked = checked);
+
+        updateSummary();
+    });
+});
+
+/* ---------------------------
+  INDIVIDUAL CHECKBOXES
+--------------------------- */
+document.addEventListener("change", function (e) {
+    if (e.target.classList.contains("cart-check")) {
+
+        // update global select all
+        const all = document.querySelectorAll(".cart-check");
+        const checked = document.querySelectorAll(".cart-check:checked");
+
+        const selectAllGlobalEl_ = document.getElementById("select-all-global");
+        if (selectAllGlobalEl_) selectAllGlobalEl_.checked = all.length === checked.length;
+
+        // update per-shop select all
+        let shopName = e.target.dataset.shop;
+        const shopItems = document.querySelectorAll(`.cart-check[data-shop="${shopName}"]`);
+        const shopCheckedItems = document.querySelectorAll(`.cart-check[data-shop="${shopName}"]:checked`);
+
+        const shopCheckbox = document.querySelector(`.shop-select-all[data-shop="${shopName}"]`);
+        if (shopCheckbox) {
+            shopCheckbox.checked = shopItems.length === shopCheckedItems.length;
+        }
+
+        updateSummary();
+    }
+});
+
+window.onload = updateSummary;
+    </script>
+
+    <script>
+let removeProductId = null;
+let removeVariantId = null;
+let removeBtnElement = null;
+
+const modal = document.getElementById("remove-modal");
+const modalContent = modal.querySelector("div");
+
+// Open modal with fade-in & scale-up
+document.querySelectorAll(".remove-btn").forEach(btn => {
+  btn.addEventListener("click", function () {
+    removeProductId = this.dataset.productId;
+    removeVariantId = this.dataset.variantId;
+    removeBtnElement = this;
+
+    modal.classList.remove("hidden");
+    setTimeout(() => {
+      modal.classList.remove("opacity-0");
+      modalContent.classList.remove("scale-90");
+    }, 10); // trigger transition
+  });
+});
+
+// Cancel button: fade-out & scale-down
+document.getElementById("cancel-remove").addEventListener("click", () => {
+  modalContent.classList.add("scale-90");
+  modal.classList.add("opacity-0");
+  setTimeout(() => modal.classList.add("hidden"), 300);
+
+  removeProductId = null;
+  removeVariantId = null;
+  removeBtnElement = null;
+});
+
+// Confirm remove button
+document.getElementById("confirm-remove").addEventListener("click", async () => {
+  if (!removeProductId) return;
+
+  try {
+    const response = await fetch('/remove_cart_item', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        product_id: removeProductId,
+        variant_id: removeVariantId
+      })
+    });
+
+    const data = await response.json();
+    if (data.success) {
+      // Remove item row
+      const itemRow = removeBtnElement.closest(".flex.items-center.justify-between.gap-4");
+      itemRow.remove();
+
+      // Remove checkbox
+      const checkbox = document.querySelector(
+        `.cart-check[data-product-id="${removeProductId}"][data-variant-id="${removeVariantId}"]`
+      );
+      if (checkbox) checkbox.remove();
+
+      // Update summary & cart count
+      updateSummary();
+      updateCartCount();
+
+      // If there are no more items in the DOM, re-load to show the empty-cart message
+      // (fallback: we could render an empty state dynamically instead of reload)
+      const remaining = document.querySelectorAll('.cart-check');
+      if (!remaining || remaining.length === 0) {
+        // Replace the cart grid with an empty-cart message immediately for a smoother UX
+        const grid = document.querySelector('main .grid') || document.querySelector('main .max-w-6xl');
+        // find category/hero links for URLs to preserve server-generated routes
+        const productsLink = document.querySelector('nav a[href*="/products"]');
+        const productsUrl = productsLink ? productsLink.href : '/products/Dog';
+        const homeLink = document.querySelector('header a[href="/"]');
+        const homeUrl = homeLink ? homeLink.href : '/';
+        if (grid) {
+          grid.innerHTML = `\n            <div class="grid lg:grid-cols-3 gap-8 items-center">\n              <div class="lg:col-span-3 bg-white p-12 rounded-xl shadow-sm border border-gray-100 text-center">\n                <div class="text-6xl">🛒</div>\n                <h2 class="text-2xl font-semibold mt-4 text-gray-800">Your shopping cart is empty</h2>\n                <p class="text-gray-600 mt-2">Looks like you haven't added any items yet. Start exploring our products!</p>\n                <div class="mt-6 flex justify-center gap-3">\n                  <a href="${productsUrl}" class="px-5 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition">Continue Shopping</a>\n                  <a href="${homeUrl}" class="px-5 py-2 border border-gray-200 rounded-lg hover:bg-gray-50">Back to Home</a>\n                </div>\n              </div>\n            </div>\n          `;
+        }
+        const selectBar = document.getElementById('select-all-global');
+        if (selectBar) {
+          const parent = selectBar.closest('div');
+          if (parent) parent.remove();
+        }
+        // Fade out and hide the order summary (if still present)
+        const orderSummary = document.querySelector('.bg-white.p-6.rounded-xl');
+        if (orderSummary) orderSummary.remove();
+
+        // Then reload after a short delay to let the server re-render the actual empty branch
+        setTimeout(() => {
+          window.location.href = window.location.href;
+        }, 500);
+        return;
+      }
+
+      // Fade-out modal
+      modalContent.classList.add("scale-90");
+      modal.classList.add("opacity-0");
+      setTimeout(() => modal.classList.add("hidden"), 300);
+
+      removeProductId = null;
+      removeVariantId = null;
+      removeBtnElement = null;
+    } else {
+      alert("Failed to remove item");
+    }
+  } catch (err) {
+    console.error(err);
+    alert("Error removing item");
+  }
+});
+    </script>
+
+    <script>
+document.getElementById("checkout-btn").addEventListener("click", async function() {
+    const selectedCheckboxes = document.querySelectorAll(".cart-check:checked");
+    if (selectedCheckboxes.length === 0) return;
+
+    const items = Array.from(selectedCheckboxes).map(chk => {
+        return chk.dataset.variantId === "0" 
+               ? chk.dataset.productId 
+               : `${chk.dataset.productId}:${chk.dataset.variantId}`;
+    });
+
+    try {
+        const response = await fetch("/checkout", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ items: JSON.stringify(items) })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            window.location.href = data.redirect;
+        }
+    } catch(err) {
+        console.error(err);
+        alert("Failed to proceed to checkout.");
+    }
+});
+</script>
+
+<script>
+      // Customer notifications dropdown toggle (copied from homepages.html)
+      const custNotifBtn = document.getElementById('cust-notif-btn');
+      const custNotifDropdown = document.getElementById('cust-notif-dropdown');
+      custNotifBtn?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        custNotifDropdown.classList.toggle('hidden');
+      });
+      window.addEventListener('click', (e) => {
+        if (custNotifDropdown && !custNotifDropdown.classList.contains('hidden')) {
+          custNotifDropdown.classList.add('hidden');
+        }
+      });
+    </script>
+
+</body>
+</html>

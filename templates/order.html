@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>Petopia | My Orders</title>
+	<script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/lucide-static/font/lucide.css">  
+	<link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='image/petopia-favicon.svg') }}" />
+  <style>
+      html {
+        scrollbar-gutter: stable;
+        overflow-y: scroll;
+      }
+    
+    </style>
+</head>
+
+<body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col">
+	<!-- Header -->
+	<header
+      class="flex items-center justify-between px-6 md:px-20 py-4 bg-white shadow-md sticky top-0 z-50"
+    >
+      <!-- Logo -->
+      <a href="{{ url_for('homepage') }}" class="flex items-center">
+        <img src="{{ url_for('static', filename='image/petopia-logo.png') }}" alt="Petopia" class="h-24 w-auto max-w-none" />
+      </a>
+
+      <!-- Search Bar -->
+      <div class="hidden md:flex items-center w-1/2">
+        <div class="w-full relative">
+          <input
+            id="main-search-input"
+            type="text"
+            autocomplete="off"
+            placeholder="Search for products, brands..."
+            class="w-full px-4 py-2.5 pr-14 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-amber-500 transition"
+          />
+          <button
+            id="main-search-btn"
+            type="button"
+            class="absolute right-1.5 top-1/2 -translate-y-1/2 bg-amber-500 text-white w-10 h-10 rounded-full hover:bg-amber-600 transition flex items-center justify-center shadow-md hover:shadow-lg"
+          >
+            <i class="fas fa-paw text-sm"></i>
+          </button>
+        </div>
+      </div>
+  <script src="{{ url_for('static', filename='search.js') }}"></script>
+
+      <!-- Icons -->
+      <div class="flex items-center gap-6 text-2xl relative">
+        <!--  Cart Button -->
+        <button id="cart-btn" class="hover:text-amber-600 relative">
+          <i class="bx bx-cart-add"></i>
+          <span
+            id="cart-count"
+            class="absolute -top-2 -right-2 bg-amber-500 text-white text-xs px-1.5 py-0.5 rounded-full hidden"
+          ></span>
+        </button>
+
+        <!-- 🔔 Notifications (customer) -->
+        <div class="relative">
+          <button id="cust-notif-btn" class="text-2xl relative">
+            <i class="bx bxs-bell"></i>
+            {% set cust_unread = notifications|selectattr('is_read', 'equalto', False)|list|length if notifications else 0 %}
+            {% if cust_unread > 0 %}
+              <span class="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">{{ cust_unread }}</span>
+            {% endif %}
+          </button>
+          <div id="cust-notif-dropdown" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-gray-100 z-50">
+            <div class="p-4 border-b flex items-center justify-between">
+              <div class="font-semibold text-gray-700">Notifications</div>
+              <form method="post" action="{{ url_for('mark_all_notifications_read') }}">
+                <button type="submit" class="text-xs text-blue-600 hover:underline">Mark all as read</button>
+              </form>
+            </div>
+            <ul class="max-h-80 overflow-y-auto">
+              {% for notif in notifications|sort(attribute='created_at', reverse=True) %}
+                <li data-notif-id="{{ notif.id }}" data-target="{{ notif.target_url or '#' }}" class="px-4 py-3 border-b last:border-b-0 {{ 'bg-amber-50' if not notif.is_read else '' }} flex items-center justify-between gap-2 cursor-pointer">
+                  <div>
+                    <div class="text-sm text-gray-800">{{ notif.message }}</div>
+                    <div class="text-xs text-gray-400 mt-1">{{ notif.created_at.strftime('%b %d, %Y %I:%M %p') }}</div>
+                  </div>
+                  {% if not notif.is_read %}
+                    <form class="mark-notif-form" method="post" action="{{ url_for('mark_notification_read') }}">
+                      <input type="hidden" name="notification_id" value="{{ notif.id }}">
+                      <button type="submit" class="text-xs text-blue-600 hover:underline ml-2">Mark as read</button>
+                    </form>
+                  {% endif %}
+                </li>
+              {% else %}
+                <li class="px-4 py-3 text-gray-500 text-sm">No notifications.</li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+
+        <!-- 👤 User -->
+      <div class="relative text-2xl" id="user-btn-container">
+        {% if user %}
+          <button id="user-btn" class="flex items-center gap-2 hover:text-amber-600">
+            {% if user.profile_pic %}
+              <img
+                src="{{ media_url(user.profile_pic, 'image/default-avatar.png') }}"
+                alt="Profile"
+                class="w-10 h-10 rounded-full object-cover border-2 border-amber-400 profile-pic"
+              />
+            {% else %}
+              <i class="bx bx-user-circle text-3xl"></i>
+            {% endif %}
+          </button>
+
+    <!-- Dropdown Menu -->
+    <div
+      id="user-pane"
+      class="hidden absolute right-0 top-12 w-48 bg-white rounded-xl shadow-xl border border-gray-100 p-4 z-50"
+    >
+      <p class="text-sm text-gray-700 mb-2">
+        <strong>{{ user.fullname }}</strong>
+      </p>
+      <hr class="my-2" />
+
+      <a href="{{ url_for('settings') }}"
+        class="flex items-center gap-3 text-sm text-gray-700 hover:bg-gray-100 px-2 py-1 rounded">
+        <i class="icon-settings text-lg"></i> Settings
+      </a>
+
+      <a href="{{ url_for('orders') }}"
+        class="flex items-center gap-3 text-sm text-gray-700 hover:bg-gray-100 px-2 py-1 rounded">
+        <i class="icon-package text-lg"></i> Orders
+      </a>
+
+      <a href="{{ url_for('wishlist') }}"
+        class="flex items-center gap-3 text-sm text-gray-700 hover:bg-gray-100 px-2 py-1 rounded">
+        <i class="icon-heart text-lg"></i> Wishlist
+      </a>
+
+      <a href="{{ url_for('logout') }}"
+        class="flex items-center gap-3 text-sm text-red-600 hover:bg-red-50 px-2 py-1 rounded pt-1">
+        <i class="icon-log-out text-lg"></i> Logout
+      </a>
+    </div>
+  {% else %}
+    <!-- If user NOT logged in, show Login button instead of profile icon -->
+    <a href="{{ url_for('loginreg') }}" class="bg-amber-500 text-white px-3 py-1 text-sm rounded-full hover:bg-amber-600 transition shadow-sm font-medium ">
+      Login
+    </a>
+  {% endif %}
+</div>
+    </header>
+    <script>
+      (function(){
+        const notifDropdown = document.getElementById('cust-notif-dropdown');
+        if (!notifDropdown) return;
+        notifDropdown.addEventListener('click', async (ev) => {
+          const li = ev.target.closest('li[data-notif-id]');
+          if (!li) return;
+          if (ev.target.closest('form.mark-notif-form')) return;
+          const notifId = li.getAttribute('data-notif-id');
+          const target = li.getAttribute('data-target');
+          if (notifId) {
+            try {
+              await fetch("{{ url_for('mark_notification_read') }}", { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' }, body: 'notification_id=' + encodeURIComponent(notifId) });
+            } catch (e) {}
+          }
+          if (target && target !== '#') {
+            window.location.href = target;
+          }
+        });
+      })();
+    </script>
+
+    <!-- Category Navigation -->
+    <nav class="bg-amber-100 py-3 shadow-inner">
+  <ul class="flex flex-wrap justify-center gap-6 font-medium text-amber-700">
+    <li><a href="{{ url_for('products_page', category='Dog') }}" class="hover:text-amber-900">Dog</a></li>
+    <li><a href="{{ url_for('products_page', category='Cat') }}" class="hover:text-amber-900">Cat</a></li>
+    <li><a href="{{ url_for('products_page', category='Fish') }}" class="hover:text-amber-900">Fish</a></li>
+    <li><a href="{{ url_for('products_page', category='Bird') }}" class="hover:text-amber-900">Bird</a></li>
+    <li><a href="{{ url_for('products_page', category='Grooming') }}" class="hover:text-amber-900">Grooming</a></li>
+    <li><a href="{{ url_for('products_page', category='Pet Health') }}" class="hover:text-amber-900">Pet Health</a></li>
+  </ul>
+</nav>
+
+  <main class="flex-1 px-6 py-10 max-w-5xl mx-auto w-full min-h-[120vh]">
+		<!-- Section Tabs -->
+		<div class="flex items-center gap-4 mb-6">
+			<h1 class="text-2xl font-bold text-gray-700">My Orders</h1>
+		</div>
+
+		<!-- Orders Section -->
+		<div id="orders_section" class="section">
+		<div class="mb-8">
+			{% set steps = [('all', 'All'), ('processing', 'Processing'), ('ready_for_pickup', 'Ready for Pickup'), ('shipped', 'Shipped'), ('delivered', 'Delivered'), ('completed', 'Completed'), ('cancelled', 'Cancelled'), ('refund_request', 'Refund Request'), ('refunded', 'Refunded')] %}
+			<div class="relative inline-block">
+				<button id="order-filter-btn" class="px-4 py-1.5 rounded-full bg-white border border-gray-300 text-gray-700 text-sm font-semibold focus:outline-none transition flex items-center gap-2 hover:bg-gray-50">
+					<span id="order-filter-label">All</span>
+					<svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+				</button>
+				<div id="order-filter-dropdown" class="hidden absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-40 min-w-40 max-h-96 overflow-y-auto">
+					{% for status, label in steps %}
+						<button type="button" class="order-status-filter-btn w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition {% if status == 'all' %}bg-amber-100 text-amber-900 font-medium{% endif %}" data-status="{{ status }}" onclick="filterOrders('{{ status }}'); toggleOrderFilterDropdown();">{{ label }}</button>
+					{% endfor %}
+				</div>
+			</div>
+		</div>
+		<script>
+			function toggleOrderFilterDropdown() {
+				const dropdown = document.getElementById('order-filter-dropdown');
+				dropdown.classList.toggle('hidden');
+			}
+			function updateOrderFilterLabel(status) {
+				const stepLabels = {
+					'all': 'All',
+					'processing': 'Processing',
+					'ready_for_pickup': 'Ready for Pickup',
+					'shipped': 'Shipped',
+					'delivered': 'Delivered',
+					'completed': 'Completed',
+					'cancelled': 'Cancelled',
+					'refund_request': 'Refund Request',
+					'refunded': 'Refunded'
+				};
+				document.getElementById('order-filter-label').textContent = stepLabels[status] || status;
+				document.querySelectorAll('.order-status-filter-btn').forEach(btn => {
+					if (btn.dataset.status === status) {
+						btn.classList.add('bg-amber-100', 'text-amber-900', 'font-medium');
+						btn.classList.remove('text-gray-700');
+					} else {
+						btn.classList.remove('bg-amber-100', 'text-amber-900', 'font-medium');
+						btn.classList.add('text-gray-700');
+					}
+				});
+			}
+			document.getElementById('order-filter-btn').addEventListener('click', toggleOrderFilterDropdown);
+			document.querySelectorAll('.order-status-filter-btn').forEach(btn => {
+				btn.addEventListener('click', function() {
+					updateOrderFilterLabel(this.dataset.status);
+				});
+			});
+			document.addEventListener('click', function(event) {
+				const dropdown = document.getElementById('order-filter-dropdown');
+				const btn = document.getElementById('order-filter-btn');
+				if (!btn.contains(event.target) && !dropdown.contains(event.target)) {
+					dropdown.classList.add('hidden');
+				}
+			});
+		</script>
+		{% if orders %}
+		<div class="space-y-8">
+			{% for order in orders %}
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 order-card" data-status="{{ order.status }}" data-order-id="{{ order.id }}">
+        <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-4">
+					<div class="flex items-center gap-3 mb-2 md:mb-0">
+						<span class="text-amber-600 font-semibold">Order #{{ order.id }}</span>
+            <span class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">{{ order.status|capitalize }}{% if order.return_request %} <span class="ml-2 px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs">Return</span>{% endif %}</span>
+						<span class="text-xs text-gray-400">{{ order.created_at.strftime('%b %d, %Y') if order.created_at else '' }}</span>
+					</div>
+					<div class="text-sm text-gray-600">Total: <span class="font-bold text-amber-600">₱{{ '%.2f'|format(order.total) }}</span></div>
+				</div>
+				   <div class="divide-y divide-gray-100">
+					   {% for item in order['items'] %}
+					<div class="flex flex-col md:flex-row md:items-center py-4 gap-4">
+						<img src="{{ media_url(item.product_image, 'image/dog.webp') }}" class="w-20 h-20 rounded-lg object-cover border" />
+						<div class="flex-1">
+							<div class="flex justify-between items-center">
+								<div>
+									<p class="font-medium text-gray-700">{{ item.product_name }}</p>
+									<p class="text-xs text-gray-500">Qty: {{ item.quantity }}</p>
+									<p class="text-xs text-gray-500">₱{{ '%.2f'|format(item.price) }}</p>
+								</div>
+								<div class="text-right flex flex-col gap-2">
+									<span class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">{{ item.status|capitalize if item.status else 'Ordered' }}</span>
+								</div>
+							</div>
+						</div>
+					</div>
+					{% endfor %}
+				</div>
+                   <div class="flex justify-between items-center mt-4">
+                     <div class="text-sm text-gray-500">Shipping: <span class="font-medium">₱{{ '%.2f'|format(order.shipping_fee) }}</span></div>
+                     <div class="text-sm text-gray-500">Vehicle: <span class="font-medium">{{ order.vehicle|capitalize if order.vehicle else '' }}</span></div>
+                   </div> 
+                     {% if order.status == 'delivered' %}
+                     <div class="flex gap-4 mt-6 justify-center">
+                       <form method="POST" action="/order/update_status" class="inline order-received-form">
+                         <input type="hidden" name="order_id" value="{{ order.id }}">
+                         <input type="hidden" name="new_status" value="completed">
+                         <button type="submit" class="flex items-center gap-2 bg-green-600 text-white px-6 py-2 rounded-full shadow hover:bg-green-700 transition font-semibold text-base order-received-btn" data-order-id="{{ order.id }}">
+                           <i class="bx bx-check-circle text-xl"></i> Order Received
+                         </button>
+                       </form>
+                       <button type="button" class="flex items-center gap-2 bg-red-500 text-white px-6 py-2 rounded-full shadow hover:bg-red-600 transition font-semibold text-base request-refund-btn" data-order-id="{{ order.id }}">
+                         <i class="bx bx-undo text-xl"></i> Refund
+                       </button>
+                     </div>
+                     {% endif %}
+                     {% if order.status == 'completed' %}
+                    <div class="flex gap-4 mt-6 justify-center flex-wrap">
+                      {% if order.is_rated %}
+                        <form method="POST" action="{{ url_for('buy_again', order_id=order.id) }}" style="display:inline;">
+                          <button type="submit" class="flex items-center gap-2 bg-amber-600 text-white px-6 py-2 rounded-full shadow hover:bg-amber-700 transition font-semibold text-base">
+                            <i class="bx bx-cart text-xl"></i> Buy Again
+                          </button>
+                        </form>
+                        <a href="{{ url_for('view_order_rating', order_id=order.id) }}" class="flex items-center gap-2 bg-green-600 text-white px-6 py-2 rounded-full shadow hover:bg-green-700 transition font-semibold text-base">
+                          <i class="bx bx-show text-xl"></i> View Rating
+                        </a>
+                      {% else %}
+                        <a href="{{ url_for('rate_order', order_id=order.id) }}" class="flex items-center gap-2 bg-blue-600 text-white px-6 py-2 rounded-full shadow hover:bg-blue-700 transition font-semibold text-base">
+                          <i class="bx bx-star text-xl"></i> Rate Order
+                        </a>
+                      {% endif %}
+                    </div>
+                    {% endif %}
+
+                     {% if order.status == 'processing' %}
+                     <div class="flex gap-4 mt-6 justify-center">
+                       <button class="flex items-center gap-2 bg-red-500 text-white px-6 py-2 rounded-full shadow hover:bg-red-600 transition font-semibold text-base cancel-order-btn" data-order-id="{{ order.id }}">
+                         <i class="bx bx-x-circle text-xl"></i> Cancel Order
+                       </button>
+                     </div>
+                     {% endif %}
+			</div>
+			{% endfor %}
+		</div>
+		{% else %}
+		<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center text-gray-500">
+			<i class="bx bx-package text-5xl mb-2"></i>
+			<p class="font-medium">You have no orders yet.</p>
+			<a href="{{ url_for('products_page', category='Dog') }}" class="mt-4 inline-block bg-amber-500 text-white px-4 py-2 rounded-lg font-medium shadow hover:bg-amber-600 transition">Shop Now</a>
+		</div>
+		{% endif %}
+		</div>
+		<!-- End orders_section -->
+	</main>
+<div id="cancel-modal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 hidden">
+  <div class="bg-white rounded-lg shadow-lg p-8 w-full max-w-md relative">
+    <button id="close-cancel-modal" class="absolute top-2 right-2 text-gray-400 hover:text-gray-700 text-2xl">&times;</button>
+    <h2 class="text-lg font-bold mb-4">Cancel Order</h2>
+    <form id="cancel-order-form">
+      <input type="hidden" name="order_id" id="cancel-order-id" />
+      <label for="cancel-reason" class="block mb-2 font-medium">Reason for cancellation:</label>
+      <select id="cancel-reason" name="reason" class="w-full border rounded px-3 py-2 mb-4" required>
+        <option value="">Select a reason</option>
+        <option value="Changed mind">Changed mind</option>
+        <option value="Wrong size">Wrong size</option>
+        <option value="Found better price">Found better price</option>
+        <option value="Ordered by mistake">Ordered by mistake</option>
+        <option value="Other">Other</option>
+      </select>
+      <button type="submit" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 w-full">Submit Cancellation</button>
+    </form>
+    <div id="cancel-feedback" class="mt-4 text-center text-sm"></div>
+  </div>
+</div>
+
+
+
+    <footer class="bg-gray-800 text-gray-300 py-10">
+      <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 px-6">
+        <div>
+          <h4 class="font-semibold text-white mb-3">Customer Service</h4>
+          <ul class="space-y-2">
+            <li><a href="#" class="hover:text-white">Help</a></li>
+            <li><a href="#" class="hover:text-white">Delivery</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="font-semibold text-white mb-3">Company</h4>
+          <ul class="space-y-2">
+            <li><a href="#" class="hover:text-white">About Us</a></li>
+            <li><a href="#" class="hover:text-white">Contact</a></li>
+            <li><a href="#" class="hover:text-white">Careers</a></li>
+            <li><a href="#" class="hover:text-white">Legal Info</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="font-semibold text-white mb-3">Follow Us</h4>
+          <div class="flex items-center gap-4">
+            <a href="#" aria-label="Facebook" class="text-white hover:text-amber-300 text-2xl">
+              <i class="bx bxl-facebook-square"></i>
+            </a>
+            <a href="#" aria-label="Instagram" class="text-white hover:text-amber-300 text-2xl">
+              <i class="bx bxl-instagram"></i>
+            </a>
+            <a href="#" aria-label="Twitter" class="text-white hover:text-amber-300 text-2xl">
+              <i class="bx bxl-twitter"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+      <p class="text-center text-sm text-gray-400 mt-10">
+        © 2025 Petopia. Inspired by Zooplus.
+      </p>
+    </footer>
+
+	<script>
+		// Cart count update (reuse from other pages)
+		const cartBtn = document.getElementById("cart-btn");
+		const cartCount = document.getElementById("cart-count");
+		cartBtn.addEventListener("click", () => {
+			window.location.href = "/cart";
+		});
+		async function updateCartCount() {
+			try {
+				const response = await fetch("/cart_count");
+				const data = await response.json();
+				if (data.count > 0) {
+					cartCount.textContent = data.count;
+					cartCount.classList.remove("hidden");
+				} else {
+					cartCount.classList.add("hidden");
+				}
+			} catch (error) {
+				console.error("Failed to update cart count:", error);
+			}
+		}
+		updateCartCount();
+		// User dropdown
+		const userBtn = document.getElementById("user-btn");
+		const userPane = document.getElementById("user-pane");
+		userBtn?.addEventListener("click", (e) => {
+			e.stopPropagation();
+			userPane.classList.toggle("hidden");
+		});
+		window.addEventListener("click", (e) => {
+			if (!userPane.contains(e.target) && !userBtn.contains(e.target)) {
+				userPane.classList.add("hidden");
+			}
+		});
+
+  // Customer notifications toggle
+  const custNotifBtn = document.getElementById('cust-notif-btn');
+  const custNotifDropdown = document.getElementById('cust-notif-dropdown');
+  custNotifBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    custNotifDropdown.classList.toggle('hidden');
+  });
+  window.addEventListener('click', (e) => {
+    if (custNotifDropdown && !custNotifDropdown.classList.contains('hidden')) {
+      custNotifDropdown.classList.add('hidden');
+    }
+  });
+		function filterOrders(status) {
+    const allOrders = document.querySelectorAll('.order-card');
+    allOrders.forEach(card => {
+      if (status === 'all' || card.dataset.status === status) {
+        card.style.display = '';
+      } else {
+        card.style.display = 'none';
+      }
+    });
+    // Highlight the active button
+    document.querySelectorAll('.order-status-filter-btn').forEach(btn => {
+      btn.classList.remove('bg-amber-500', 'border-amber-500', 'text-white');
+      btn.classList.add('bg-white', 'border-gray-300', 'text-gray-600');
+    });
+    const activeBtn = document.querySelector('.order-status-filter-btn[data-status="' + status + '"]');
+    if (activeBtn) {
+      activeBtn.classList.add('bg-amber-500', 'border-amber-500', 'text-white');
+      activeBtn.classList.remove('bg-white', 'border-gray-300', 'text-gray-600');
+    }
+  }
+  // Set initial highlight for 'All' after reload
+  window.addEventListener('DOMContentLoaded', function() {
+    filterOrders('all');
+  });
+  
+  function showOrders() {
+    document.querySelectorAll('.section').forEach(sec => sec.classList.add('hidden'));
+    const el = document.getElementById('orders_section');
+    if (el) el.classList.remove('hidden');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // AJAX for 'Order Received' button
+  document.querySelectorAll('.order-received-form').forEach(function(form) {
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const btn = form.querySelector('.order-received-btn');
+      btn.disabled = true;
+      btn.textContent = 'Processing...';
+      const formData = new FormData(form);
+      fetch('/order/update_status', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(result => {
+        if (result.success) {
+          window.location.reload();
+        } else {
+          btn.textContent = 'Error';
+          btn.disabled = false;
+          alert(result.error || 'Failed to update order status.');
+        }
+      })
+      .catch(() => {
+        btn.textContent = 'Error';
+        btn.disabled = false;
+        alert('Network error.');
+      });
+    });
+  });
+
+  // Request refund button (collect reason + notes)
+  document.querySelectorAll('.request-refund-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const orderId = this.dataset.orderId;
+      const refundHtml = `
+        <label class="block text-left text-sm font-medium mb-1">Reason</label>
+        <select id="swal-request-refund-reason" class="w-full border rounded px-2 py-1 mb-2">
+          <option value="">-- Select reason --</option>
+          <option value="Product damaged or defective">Product damaged or defective</option>
+          <option value="Wrong item received">Wrong item received</option>
+          <option value="Item not as described">Item not as described</option>
+          <option value="Ordered by mistake">Ordered by mistake</option>
+          <option value="Other">Other</option>
+        </select>
+        <label class="block text-left text-sm font-medium mb-1">Notes (optional)</label>
+        <textarea id="swal-request-refund-notes" class="w-full border rounded px-2 py-1" rows="3" placeholder="Add any details or evidence (optional)"></textarea>
+      `;
+      Swal.fire({ title: 'Request Refund', html: refundHtml, showCancelButton: true, confirmButtonText: 'Submit Request', focusConfirm: false, preConfirm: () => {
+        const reasonEl = document.getElementById('swal-request-refund-reason');
+        const notesEl = document.getElementById('swal-request-refund-notes');
+        const reasonVal = reasonEl ? reasonEl.value.trim() : '';
+        const notesVal = notesEl ? notesEl.value.trim() : '';
+        if (!reasonVal) { Swal.showValidationMessage('Please select a reason'); return false; }
+        if (reasonVal === 'Other' && !notesVal) { Swal.showValidationMessage('Please provide details for "Other"'); return false; }
+        return { reason: reasonVal, notes: notesVal };
+      }}).then(result => {
+        if (result.isConfirmed) {
+          const clickedBtn = this;
+          clickedBtn.disabled = true;
+          fetch('/order/refund', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, body: JSON.stringify({ order_id: orderId, reason: result.value.reason, notes: result.value.notes }) })
+            .then(r => r.json()).then(j => { clickedBtn.disabled = false; if (j.success) { Swal.fire('Submitted!', 'Refund request submitted.', 'success').then(() => location.reload()); } else { Swal.fire('Error', j.error || j.message || 'Failed to submit refund request.', 'error'); } }).catch(e => { clickedBtn.disabled = false; Swal.fire('Error', e.message || 'Network error', 'error'); });
+        }
+      });
+    });
+  });
+
+// Cancel Order modal logic
+const cancelBtns = document.querySelectorAll('.cancel-order-btn');
+const cancelModal = document.getElementById('cancel-modal');
+const closeCancelModal = document.getElementById('close-cancel-modal');
+const cancelOrderForm = document.getElementById('cancel-order-form');
+const cancelOrderId = document.getElementById('cancel-order-id');
+const cancelReason = document.getElementById('cancel-reason');
+const cancelFeedback = document.getElementById('cancel-feedback');
+cancelBtns.forEach(btn => {
+  btn.addEventListener('click', function() {
+    cancelOrderId.value = btn.getAttribute('data-order-id');
+    cancelReason.value = '';
+    cancelFeedback.textContent = '';
+    cancelModal.classList.remove('hidden');
+  });
+    // Handler for 'View' buttons in Return Requests to show the corresponding order
+  (function initViewReturnOrderBtnDelegation() {
+    function onClick(ev) {
+      const btn = ev.target.closest('.view-return-order-btn, .view-order-btn');
+      if (!btn) return;
+      ev.preventDefault();
+      const oid = btn.getAttribute('data-order-id');
+      if (!oid) return;
+      // Switch to orders section if not already visible
+      showOrders();
+      // After switching, scroll to and highlight the order card
+      setTimeout(() => {
+        const card = document.querySelector('.order-card[data-order-id="' + oid + '"]');
+        if (card) {
+          card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          card.classList.add('ring-2', 'ring-amber-300');
+          setTimeout(() => card.classList.remove('ring-2','ring-amber-300'), 1600);
+        }
+      }, 300);
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => document.addEventListener('click', onClick)); else document.addEventListener('click', onClick);
+  })();
+
+});
+closeCancelModal.addEventListener('click', function() {
+  cancelModal.classList.add('hidden');
+});
+cancelOrderForm.addEventListener('submit', function(e) {
+  e.preventDefault();
+  const orderId = cancelOrderId.value;
+  const reason = cancelReason.value;
+  if (!reason) {
+    cancelFeedback.textContent = 'Please select a reason.';
+    return;
+  }
+  cancelFeedback.textContent = 'Submitting...';
+  fetch('/order/cancel', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ order_id: orderId, reason: reason })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      cancelFeedback.textContent = data.message;
+      setTimeout(() => { window.location.reload(); }, 1200);
+    } else {
+      cancelFeedback.textContent = data.error || 'Cancellation failed.';
+    }
+  })
+  .catch(() => {
+    cancelFeedback.textContent = 'Network error.';
+  });
+});
+	</script>
+</body>
+</html>

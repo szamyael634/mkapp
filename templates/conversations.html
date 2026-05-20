@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Messages - Petopia</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css">
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='image/petopia-favicon.svg') }}" />
+  <style>
+    /* Left column */
+    .convo-list { width: 26rem; }
+    .convo-item { display:flex; gap:0.75rem; align-items:center; padding:0.6rem; border-radius:0.5rem; }
+    .convo-item .avatar { width:3rem; height:3rem; border-radius:999px; display:flex; align-items:center; justify-content:center; font-weight:600; }
+    .convo-item .meta { flex:1; overflow:hidden; }
+    .convo-item .meta .title { font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .convo-item .meta .snippet { font-size:0.875rem; color:#6B7280; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .convo-item .time { font-size:0.75rem; color:#9CA3AF; }
+    .convo-item.unread { background: #FEF3C7; }
+    .convo-item.selected { background: #FEF3C7; border-left:4px solid #F59E0B; }
+
+    /* Chat area */
+    .chat-scroll { height: calc(100vh - 190px); overflow-y: auto; }
+    .bubble { max-width: 78%; padding: 0.7rem 1rem; border-radius: 1rem; }
+    .bubble.mine { background: #F59E0B; color: white; margin-left:auto; }
+    .bubble.theirs { background: #F3F4F6; color: #111827; margin-right:auto; }
+    .msg-row { display:flex; align-items:flex-end; gap:0.5rem; margin-bottom:0.5rem; }
+    .msg-row .avatar { width:2.5rem; height:2.5rem; border-radius:999px; }
+    .msg-row .meta { display:flex; flex-direction:column; }
+    .msg-row.mine { justify-content:flex-end; flex-direction:row-reverse; }
+    .msg-time { font-size:0.72rem; color:#9CA3AF; margin-top:0.25rem; }
+    /* Sticky composer */
+    .composer { position: sticky; bottom: 0; background: white; padding-top:0.5rem; padding-bottom:0.5rem; }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-900 font-sans">
+<header class="bg-white py-3 shadow-md sticky top-0 z-50">
+  <div class="max-w-6xl mx-auto px-4 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <a href="{{ url_for('homepage') }}" class="text-gray-400 hover:text-gray-700"><i class="bx bx-arrow-back text-2xl"></i></a>
+      <div class="flex items-center gap-3">
+        <img src="{{ url_for('static', filename='image/petopia-logo.png') }}" alt="Petopia" class="h-24 w-auto max-w-none" />
+        <div class="font-semibold text-gray-700">Messages</div>
+      </div>
+    </div>
+  </div>
+</header>
+<main class="max-w-6xl mx-auto mt-6 px-4">
+  <div class="bg-white rounded-lg shadow-sm border border-gray-200 grid grid-cols-12">
+    <aside class="col-span-3 border-r border-gray-100 p-4 convo-list">
+      <div class="mb-3 flex items-center justify-between">
+        <strong>Conversations</strong>
+      </div>
+      <div id="convo-list" class="space-y-2 overflow-y-auto" style="height: 76vh;">
+        <!-- conversation list populated by JS -->
+      </div>
+    </aside>
+    <div id="chat-meta" data-user-id="{{ session.get('user_id') }}" style="display:none"></div>
+    <section class="col-span-9 p-4">
+      <div id="chat-header" class="border-b pb-3 mb-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div id="chat-other-avatar" class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-700"></div>
+          <div>
+            <div id="chat-other-name" class="font-semibold">Select a conversation</div>
+            <div id="chat-product" class="text-sm text-gray-500"></div>
+          </div>
+        </div>
+      </div>
+      <div id="chat-panel" class="p-4 bg-white rounded-md border chat-scroll">
+        <div id="messages" class="space-y-2 max-w-full"></div>
+      </div>
+      <div class="mt-4 border-t pt-4 composer">
+        <form id="send-form" class="flex gap-3 items-center">
+          <input type="hidden" id="conversation_id" value="">
+          <input id="message-body" placeholder="Type a message" class="flex-1 border border-gray-300 rounded-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-amber-500" />
+          <button class="bg-amber-500 text-white px-4 py-2 rounded-full hover:bg-amber-600">Send</button>
+        </form>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script>
+  const convoListEl = document.getElementById('convo-list');
+  const refreshBtn = document.getElementById('refresh-convos');
+  const messagesEl = document.getElementById('messages');
+  const conversationIdEl = document.getElementById('conversation_id');
+  const messageBody = document.getElementById('message-body');
+  const currentUserId = parseInt(document.getElementById('chat-meta').dataset.userId, 10);
+  let selectedConvoId = null;
+  let convoPollingInterval = null;
+  let convoElements = {};
+
+  function escapeHtml(str){
+    return String(str).replace(/[&<>\"]+/g, function(match){
+      return ({'&': '&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;'})[match];
+    });
+  }
+
+  async function fetchConversations(){
+    try{
+      const res = await fetch('/api/conversations');
+      const j = await res.json();
+      if(j.success){
+        // Build new map and update only changed items
+        const newMap = {};
+        for(const c of j.conversations){
+          newMap[c.id] = c;
+          const existing = convoElements[c.id];
+          if(existing){
+            // update last_message or unread if changed
+            const lastDiv = existing.querySelector('.text-xs');
+            const unreadBadge = existing.querySelector('.unread-badge');
+            if(lastDiv && lastDiv.innerText !== (c.last_message || '')){
+              lastDiv.innerText = c.last_message || '';
+            }
+            if(unreadBadge){
+              if(c.unread > 0) unreadBadge.innerText = c.unread; else unreadBadge.remove();
+            } else if(c.unread > 0){
+              const badge = document.createElement('div');
+              badge.className = 'bg-red-500 text-white px-2 rounded-full text-xs unread-badge';
+              badge.innerText = c.unread;
+              existing.appendChild(badge);
+            }
+            // move element if necessary based on updated_at (move to top)
+            const updatedAtOld = existing.dataset.updatedAt || '';
+            if(updatedAtOld !== (c.updated_at || '')){
+              existing.dataset.updatedAt = c.updated_at || '';
+              // move to top if changed
+              convoListEl.prepend(existing);
+            }
+            // update cached object
+            window._convosMap[c.id] = c;
+          } else {
+            // create new element
+              const el = document.createElement('div');
+              el.className = 'convo-item hover:bg-gray-100 cursor-pointer';
+            el.dataset.convoId = c.id;
+            el.dataset.updatedAt = c.updated_at || '';
+              // Determine display name: show other party's name
+              const displayName = c.other_name || c.shop_name || 'User';
+              const displayInitial = displayName.substring(0,1);
+              el.innerHTML = `
+                <div class="w-12 h-12 avatar bg-gray-200 text-gray-700">${escapeHtml(displayInitial)}</div>
+                <div class="meta">
+                  <div class="flex items-center justify-between">
+                    <div class='title'>${escapeHtml(displayName)}</div>
+                    <div class='time text-xs text-gray-400'>${c.updated_at ? (new Date(c.updated_at)).toLocaleTimeString() : ''}</div>
+                  </div>
+                  <div class='snippet text-xs'>${escapeHtml(c.last_message || '')}</div>
+                </div>
+                ${c.unread>0?'<div class="ml-2 bg-red-500 text-white px-2 rounded-full text-xs unread-badge">'+c.unread+'</div>':''}`;
+              if(c.unread && c.unread > 0){ el.classList.add('unread'); }
+            el.addEventListener('click', () => { selectConversation(c); });
+            convoListEl.prepend(el); // add newest at top
+            convoElements[c.id] = el;
+            window._convosMap = window._convosMap || {};
+            window._convosMap[c.id] = c;
+          }
+        }
+        // Remove elements that no longer exist
+        const toRemove = Object.keys(convoElements).filter(id => !newMap[id]);
+        for(const id of toRemove){
+          convoElements[id].remove();
+          delete convoElements[id];
+          delete window._convosMap[id];
+        }
+      }
+    } catch(e){
+      // ignore
+    }
+  }
+
+  async function selectConversation(c){
+    conversationIdEl.value = c.id;
+    // Show other party's name in header
+    const headerName = c.other_name || c.shop_name || 'Unknown';
+    document.getElementById('chat-other-name').innerText = headerName;
+    // Show product name if available
+    const productDisplay = c.product_name ? `📦 ${c.product_name}` : (c.product_id ? `Product #${c.product_id}` : '');
+    document.getElementById('chat-product').innerText = productDisplay;
+    // fetch messages
+    messagesEl.innerHTML = '';
+    try{
+      const res = await fetch(`/api/conversations/${c.id}/messages`);
+      const j = await res.json();
+      if(j.success){
+        for(const m of j.messages){
+          const mine = m.sender_id == currentUserId;
+          const outer = document.createElement('div');
+          outer.className = 'msg-row ' + (mine ? 'mine' : 'theirs');
+          let inner = '';
+          if(!mine) inner += `<div class="avatar bg-gray-200 text-gray-700">${escapeHtml((m.sender_name || 'U').substring(0,1))}</div>`;
+          inner += `<div class="meta"><div class="bubble ${mine ? 'mine' : 'theirs'}"><div class="text-sm">${escapeHtml(m.body)}</div></div><div class='msg-time'>${(m.created_at ? new Date(m.created_at).toLocaleString() : '')}</div></div>`;
+          if(mine) inner += `<div class="avatar bg-amber-500 text-white">You</div>`;
+          outer.innerHTML = inner;
+          outer.dataset.msgId = m.id;
+          messagesEl.appendChild(outer);
+        }
+      }
+    } catch(e){ }
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+    // set selected conversation id, highlight it in list and start polling
+    selectedConvoId = c.id;
+    startMessagePolling();
+    // highlight selected conversation in list
+    const items = Array.from(convoListEl.querySelectorAll('[data-convo-id]'));
+    for(const item of items){
+      item.classList.remove('selected');
+      if(parseInt(item.dataset.convoId,10) === c.id){
+        item.classList.add('selected');
+        // remove unread badge if present
+        const unreadBadge = item.querySelector('.unread-badge');
+        if(unreadBadge) unreadBadge.remove();
+        item.classList.remove('unread');
+      }
+    }
+    // start polling for this convo's messages
+    selectedConvoId = c.id;
+    startMessagePolling();
+  }
+
+  document.getElementById('send-form').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const body = messageBody.value.trim();
+    const convo_id = parseInt(conversationIdEl.value, 10);
+    if(!body || !convo_id) return;
+    try{
+      const res = await fetch('/message/send', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ conversation_id: convo_id, body }) });
+      const j = await res.json();
+      if(j.success){
+        messageBody.value = '';
+        // Refresh messages from database to ensure we have the saved message with proper ID and timestamp
+        const msgRes = await fetch(`/api/conversations/${convo_id}/messages`);
+        const msgData = await msgRes.json();
+        if(msgData.success){
+          messagesEl.innerHTML = '';
+          for(const m of msgData.messages){
+            const mine = m.sender_id == currentUserId;
+            const outer = document.createElement('div');
+            outer.className = 'msg-row ' + (mine ? 'mine' : 'theirs');
+            outer.dataset.msgId = m.id;
+            let inner = '';
+            if(!mine) inner += `<div class="avatar bg-gray-200 text-gray-700 mr-2">${escapeHtml((m.sender_name || 'U').substring(0,1))}</div>`;
+            inner += `<div class="meta"><div class="bubble ${mine ? 'mine' : 'theirs'}"><div class="text-sm">${escapeHtml(m.body)}</div></div><div class='msg-time'>${(m.created_at ? new Date(m.created_at).toLocaleString() : '')}</div></div>`;
+            if(mine) inner += `<div class="avatar bg-amber-500 text-white ml-2">You</div>`;
+            outer.innerHTML = inner;
+            messagesEl.appendChild(outer);
+          }
+          messagesEl.scrollTop = messagesEl.scrollHeight;
+        }
+        // update conversations list to reflect new last message count and ordering
+        await fetchConversations();
+      } else {
+        alert(j.error || 'Failed to send message')
+      }
+    } catch(e){ alert('Network error: ' + e.message) }
+  });
+
+  refreshBtn.addEventListener('click', fetchConversations);
+
+  // initial load
+  await fetchConversations();
+  // poll convos periodically but only when visible
+  setInterval(async () => {
+    if(document.visibilityState === 'visible') await fetchConversations();
+  }, 4000);
+
+  // Poll messages for selected conversation
+  function startMessagePolling(){
+    if(convoPollingInterval) clearInterval(convoPollingInterval);
+    convoPollingInterval = setInterval(async () => {
+      if(!selectedConvoId) return;
+      try{
+        const res = await fetch(`/api/conversations/${selectedConvoId}/messages`);
+        const j = await res.json();
+        if(j.success){
+          // handle append new messages without full re-render
+          const existingMessages = Array.from(messagesEl.querySelectorAll('.msg-item')).map(m => m.dataset.msgId);
+          for(const m of j.messages){
+              if(!existingMessages.includes(String(m.id))){
+                const mine = m.sender_id == currentUserId;
+                const outer = document.createElement('div');
+                outer.className = 'msg-row ' + (mine ? 'mine' : 'theirs');
+                let inner = '';
+                if(!mine) inner += `<div class="avatar bg-gray-200 text-gray-700 mr-2">${escapeHtml((m.sender_name || 'U').substring(0,1))}</div>`;
+                inner += `<div class="meta"><div class="bubble ${mine ? 'mine' : 'theirs'}"><div class="text-sm">${escapeHtml(m.body)}</div></div><div class='msg-time'>${(m.created_at ? new Date(m.created_at).toLocaleString() : '')}</div></div>`;
+                if(mine) inner += `<div class="avatar bg-amber-500 text-white ml-2">You</div>`;
+                outer.innerHTML = inner;
+                outer.dataset.msgId = m.id;
+                messagesEl.appendChild(outer);
+              }
+          }
+          messagesEl.scrollTop = messagesEl.scrollHeight;
+        }
+      } catch (e){}
+    }, 3000);
+  }
+
+  // preselect if query params specify other_id and product_id
+  (function(){
+    const urlParams = new URLSearchParams(window.location.search);
+    const otherId = urlParams.get('other_id');
+    const productId = urlParams.get('product_id');
+    const queryConvoId = urlParams.get('convo_id');
+    if(otherId){
+      // find a conversation with that otherId (will be loaded after fetchConversations resolves)
+      setTimeout(async () => {
+        await fetchConversations();
+        const all = Array.from(convoListEl.querySelectorAll('[data-convo-id]'));
+        for(const el of all){
+          // no-op; this loop was placeholder in template; use the list items to find convos
+        }
+        // find matching conversation by otherId & productId in JSON data instead
+        const convElements = Array.from(convoListEl.querySelectorAll('[data-convo-id]'));
+        let matchEl = null;
+        for(const el of convElements){
+          const cid = parseInt(el.dataset.convoId, 10);
+          const obj = window._convosMap && window._convosMap[cid];
+          if(!obj) continue;
+          if(obj.other_id == parseInt(otherId, 10) && (productId ? (obj.product_id == parseInt(productId,10)) : true)){
+            matchEl = el; break;
+          }
+        }
+        if(matchEl){
+          matchEl.click();
+          // start message polling for this conversation
+          selectedConvoId = parseInt(matchEl.dataset.convoId, 10);
+          startMessagePolling();
+        } else {
+          // create conversation via API then refresh and select
+          try{
+            const res = await fetch('/api/conversations/create', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ other_id: otherId, product_id: productId }) });
+            const j = await res.json();
+            if(j.success && j.conversation_id){
+              // reload and select the created conversation
+              await fetchConversations();
+              const el = convoListEl.querySelector(`[data-convo-id="${j.conversation_id}"]`);
+              if(el) el.click();
+              else window.location.href = `/message/${otherId}` + (productId ? `?product_id=${productId}` : '');
+            } else {
+              window.location.href = `/message/${otherId}` + (productId ? `?product_id=${productId}` : '');
+            }
+          } catch (err){
+            window.location.href = `/message/${otherId}` + (productId ? `?product_id=${productId}` : '');
+          }
+        }
+        // Removed unconditional redirect
+      }, 400);
+    }
+    if(!otherId && queryConvoId){
+      // select by conv id param
+      setTimeout(async () => {
+        await fetchConversations();
+        const el = convoListEl.querySelector(`[data-convo-id="${queryConvoId}"]`);
+        if(el) el.click();
+      }, 200);
+    }
+  })();
+</script>
+</body>
+</html>

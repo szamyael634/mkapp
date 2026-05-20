@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Petopia | Rate Order</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/lucide-static/font/lucide.css">
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='image/petopia-favicon.svg') }}" />
+    <style>
+      html {
+        scrollbar-gutter: stable;
+        overflow-y: scroll;
+      }
+      .star {
+        transition: color 0.2s;
+        cursor: pointer;
+      }
+      .star.selected {
+        color: #fbbf24;
+      }
+      .star.unselected {
+        color: #d1d5db;
+      }
+      .rider-star {
+        transition: color 0.2s;
+        cursor: pointer;
+      }
+      .rider-star.selected {
+        color: #3b82f6;
+      }
+      .rider-star.unselected {
+        color: #d1d5db;
+      }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="flex items-center justify-between px-6 md:px-20 py-4 bg-white shadow-md sticky top-0 z-50">
+      <a href="{{ url_for('homepage') }}" class="flex items-center">
+        <img src="{{ url_for('static', filename='image/petopia-logo.png') }}" alt="Petopia" class="h-24 w-auto max-w-none" />
+      </a>
+      <div class="hidden md:flex items-center w-1/2">
+        <input type="text" placeholder="Search for products, brands..." class="w-full px-4 py-2 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-amber-500" />
+        <button class="bg-amber-500 text-white px-4 py-2 rounded-r-lg hover:bg-amber-600">🔍</button>
+      </div>
+      <div class="flex items-center gap-6 text-2xl relative">
+        <button id="cart-btn" class="hover:text-amber-600 relative">
+          <i class="bx bx-cart-add"></i>
+          <span id="cart-count" class="absolute -top-2 -right-2 bg-amber-500 text-white text-xs px-1.5 py-0.5 rounded-full hidden"></span>
+        </button>
+        <div class="relative text-2xl" id="user-btn-container">
+          {% if user %}
+            <button id="user-btn" class="flex items-center gap-2 hover:text-amber-600">
+              {% if user.profile_pic %}
+                <img src="{{ media_url(user.profile_pic, 'image/default-avatar.png') }}" alt="Profile" class="w-10 h-10 rounded-full object-cover border-2 border-amber-400 profile-pic" />
+              {% else %}
+                <i class="bx bx-user-circle text-3xl"></i>
+              {% endif %}
+            </button>
+            <div id="user-pane" class="hidden absolute right-0 top-12 w-48 bg-white rounded-xl shadow-xl border border-gray-100 p-4 z-50">
+              <p class="text-sm text-gray-700 mb-2"><strong>{{ user.fullname }}</strong></p>
+              <hr class="my-2" />
+              <a href="{{ url_for('settings') }}" class="flex items-center gap-3 text-sm text-gray-700 hover:bg-gray-100 px-2 py-1 rounded"><i class="icon-settings text-lg"></i> Settings</a>
+              <a href="{{ url_for('orders') }}" class="flex items-center gap-3 text-sm text-gray-700 hover:bg-gray-100 px-2 py-1 rounded"><i class="icon-package text-lg"></i> Orders</a>
+              <a href="{{ url_for('wishlist') }}" class="flex items-center gap-3 text-sm text-gray-700 hover:bg-gray-100 px-2 py-1 rounded"><i class="icon-heart text-lg"></i> Wishlist</a>
+              <a href="{{ url_for('logout') }}" class="flex items-center gap-3 text-sm text-red-600 hover:bg-red-50 px-2 py-1 rounded pt-1"><i class="icon-log-out text-lg"></i> Logout</a>
+            </div>
+          {% else %}
+            <a href="{{ url_for('loginreg') }}" class="bg-amber-500 text-white px-3 py-1 text-sm rounded-full hover:bg-amber-600 transition shadow-sm font-medium ">Login</a>
+          {% endif %}
+        </div>
+      </div>
+    </header>
+    <main class="flex-1 px-6 py-10 max-w-xl mx-auto w-full min-h-[120vh]">
+      <div class="bg-white rounded-2xl shadow-lg p-8 border border-gray-200">
+        <div class="flex items-center justify-center mb-6">
+          <i class="bx bx-package text-5xl text-amber-500 mr-2"></i>
+          <h1 class="text-3xl font-bold text-gray-800">Rate Your Order</h1>
+        </div>
+        <form method="POST" action="">
+          <input type="hidden" name="order_id" value="{{ order_id }}">
+          
+          <!-- Rider Performance Rating -->
+          <div class="mb-8 border-b pb-6 bg-blue-50 p-4 rounded-lg">
+            <span class="block text-lg font-semibold text-gray-700 mb-2">Rate: Rider Performance</span>
+            <div class="flex justify-center gap-2 mb-2">
+              {% for star in range(1, 6) %}
+              <label>
+                <input type="radio" name="rider_rating" value="{{ star }}" class="hidden" required>
+                <i class="bx bxs-star rider-star unselected text-4xl"></i>
+              </label>
+              {% endfor %}
+            </div>
+          </div>
+          
+          {% for pid, pname in products.items() %}
+          <div class="mb-8 border-b pb-6">
+            <span class="block text-lg font-semibold text-gray-700 mb-2">Rate: {{ pname }}</span>
+            <div class="flex justify-center gap-2 mb-2">
+              {% for star in range(1, 6) %}
+              <label>
+                <input type="radio" name="rating_{{ pid }}" value="{{ star }}" class="hidden" required>
+                <i class="bx bxs-star star unselected text-4xl"></i>
+              </label>
+              {% endfor %}
+            </div>
+            <textarea name="comment_{{ pid }}" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="Share your thoughts about this product..."></textarea>
+          </div>
+          {% endfor %}
+          <button type="submit" class="w-full bg-amber-500 text-white py-2 rounded-lg font-semibold hover:bg-amber-600 transition text-lg shadow">Submit Ratings</button>
+        </form>
+        <div class="mt-8 text-center text-gray-400 text-xs">
+          <span>Thank you for helping us improve your shopping experience!</span>
+        </div>
+      </div>
+    </main>
+    <footer class="bg-gray-800 text-gray-300 py-10">
+      <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 px-6">
+        <div>
+          <h4 class="font-semibold text-white mb-3">Customer Service</h4>
+          <ul class="space-y-2">
+            <li><a href="#" class="hover:text-white">Help</a></li>
+            <li><a href="#" class="hover:text-white">Delivery</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="font-semibold text-white mb-3">Company</h4>
+          <ul class="space-y-2">
+            <li><a href="#" class="hover:text-white">About Us</a></li>
+            <li><a href="#" class="hover:text-white">Contact</a></li>
+            <li><a href="#" class="hover:text-white">Careers</a></li>
+            <li><a href="#" class="hover:text-white">Legal Info</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="font-semibold text-white mb-3">Follow Us</h4>
+          <div class="flex items-center gap-4">
+            <a href="#" aria-label="Facebook" class="text-white hover:text-amber-300 text-2xl">
+              <i class="bx bxl-facebook-square"></i>
+            </a>
+            <a href="#" aria-label="Instagram" class="text-white hover:text-amber-300 text-2xl">
+              <i class="bx bxl-instagram"></i>
+            </a>
+            <a href="#" aria-label="Twitter" class="text-white hover:text-amber-300 text-2xl">
+              <i class="bx bxl-twitter"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+      <p class="text-center text-sm text-gray-400 mt-10">
+        © 2025 Petopia. Inspired by Zooplus.
+      </p>
+    </footer>
+    <script>
+      // Cart count update
+      const cartBtn = document.getElementById("cart-btn");
+      const cartCount = document.getElementById("cart-count");
+      cartBtn.addEventListener("click", () => {
+        window.location.href = "/cart";
+      });
+      async function updateCartCount() {
+        try {
+          const response = await fetch("/cart_count");
+          const data = await response.json();
+          if (data.count > 0) {
+            cartCount.textContent = data.count;
+            cartCount.classList.remove("hidden");
+          } else {
+            cartCount.classList.add("hidden");
+          }
+        } catch (error) {
+          console.error("Failed to update cart count:", error);
+        }
+      }
+      updateCartCount();
+      // User dropdown
+      const userBtn = document.getElementById("user-btn");
+      const userPane = document.getElementById("user-pane");
+      userBtn?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        userPane.classList.toggle("hidden");
+      });
+      window.addEventListener("click", (e) => {
+        if (!userPane.contains(e.target) && !userBtn.contains(e.target)) {
+          userPane.classList.add("hidden");
+        }
+      });
+      // Star rating UI for each product and rider
+      document.querySelectorAll('div.mb-8').forEach(function(productBlock) {
+        const stars = productBlock.querySelectorAll('.star, .rider-star');
+        const radios = productBlock.querySelectorAll('input[type="radio"]');
+        
+        stars.forEach(function(star, idx) {
+          star.addEventListener('click', function() {
+            radios[idx].checked = true;
+            stars.forEach(function(s, i) {
+              if (i <= idx) {
+                s.classList.add('selected');
+                s.classList.remove('unselected');
+              } else {
+                s.classList.remove('selected');
+                s.classList.add('unselected');
+              }
+            });
+          });
+          
+          // Hover effect
+          star.addEventListener('mouseover', function() {
+            stars.forEach(function(s, i) {
+              if (i <= idx) {
+                s.style.opacity = '0.7';
+              } else {
+                s.style.opacity = '1';
+              }
+            });
+          });
+          
+          star.addEventListener('mouseout', function() {
+            stars.forEach(function(s) {
+              s.style.opacity = '1';
+            });
+          });
+        });
+        
+        // Also handle radio change (keyboard)
+        radios.forEach(function(radio, idx) {
+          radio.addEventListener('change', function() {
+            stars.forEach(function(s, i) {
+              if (i <= idx) {
+                s.classList.add('selected');
+                s.classList.remove('unselected');
+              } else {
+                s.classList.remove('selected');
+                s.classList.add('unselected');
+              }
+            });
+          });
+        });
+      });
+    </script>
+</body>
+</html>

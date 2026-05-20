@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Petopia | Login & Register</title>
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='image/petopia-favicon.svg') }}" />
+
+  <style>
+    html { 
+      scroll-behavior: smooth;
+    }
+
+    .fade-in {
+      animation: fadeIn 0.7s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .glass-card {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      perspective: 1000px;
+    }
+
+    /* Card flip animation */
+    .flip {
+      animation: flip 0.3s ease-in-out;
+    }
+
+    @keyframes flip {
+      0% { transform: rotateY(0deg); }
+      100% { transform: rotateY(180deg); }
+    }
+
+    @keyframes flipBack {
+      0% { transform: rotateY(-180deg); }
+      100% { transform: rotateY(0deg); }
+    }
+
+    .flip-back {
+      animation: flipBack 0.3s ease-in-out;
+    }
+
+    .password-strength { margin-top: 0.45rem; }
+    .password-strength-track {
+      height: 0.4rem;
+      border-radius: 999px;
+      background: #e5e7eb;
+      overflow: hidden;
+    }
+    .password-strength-fill {
+      display: block;
+      width: 0;
+      height: 100%;
+      border-radius: inherit;
+      transition: width 0.2s ease, background-color 0.2s ease;
+    }
+    .password-strength-text {
+      margin-top: 0.25rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #6b7280;
+    }
+
+  </style>
+</head>
+
+<body class="bg-gradient-to-br from-amber-50 via-white to-amber-100 text-gray-800 font-sans h-screen flex flex-col overflow-hidden">
+
+  <!-- Header -->
+  <header class="flex items-center justify-between px-8 py-4 bg-white/80 backdrop-blur-md shadow-sm border-b border-gray-100">
+    <div class="flex items-center gap-3">
+    <!-- ⬅️ Back Button -->
+    <a href="/" 
+      class="flex items-center justify-center w-10 h-10 rounded-full hover:bg-amber-100 transition duration-300"
+      title="Go home">
+      <i class='bx bx-arrow-back text-2xl text-amber-600'></i>
+    </a>
+
+    <a href="{{ url_for('homepage') }}" class="flex items-center">
+      <img src="{{ url_for('static', filename='image/petopia-logo.png') }}" alt="Petopia" class="h-24 w-auto max-w-none" />
+    </a>
+  </header>
+
+  <!-- Main Section -->
+  <div id="main-wrapper" class="flex flex-1 md:flex-row flex-col overflow-hidden">
+
+    <!-- Left Banner -->
+    <div class="relative md:w-[50%] bg-[url('/static/image/loginbg.jpg')] bg-cover bg-center hidden md:flex items-center justify-center">
+      <div class="absolute inset-0 bg-gradient-to-br from-black/60 to-black/40"></div>
+      <div class="relative text-center text-white px-6 fade-in">
+        <h1 class="text-5xl font-extrabold mb-4 tracking-wide">Welcome to Petopia</h1>
+        <p class="text-lg text-gray-200 max-w-md mx-auto">
+          Your one-stop place for everything pets — where love and loyalty meet
+        </p>
+      </div>  
+    </div>
+
+    <!-- Right Form -->
+    <div class="flex md:w-[50%] w-full items-start md:items-center justify-center py-8 px-8 fade-in overflow-y-auto">
+      <div class="glass-card shadow-2xl rounded-3xl w-full max-w-md p-10 transition-transform duration-500 hover:scale-[1.01] my-auto">
+
+        <!-- LOGIN FORM -->
+        <div id="login-form">
+          <div class="text-center mb-8">
+            <h2 class="text-3xl font-extrabold text-amber-600 mb-2">Welcome Back!</h2>
+            <p class="text-gray-600 text-sm">Log in to continue your Petopia journey</p>
+          </div>
+
+          <form method="POST" class="space-y-5">
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Email</label>
+              <div class="relative">
+                <i class='bx bx-envelope absolute left-3 top-2.5 text-gray-400'></i>
+                <input type="email" name="login_email" placeholder="you@example.com"
+                       class="w-full border border-gray-300 rounded-lg pl-10 pr-3 py-2 focus:ring-2 focus:ring-amber-500 focus:outline-none" required>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Password</label>
+              <div class="relative">
+                <i class='bx bx-lock-alt absolute left-3 top-2.5 text-gray-400'></i>
+                <input type="password" name="login_password" placeholder="••••••••"
+                       class="w-full border border-gray-300 rounded-lg pl-10 pr-3 py-2 focus:ring-2 focus:ring-amber-500 focus:outline-none" required>
+              </div>
+            </div>
+
+            <button type="submit"
+                    class="w-full bg-amber-500 hover:bg-amber-600 hover:shadow-lg text-white py-2 rounded-lg font-semibold transition duration-300">
+              Log In
+            </button>
+          </form>
+
+          <p class="text-center text-sm mt-3 text-gray-600">
+            <a href="{{ url_for('forgot_password') }}" class="text-amber-600 hover:underline font-medium">Forgot your password?</a>
+          </p>
+
+          <p class="text-center text-sm mt-5 text-gray-600">
+            Don't have an account?
+            <a href="#" onclick="showRegister()" class="text-amber-600 hover:underline font-medium">Sign up here</a>
+          </p>
+        </div>
+
+        <!-- REGISTER FORM -->
+      <div id="register-form" class="hidden">
+        <div class="text-center mb-8">
+          <h2 class="text-3xl font-extrabold text-amber-600 mb-2">Create an Account</h2>
+          <p class="text-gray-600 text-sm">Join Petopia as a Customer, Seller, or Rider</p>
+        </div>
+
+        <!-- ROLE SELECT BUTTONS -->
+        <div class="flex gap-2 mb-6 justify-center">
+          <button type="button" onclick="showRegForm('customer', this)" 
+            class="role-btn bg-amber-100 text-amber-700 px-4 py-2 rounded-lg font-semibold hover:bg-amber-200 border border-gray-300 transition flex items-center gap-2" 
+            id="btn-customer">
+            <i class='bx bx-user text-lg'></i> Customer
+          </button>
+          <button type="button" onclick="showRegForm('seller', this)" 
+            class="role-btn bg-gray-100 text-gray-700 px-4 py-2 rounded-lg font-semibold hover:bg-amber-200 border border-gray-300 transition flex items-center gap-2" 
+            id="btn-seller">
+            <i class='bx bx-briefcase text-lg'></i> Seller
+          </button>
+          <button type="button" onclick="showRegForm('rider', this)" 
+            class="role-btn bg-gray-100 text-gray-700 px-4 py-2 rounded-lg font-semibold hover:bg-amber-200 border border-gray-300 transition flex items-center gap-2" 
+            id="btn-rider">
+            <i class='bx bx-car text-lg'></i> Rider
+          </button>
+        </div>
+
+        <!-- INPUT STYLES -->
+        <style>
+          .input-box {
+            position: relative;
+          }
+          .input-icon {
+            position: absolute;
+            left: 12px;
+            top: 10px;
+            color: #9ca3af;
+          }
+          .input-field,
+          .select-field,
+          input[type="file"] {
+            width: 100%;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 8px 12px 8px 36px;
+            transition: all 0.2s ease;
+            outline: none;
+            background-color: white;
+          }
+          .input-field:focus,
+          .select-field:focus,
+          input[type="file"]:focus {
+            border-color: #f59e0b;
+            box-shadow: 0 0 0 2px #fbbf24;
+          }
+          .select-field {
+            padding-left: 12px !important;
+          }
+          .btn-submit {
+            width: 100%;
+            background-color: #f59e0b;
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+          }
+          .btn-submit:hover {
+            background-color: #d97706;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+          }
+          input[type="file"] {
+            padding-left: 12px !important;
+            cursor: pointer;
+          }
+        </style>
+
+        <!-- ====================== CUSTOMER FORM ====================== -->
+        <form id="customer-form" action="{{ url_for('register_customer') }}" method="POST" enctype="multipart/form-data" class="space-y-5">
+          <input type="hidden" name="role" value="customer">
+
+          <!-- Name -->
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Full Name</label>
+            <div class="input-box">
+              <i class='bx bx-user input-icon'></i>
+              <input type="text" name="fullname" placeholder="Juan Dela Cruz" required class="input-field">
+            </div>
+          </div>
+
+          <!-- Email -->
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Email</label>
+            <div class="input-box">
+              <i class='bx bx-envelope input-icon'></i>
+              <input type="email" name="email" placeholder="you@example.com" required class="input-field">
+            </div>
+          </div>
+
+          <!-- Password -->
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Password</label>
+              <div class="input-box">
+                <i class='bx bx-lock-alt input-icon'></i>
+                <input type="password" name="password" placeholder="••••••••" required class="input-field password-input" data-strength-target="customer">
+              </div>
+              <div class="password-strength" data-strength-meter="customer">
+                <div class="password-strength-track"><span class="password-strength-fill"></span></div>
+                <p class="password-strength-text">Password strength: Weak</p>
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Confirm Password</label>
+              <div class="input-box">
+                <i class='bx bx-lock-open input-icon'></i>
+                <input type="password" name="confirm_password" placeholder="••••••••" required class="input-field">
+              </div>
+            </div>
+          </div>
+
+          <!-- Contact + DOB -->
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Contact Number</label>
+              <div class="input-box">
+                <i class='bx bx-phone input-icon'></i>
+                <input type="tel" name="phone" placeholder="+63 9XX XXX XXXX" required class="input-field">
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Date of Birth</label>
+              <div class="input-box">
+                <i class='bx bx-calendar input-icon'></i>
+                <input type="date" name="date_of_birth" required class="input-field">
+              </div>
+            </div>
+          </div>
+
+          <!-- Address -->
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Address</label>
+            <div class="grid grid-cols-2 gap-2 mb-2">
+              <select id="region" name="region" class="select-field" required onchange="updateAddressNames('region')">
+                <option value="">Select Region</option>
+              </select>
+              <input type="hidden" name="region_name" id="region_name">
+
+              <select id="province" name="province" class="select-field" required onchange="updateAddressNames('province')">
+                <option value="">Select Province</option>
+              </select>
+              <input type="hidden" name="province_name" id="province_name">
+
+              <select id="city" name="city" class="select-field" required onchange="updateAddressNames('city')">
+                <option value="">Select City / Municipality</option>
+              </select>
+              <input type="hidden" name="city_name" id="city_name">
+
+              <select id="barangay" name="barangay" class="select-field" required onchange="updateAddressNames('barangay')">
+                <option value="">Select Barangay</option>
+              </select>
+              <input type="hidden" name="barangay_name" id="barangay_name">
+            </div>
+            <input type="text" name="street" placeholder="Street / House No. / Subdivision" class="input-field">
+          </div>
+
+          <!-- Upload ID -->
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Upload Valid ID</label>
+            <input type="file" name="id_picture" accept="image/*" 
+  class="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-amber-500 focus:outline-none transition">
+
+          </div>
+
+          <!-- Submit Button -->
+          <button type="submit" class="btn-submit">Register as Customer</button>
+        </form>
+
+        <!-- ====================== SELLER FORM ====================== -->
+        <form id="seller-form" action="{{ url_for('register_seller') }}" method="POST" enctype="multipart/form-data" class="space-y-5 hidden">
+          <input type="hidden" name="role" value="seller">
+
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Full Name</label>
+            <div class="input-box">
+              <i class='bx bx-user input-icon'></i>
+              <input type="text" name="fullname" placeholder="Juan Dela Cruz" required class="input-field">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Email</label>
+            <div class="input-box">
+              <i class='bx bx-envelope input-icon'></i>
+              <input type="email" name="email" placeholder="you@example.com" required class="input-field">
+            </div>
+          </div>
+
+          <!-- Passwords -->
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Password</label>
+              <div class="input-box">
+                <i class='bx bx-lock-alt input-icon'></i>
+                <input type="password" name="password" placeholder="••••••••" required class="input-field password-input" data-strength-target="seller">
+              </div>
+              <div class="password-strength" data-strength-meter="seller">
+                <div class="password-strength-track"><span class="password-strength-fill"></span></div>
+                <p class="password-strength-text">Password strength: Weak</p>
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Confirm Password</label>
+              <div class="input-box">
+                <i class='bx bx-lock-open input-icon'></i>
+                <input type="password" name="confirm_password" placeholder="••••••••" required class="input-field">
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Store / Business Name</label>
+            <div class="input-box">
+              <i class='bx bx-store input-icon'></i>
+              <input type="text" name="business_name" placeholder="Petopia Shop" required class="input-field">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Business Permit</label>
+            <input type="file" name="business_permit" accept="image/*,application/pdf" 
+  class="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-amber-500 focus:outline-none transition" required>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Contact Number</label>
+              <div class="input-box">
+                <i class='bx bx-phone input-icon'></i>
+                <input type="tel" name="phone" placeholder="+63 9XX XXX XXXX" required class="input-field">
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Date of Birth</label>
+              <div class="input-box">
+                <i class='bx bx-calendar input-icon'></i>
+                <input type="date" name="date_of_birth" required class="input-field">
+              </div>
+            </div>
+          </div>
+
+          <!-- Address -->
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Address</label>
+            <div class="grid grid-cols-2 gap-2 mb-2">
+              <select id="region-seller" name="region" class="select-field" required onchange="updateAddressNames('region-seller')">
+                <option value="">Select Region</option>
+              </select>
+              <input type="hidden" name="region_name" id="region-seller_name">
+
+              <select id="province-seller" name="province" class="select-field" required onchange="updateAddressNames('province-seller')">
+                <option value="">Select Province</option>
+              </select>
+              <input type="hidden" name="province_name" id="province-seller_name">
+
+              <select id="city-seller" name="city" class="select-field" required onchange="updateAddressNames('city-seller')">
+                <option value="">Select City / Municipality</option>
+              </select>
+              <input type="hidden" name="city_name" id="city-seller_name">
+
+              <select id="barangay-seller" name="barangay" class="select-field" required onchange="updateAddressNames('barangay-seller')">
+                <option value="">Select Barangay</option>
+              </select>
+              <input type="hidden" name="barangay_name" id="barangay-seller_name">
+            </div>
+            <input type="text" name="street" placeholder="Street / House No. / Subdivision" class="input-field">
+          </div>
+
+          <!-- Upload ID -->
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Upload Valid ID</label>
+            <input type="file" name="id_picture" accept="image/*"
+  class="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-amber-500 focus:outline-none transition">
+          </div>
+
+          <button type="submit" class="btn-submit">Register as Seller</button>
+        </form>
+
+        <!-- ====================== RIDER FORM ====================== -->
+        <form id="rider-form" action="{{ url_for('register_rider') }}" method="POST" enctype="multipart/form-data" class="space-y-5 hidden">
+        <input type="hidden" name="role" value="rider">
+
+        <!-- Full Name -->
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Full Name</label>
+          <div class="input-box">
+            <i class='bx bx-user input-icon'></i>
+            <input type="text" name="fullname" placeholder="Juan Dela Cruz" required class="input-field">
+          </div>
+        </div>
+
+        <!-- Email -->
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Email</label>
+          <div class="input-box">
+            <i class='bx bx-envelope input-icon'></i>
+            <input type="email" name="email" placeholder="you@example.com" required class="input-field">
+          </div>
+        </div>
+
+        <!-- Passwords -->
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Password</label>
+            <div class="input-box">
+              <i class='bx bx-lock-alt input-icon'></i>
+              <input type="password" name="password" placeholder="••••••••" required class="input-field password-input" data-strength-target="rider">
+            </div>
+            <div class="password-strength" data-strength-meter="rider">
+              <div class="password-strength-track"><span class="password-strength-fill"></span></div>
+              <p class="password-strength-text">Password strength: Weak</p>
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Confirm Password</label>
+            <div class="input-box">
+              <i class='bx bx-lock-open input-icon'></i>
+              <input type="password" name="confirm_password" placeholder="••••••••" required class="input-field">
+            </div>
+          </div>
+        </div>
+
+        <!-- Contact + DOB -->
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Contact Number</label>
+            <div class="input-box">
+              <i class='bx bx-phone input-icon'></i>
+              <input type="tel" name="phone" placeholder="+63 9XX XXX XXXX" required class="input-field">
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Date of Birth</label>
+            <div class="input-box">
+              <i class='bx bx-calendar input-icon'></i>
+              <input type="date" name="date_of_birth" required class="input-field">
+            </div>
+          </div>
+        </div>
+
+        <!-- Vehicle Info -->
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-1">Vehicle Type</label>
+        <div class="input-box">
+          <i class='bx bx-car input-icon'></i>
+          <select name="vehicle_type" required class="input-field">
+            <option value="" disabled selected>Select Vehicle Type</option>
+            <option value="motorcycle">Motorcycle</option>
+            <option value="sedan">Sedan</option>
+            <option value="suv">SUV</option>
+            <option value="van">Van</option>
+            <option value="light_truck">Light Truck</option>
+          </select>
+        </div>
+      </div>
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">License Plate</label>
+            <div class="input-box">
+              <i class='bx bx-id-card input-icon'></i>
+              <input type="text" name="plate_number" placeholder="ABC-1234" required class="input-field">
+            </div>
+          </div>
+        </div>
+
+        <!-- Uploads -->
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Driver’s License</label>
+            <input type="file" name="drivers_license" accept="image/*,application/pdf" required
+  class="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-amber-500 focus:outline-none transition">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Valid ID</label>
+            <input type="file" name="id_picture" accept="image/*"
+  class="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-amber-500 focus:outline-none transition"> 
+          </div>
+        </div>
+
+        <!-- Address -->
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Address</label>
+          <div class="grid grid-cols-2 gap-2 mb-2">
+            <select id="region-rider" name="region" class="select-field" required onchange="updateAddressNames('region-rider')">
+              <option value="">Select Region</option>
+            </select>
+            <input type="hidden" name="region_name" id="region-rider_name">
+
+            <select id="province-rider" name="province" class="select-field" required onchange="updateAddressNames('province-rider')">
+              <option value="">Select Province</option>
+            </select>
+            <input type="hidden" name="province_name" id="province-rider_name">
+
+            <select id="city-rider" name="city" class="select-field" required onchange="updateAddressNames('city-rider')">
+              <option value="">Select City / Municipality</option>
+            </select>
+            <input type="hidden" name="city_name" id="city-rider_name">
+
+            <select id="barangay-rider" name="barangay" class="select-field" required onchange="updateAddressNames('barangay-rider')">
+              <option value="">Select Barangay</option>
+            </select>
+            <input type="hidden" name="barangay_name" id="barangay-rider_name">
+          </div>
+          <input type="text" name="street" placeholder="Street / House No. / Subdivision" class="input-field">
+        </div>
+
+        <button type="submit" class="btn-submit">Register as Rider</button>
+      </form>
+
+        <p class="text-center text-sm mt-5 text-gray-600">
+          Already have an account?
+          <a href="#" onclick="showLogin()" class="text-amber-600 hover:underline font-medium">Login</a>
+        </p>
+      </div>
+
+
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Flash Messages -->
+  <!-- Flash Messages (suppress logout messages on this page) -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        {% set _m = message|lower %}
+        {% if 'logged out' not in _m and 'log out' not in _m and 'logout' not in _m %}
+          <script>alert("{{ message }}");</script>
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <!-- Toggle Script -->
+  <script>
+    function showLogin() {
+      document.getElementById("login-form").classList.remove("hidden");
+      document.getElementById("register-form").classList.add("hidden");
+    }
+    function showRegister() {
+      document.getElementById("register-form").classList.remove("hidden");
+      document.getElementById("login-form").classList.add("hidden");
+    }
+  </script>
+
+  <script>
+    function showRegForm(role) {
+      const forms = ["customer", "seller", "rider"];
+      forms.forEach(r => {
+        document.getElementById(r + "-form").classList.add("hidden");
+      });
+      document.getElementById(role + "-form").classList.remove("hidden");
+
+      // Change button colors
+      const buttons = document.querySelectorAll(".role-btn");
+      buttons.forEach(btn => btn.classList.remove("bg-amber-100", "text-amber-700"));
+      event.target.classList.add("bg-amber-100", "text-amber-700");
+    }
+
+    function showRegister() {
+      document.getElementById("register-form").classList.remove("hidden");
+      document.getElementById("login-form").classList.add("hidden");
+    }
+
+    function showLogin() {
+      document.getElementById("login-form").classList.remove("hidden");
+      document.getElementById("register-form").classList.add("hidden");
+    }
+  </script>
+
+  <script>
+function showRegForm(role, btn) {
+  const forms = ["customer", "seller", "rider"];
+
+  // Hide all forms and reset buttons
+  forms.forEach(r => {
+    document.getElementById(`${r}-form`).classList.add("hidden");
+    const button = document.getElementById(`btn-${r}`);
+    button.classList.remove("bg-amber-100", "text-amber-700");
+    button.classList.add("bg-gray-100", "text-gray-700");
+  });
+
+  // Show selected form
+  document.getElementById(`${role}-form`).classList.remove("hidden");
+
+  // Highlight clicked button
+  btn.classList.remove("bg-gray-100", "text-gray-700");
+  btn.classList.add("bg-amber-100", "text-amber-700");
+}
+
+// Highlight default role = customer if register form visible
+document.addEventListener("DOMContentLoaded", () => {
+  const registerForm = document.getElementById("register-form");
+  if (!registerForm.classList.contains("hidden")) {
+    const defaultBtn = document.getElementById("btn-customer");
+    showRegForm("customer", defaultBtn);
+  }
+});
+</script>
+
+
+  <script>
+  function updateAddressNames(level) {
+    const select = document.getElementById(level);
+    const hiddenInput = document.getElementById(level + "_name");
+    if (select && hiddenInput) {
+      hiddenInput.value = select.options[select.selectedIndex].text;
+    }
+  }
+  </script>
+
+  <script>
+function updateAddressNames(type) {
+  // Split the type to get base and optional form prefix
+  const parts = type.split("-");
+  const base = parts[0]; // region, province, city, barangay
+  const suffix = parts[1] ? `-${parts[1]}` : ""; // for selecting other form elements
+
+  // Get the selected <select> element
+  const select = document.getElementById(type);
+  const selectedOption = select.options[select.selectedIndex];
+
+  // Get corresponding hidden input to store the name
+  const hiddenInput = document.getElementById(`${type}_name`);
+  if (hiddenInput && selectedOption) {
+    hiddenInput.value = selectedOption.textContent.trim();
+  }
+
+  // Reset lower levels when higher level changes
+  if (base === "region") {
+    document.getElementById(`province${suffix}`).innerHTML = `<option value="">Select Province</option>`;
+    document.getElementById(`city${suffix}`).innerHTML = `<option value="">Select City / Municipality</option>`;
+    document.getElementById(`barangay${suffix}`).innerHTML = `<option value="">Select Barangay</option>`;
+  } else if (base === "province") {
+    document.getElementById(`city${suffix}`).innerHTML = `<option value="">Select City / Municipality</option>`;
+    document.getElementById(`barangay${suffix}`).innerHTML = `<option value="">Select Barangay</option>`;
+  } else if (base === "city") {
+    document.getElementById(`barangay${suffix}`).innerHTML = `<option value="">Select Barangay</option>`;
+  }
+}
+</script>
+ 
+ <script>
+async function fetchRegions() {
+  const response = await fetch("https://psgc.gitlab.io/api/regions/");
+  const regions = await response.json();
+
+  // Handle all region selects
+  ["region", "region-seller", "region-rider"].forEach(id => {
+    const select = document.getElementById(id);
+    if (select) {
+      select.innerHTML = '<option value="">Select Region</option>'; // reset
+      regions.forEach(region => {
+        const option = document.createElement("option");
+        option.value = region.code;
+        option.textContent = region.name;
+        select.appendChild(option);
+      });
+      select.disabled = false;
+    }
+  });
+}
+
+async function fetchProvinces(regionCode, formType = "") {
+  const response = await fetch(`https://psgc.gitlab.io/api/regions/${regionCode}/provinces/`);
+  const provinces = await response.json();
+  const selectId = `province${formType ? '-' + formType : ''}`;
+  const select = document.getElementById(selectId);
+  if (select) {
+    select.innerHTML = '<option value="">Select Province</option>';
+    provinces.forEach(prov => {
+      const option = document.createElement("option");
+      option.value = prov.code;
+      option.textContent = prov.name;
+      select.appendChild(option);
+    });
+    select.disabled = false;
+  }
+}
+
+async function fetchCities(provinceCode, formType = "") {
+  const response = await fetch(`https://psgc.gitlab.io/api/provinces/${provinceCode}/cities-municipalities/`);
+  const cities = await response.json();
+  const selectId = `city${formType ? '-' + formType : ''}`;
+  const select = document.getElementById(selectId);
+  if (select) {
+    select.innerHTML = '<option value="">Select City / Municipality</option>';
+    cities.forEach(city => {
+      const option = document.createElement("option");
+      option.value = city.code;
+      option.textContent = city.name;
+      select.appendChild(option);
+    });
+    select.disabled = false;
+  }
+}
+
+async function fetchBarangays(cityCode, formType = "") {
+  const response = await fetch(`https://psgc.gitlab.io/api/cities-municipalities/${cityCode}/barangays/`);
+  const barangays = await response.json();
+  const selectId = `barangay${formType ? '-' + formType : ''}`;
+  const select = document.getElementById(selectId);
+  if (select) {
+    select.innerHTML = '<option value="">Select Barangay</option>';
+    barangays.forEach(brgy => {
+      const option = document.createElement("option");
+      option.value = brgy.code;
+      option.textContent = brgy.name;
+      select.appendChild(option);
+    });
+    select.disabled = false;
+  }
+}
+
+// Update hidden input names
+function updateAddressNames(type) {
+  const parts = type.split("-");
+  const base = parts[0];
+  const suffix = parts[1] ? `-${parts[1]}` : "";
+
+  const select = document.getElementById(type);
+  const selectedOption = select.options[select.selectedIndex];
+
+  const hiddenInput = document.getElementById(`${type}_name`);
+  if (hiddenInput && selectedOption) {
+    hiddenInput.value = selectedOption.textContent.trim();
+  }
+
+  // Reset lower levels
+  if (base === "region") {
+    document.getElementById(`province${suffix}`).innerHTML = `<option value="">Select Province</option>`;
+    document.getElementById(`city${suffix}`).innerHTML = `<option value="">Select City / Municipality</option>`;
+    document.getElementById(`barangay${suffix}`).innerHTML = `<option value="">Select Barangay</option>`;
+  } else if (base === "province") {
+    document.getElementById(`city${suffix}`).innerHTML = `<option value="">Select City / Municipality</option>`;
+    document.getElementById(`barangay${suffix}`).innerHTML = `<option value="">Select Barangay</option>`;
+  } else if (base === "city") {
+    document.getElementById(`barangay${suffix}`).innerHTML = `<option value="">Select Barangay</option>`;
+  }
+}
+
+// Event listeners for all selects
+["region", "region-seller", "region-rider"].forEach(id => {
+  const select = document.getElementById(id);
+  if (select) {
+    select.addEventListener("change", (e) => {
+      const code = e.target.value;
+      const formType = id.includes("-") ? id.split("-")[1] : "";
+      if (code) fetchProvinces(code, formType);
+      updateAddressNames(id);
+    });
+  }
+});
+
+["province", "province-seller", "province-rider"].forEach(id => {
+  const select = document.getElementById(id);
+  if (select) {
+    select.addEventListener("change", (e) => {
+      const code = e.target.value;
+      const formType = id.includes("-") ? id.split("-")[1] : "";
+      if (code) fetchCities(code, formType);
+      updateAddressNames(id);
+    });
+  }
+});
+
+["city", "city-seller", "city-rider"].forEach(id => {
+  const select = document.getElementById(id);
+  if (select) {
+    select.addEventListener("change", (e) => {
+      const code = e.target.value;
+      const formType = id.includes("-") ? id.split("-")[1] : "";
+      if (code) fetchBarangays(code, formType);
+      updateAddressNames(id);
+    });
+  }
+});
+
+["barangay", "barangay-seller", "barangay-rider"].forEach(id => {
+  const select = document.getElementById(id);
+  if (select) {
+    select.addEventListener("change", () => updateAddressNames(id));
+  }
+});
+
+
+
+// Initialize all regions on page load
+fetchRegions();
+</script>
+
+<script>
+function evaluatePasswordStrength(password) {
+  let score = 0;
+  if (password.length >= 8) score += 1;
+  if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score += 1;
+  if (/\d/.test(password)) score += 1;
+  if (/[^A-Za-z0-9]/.test(password)) score += 1;
+  if (password.length >= 12) score += 1;
+
+  if (score >= 4) {
+    return { label: "Strong", color: "#16a34a", width: "100%" };
+  }
+  if (score >= 3) {
+    return { label: "Medium", color: "#f59e0b", width: "66%" };
+  }
+  return { label: "Weak", color: "#dc2626", width: password ? "33%" : "0" };
+}
+
+function updatePasswordStrength(input) {
+  const target = input.dataset.strengthTarget;
+  const meter = document.querySelector(`[data-strength-meter="${target}"]`);
+  if (!meter) return;
+  const strength = evaluatePasswordStrength(input.value);
+  const fill = meter.querySelector(".password-strength-fill");
+  const text = meter.querySelector(".password-strength-text");
+  fill.style.width = strength.width;
+  fill.style.backgroundColor = strength.color;
+  text.textContent = `Password strength: ${strength.label}`;
+  text.style.color = strength.color;
+}
+
+document.querySelectorAll(".password-input[data-strength-target]").forEach(input => {
+  input.addEventListener("input", () => updatePasswordStrength(input));
+  updatePasswordStrength(input);
+});
+
+document.querySelectorAll("#customer-form, #seller-form, #rider-form").forEach(form => {
+  form.addEventListener("submit", event => {
+    const password = form.querySelector('input[name="password"]');
+    const strength = evaluatePasswordStrength(password ? password.value : "");
+    if (strength.label !== "Strong") {
+      event.preventDefault();
+      alert("Password must be strong: use at least 8 characters with uppercase, lowercase, number, and special character.");
+    }
+  });
+});
+</script>
+
+<script>
+function showRegister() {
+  const glassCard = document.querySelector(".glass-card");
+  const loginForm = document.getElementById("login-form");
+  const registerForm = document.getElementById("register-form");
+
+  // Add flip animation
+  glassCard.classList.remove("flip-back");
+  glassCard.classList.add("flip");
+
+  // Toggle visibility after animation
+  setTimeout(() => {
+    loginForm.classList.add("hidden");
+    registerForm.classList.remove("hidden");
+  }, 150); // Halfway through the faster flip
+}
+
+function showLogin() {
+  const glassCard = document.querySelector(".glass-card");
+  const loginForm = document.getElementById("login-form");
+  const registerForm = document.getElementById("register-form");
+
+  // Add flip back animation
+  glassCard.classList.remove("flip");
+  glassCard.classList.add("flip-back");
+
+  // Toggle visibility after animation
+  setTimeout(() => {
+    registerForm.classList.add("hidden");
+    loginForm.classList.remove("hidden");
+  }, 150); // Halfway through the faster flip
+}
+</script>
+
+</body>
+</html>

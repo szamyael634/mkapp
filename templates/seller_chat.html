@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat with {{ customer.fullname }} - Petopia Seller</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+</head>
+<body class="bg-gray-50">
+    <div class="flex h-screen">
+        <!-- Header -->
+        <div class="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-10">
+            <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <a href="{{ url_for('seller') }}" class="text-gray-600 hover:text-gray-900">
+                        <i class='bx bx-arrow-back text-2xl'></i>
+                    </a>
+                    <div class="flex items-center gap-3">
+                        {% if customer.profile_pic %}
+                            <img src="{{ media_url(customer.profile_pic, 'image/default-avatar.png') }}" alt="{{ customer.fullname }}" class="w-12 h-12 rounded-full object-cover">
+                        {% else %}
+                            <div class="w-12 h-12 rounded-full bg-amber-500 text-white flex items-center justify-center font-semibold">
+                                {{ customer.fullname[0].upper() }}
+                            </div>
+                        {% endif %}
+                        <div>
+                            <h2 class="font-semibold text-gray-900">{{ customer.fullname }}</h2>
+                            {% if product %}
+                                <p class="text-sm text-gray-600">📦 {{ product.name }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <button onclick="window.history.back()" class="text-gray-600 hover:text-gray-900">
+                    <i class='bx bx-x text-2xl'></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Chat Area -->
+        <div class="flex flex-col w-full mt-20">
+            <!-- Messages Container -->
+            <div id="messages-container" class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+                {% for msg in messages %}
+                    <div class="flex {% if msg.is_mine %}justify-end{% else %}justify-start{% endif %}">
+                        <div class="max-w-xs {% if msg.is_mine %}bg-amber-500 text-white{% else %}bg-gray-200 text-gray-800{% endif %} rounded-lg px-4 py-2">
+                            <p class="text-sm">{{ msg.body }}</p>
+                            <p class="text-xs {% if msg.is_mine %}text-amber-100{% else %}text-gray-600{% endif %} mt-1">
+                                {{ msg.created_at | slice(':5') if msg.created_at else '' }}
+                            </p>
+                        </div>
+                    </div>
+                {% endfor %}
+                {% if messages|length == 0 %}
+                    <div class="flex items-center justify-center h-full text-gray-400">
+                        <p>No messages yet. Start the conversation!</p>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Message Input -->
+            <div class="border-t border-gray-200 bg-white p-4">
+                <form id="message-form" class="flex gap-2 items-center">
+                    <input 
+                        type="hidden" 
+                        id="conversation-id" 
+                        value="{{ conversation_id }}"
+                    >
+                    <input 
+                        id="message-input" 
+                        type="text" 
+                        placeholder="Type your message..." 
+                        class="flex-1 border border-gray-300 rounded-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    >
+                    <button 
+                        type="submit" 
+                        class="bg-amber-500 text-white px-6 py-3 rounded-full hover:bg-amber-600 transition font-medium"
+                    >
+                        <i class='bx bx-send'></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let messageUpdateInterval = null;
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('message-form');
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await sendMessage();
+            });
+
+            // Set up auto-refresh
+            if (messageUpdateInterval) clearInterval(messageUpdateInterval);
+            messageUpdateInterval = setInterval(loadMessages, 2000);
+        });
+
+        async function sendMessage() {
+            const convoId = document.getElementById('conversation-id').value;
+            const body = document.getElementById('message-input').value.trim();
+
+            if (!convoId || !body) return;
+
+            try {
+                const res = await fetch('/message/send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: 'conversation_id=' + encodeURIComponent(convoId) + '&body=' + encodeURIComponent(body)
+                });
+
+                if (res.ok) {
+                    document.getElementById('message-input').value = '';
+                    await loadMessages();
+                }
+            } catch (error) {
+                console.error('Error sending message:', error);
+            }
+        }
+
+        async function loadMessages() {
+            const convoId = document.getElementById('conversation-id').value;
+
+            try {
+                const res = await fetch(`/api/conversations/${convoId}/messages`);
+                const data = await res.json();
+
+                if (data.success && data.messages) {
+                    const container = document.getElementById('messages-container');
+                    container.innerHTML = data.messages.map(msg => `
+                        <div class="flex ${msg.is_mine ? 'justify-end' : 'justify-start'}">
+                            <div class="max-w-xs ${msg.is_mine ? 'bg-amber-500 text-white' : 'bg-gray-200 text-gray-800'} rounded-lg px-4 py-2">
+                                <p class="text-sm">${escapeHtml(msg.body)}</p>
+                                <p class="text-xs ${msg.is_mine ? 'text-amber-100' : 'text-gray-600'} mt-1">
+                                    ${new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                </p>
+                            </div>
+                        </div>
+                    `).join('');
+
+                    // Scroll to bottom
+                    container.scrollTop = container.scrollHeight;
+                }
+            } catch (error) {
+                console.error('Error loading messages:', error);
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Clean up interval on page unload
+        window.addEventListener('beforeunload', () => {
+            if (messageUpdateInterval) clearInterval(messageUpdateInterval);
+        });
+    </script>
+</body>
+</html>

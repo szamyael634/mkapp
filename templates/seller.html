@@ -1,0 +1,2924 @@
+  <!DOCTYPE html>
+  <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>Petopia Seller Dashboard</title>
+      <script src="https://cdn.tailwindcss.com"></script>
+      <link
+        href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css"
+        rel="stylesheet"
+      />
+      <script src="{{ url_for('static', filename='js/richtext.js') }}"></script>
+      <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='image/petopia-favicon.svg') }}" />
+    </head>
+    <body class="bg-gray-50 text-gray-800 flex min-h-screen">
+      <!-- 🧭 DESKTOP SIDEBAR -->
+      <aside class="sidebar w-64 bg-white shadow-lg hidden md:flex flex-col p-6">
+        <a href="{{ url_for('homepage') }}" class="mb-6 inline-flex">
+          <img src="{{ url_for('static', filename='image/petopia-logo.png') }}" alt="Petopia" class="h-28 w-auto max-w-none" />
+        </a>
+        {% if session.get("fullname") %}
+          <div class="text-center mb-6">
+            <p class="text-lg font-semibold text-gray-700">{{ session.fullname }}</p>
+          </div>
+        {% endif %}
+        <ul class="space-y-3">
+        <li><button onclick="showSection('dashboard')" class="nav-btn block w-full text-left p-2 rounded-lg font-medium text-amber-600 bg-amber-100 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M3 3h8v8H3V3zm0 10h8v8H3v-8zm10-10h8v8h-8V3zm0 10h8v8h-8v-8z"/></svg>Dashboard</button></li>
+        <li><button onclick="showSection('products')" class="nav-btn block w-full text-left p-2 rounded-lg hover:bg-gray-100 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M4 6l8-4 8 4-8 4-8-4zm0 2l8 4 8-4v8l-8 4-8-4V8z"/></svg>My Products</button></li>
+        <li><button onclick="showSection('orders')" class="nav-btn block w-full text-left p-2 rounded-lg hover:bg-gray-100 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h12v2H3v-2z"/></svg>Orders</button></li>
+        <li><button onclick="showSection('reports')" class="nav-btn block w-full text-left p-2 rounded-lg hover:bg-gray-100 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2V17zm4 0h-2V7h2V17zm4 0h-2v-4h2V17z"/></svg>Reports</button></li>
+        <li><button onclick="showSection('settings')" class="nav-btn block w-full text-left p-2 rounded-lg hover:bg-gray-100 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M19.14 12.936a7.988 7.988 0 000-1.872l2.036-1.576a.5.5 0 00.121-.637l-1.928-3.336a.5.5 0 00-.607-.22l-2.396.96a7.953 7.953 0 00-1.62-.936l-.36-2.52A.5.5 0 0014.25 2h-4.5a.5.5 0 00-.494.432l-.36 2.52a7.953 7.953 0 00-1.62.936l-2.396-.96a.5.5 0 00-.607.22L2.7 8.851a.5.5 0 00.121.637l2.036 1.576a7.988 7.988 0 000 1.872l-2.036 1.576a.5.5 0 00-.121.637l1.928 3.336a.5.5 0 00.607.22l2.396-.96a7.953 7.953 0 001.62.936l.36 2.52a.5.5 0 00.494.432h4.5a.5.5 0 00.494-.432l.36-2.52a7.953 7.953 0 001.62-.936l2.396.96a.5.5 0 00.607-.22l1.928-3.336a.5.5 0 00-.121-.637l-2.036-1.576zM12 15.5a3.5 3.5 0 110-7 3.5 3.5 0 010 7z"/></svg>Settings</button></li>
+        <li><a href="{{ url_for('logout') }}" class="nav-btn block w-full text-left p-2 rounded-lg hover:bg-gray-100 flex items-center gap-2 text-red-500"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M16 13v-2H7V8l-5 4 5 4v-3h9zM20 3h-8v2h8v14h-8v2h8a2 2 0 002-2V5a2 2 0 00-2-2z"/></svg>Logout</a></li>
+        </ul>
+
+      </aside>
+
+      <!-- 📱 MOBILE SIDEBAR -->
+      <div
+        id="mobileSidebar"
+        class="fixed inset-0 bg-black/40 z-50 hidden transition-opacity duration-300"
+      >
+        <div
+          id="mobileMenu"
+          class="absolute left-0 top-0 h-full w-64 bg-white shadow-lg p-4 transform -translate-x-full transition-transform duration-300"
+        >
+          <button id="closeSidebar" class="text-gray-500 text-2xl mb-4">✕</button>
+          <ul class="space-y-3">
+        <li><button onclick="showSection('dashboard')" class="nav-btn block w-full text-left p-2 rounded-lg font-medium text-amber-600 bg-amber-100 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M3 3h8v8H3V3zm0 10h8v8H3v-8zm10-10h8v8h-8V3zm0 10h8v8h-8v-8z"/></svg>Dashboard</button></li>
+        <li><button onclick="showSection('products')" class="nav-btn block w-full text-left p-2 rounded-lg hover:bg-gray-100 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M4 6l8-4 8 4-8 4-8-4zm0 2l8 4 8-4v8l-8 4-8-4V8z"/></svg>My Products</button></li>
+        <li><button onclick="showSection('add')" class="nav-btn block w-full text-left p-2 rounded-lg hover:bg-gray-100 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M11 11V5h2v6h6v2h-6v6h-2v-6H5v-2h6z"/></svg>Add Product</button></li>
+        <li><button onclick="showSection('orders')" class="nav-btn block w-full text-left p-2 rounded-lg hover:bg-gray-100 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h12v2H3v-2z"/></svg>Orders</button></li>
+        <li><button onclick="showSection('reports')" class="nav-btn block w-full text-left p-2 rounded-lg hover:bg-gray-100 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2V17zm4 0h-2V7h2V17zm4 0h-2v-4h2V17z"/></svg>Reports</button></li>
+        <li><button onclick="showSection('settings')" class="nav-btn block w-full text-left p-2 rounded-lg hover:bg-gray-100 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M19.14 12.936a7.988 7.988 0 000-1.872l2.036-1.576a.5.5 0 00.121-.637l-1.928-3.336a.5.5 0 00-.607-.22l-2.396.96a7.953 7.953 0 00-1.62-.936l-.36-2.52A.5.5 0 0014.25 2h-4.5a.5.5 0 00-.494.432l-.36 2.52a7.953 7.953 0 00-1.62.936l-2.396-.96a.5.5 0 00-.607.22L2.7 8.851a.5.5 0 00.121.637l2.036 1.576a7.988 7.988 0 000 1.872l-2.036 1.576a.5.5 0 00-.121.637l1.928 3.336a.5.5 0 00.607.22l2.396-.96a7.953 7.953 0 001.62.936l.36 2.52a.5.5 0 00.494.432h4.5a.5.5 0 00.494-.432l.36-2.52a7.953 7.953 0 001.62-.936l2.396.96a.5.5 0 00.607-.22l1.928-3.336a.5.5 0 00-.121-.637l-2.036-1.576zM12 15.5a3.5 3.5 0 110-7 3.5 3.5 0 010 7z"/></svg>Settings</button></li>
+        <li><a href="{{ url_for('logout') }}" class="nav-btn block w-full text-left p-2 rounded-lg hover:bg-gray-100 flex items-center gap-2 text-red-500"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M16 13v-2H7V8l-5 4 5 4v-3h9zM20 3h-8v2h8v14h-8v2h8a2 2 0 002-2V5a2 2 0 00-2-2z"/></svg>Logout</a></li>
+        </ul>
+
+        </div>
+      </div>
+
+      <!-- 💼 MAIN SECTION -->
+      <div class="flex-1 flex flex-col">
+        <!-- 🔝 TOP BAR -->
+        <header
+          class="flex items-center justify-between bg-white px-6 py-4 shadow-sm"
+        >
+          <div class="flex items-center gap-3">
+            <button id="menuBtn" class="md:hidden text-2xl">☰</button>
+            <h1 class="font-semibold text-xl text-gray-700">Seller Dashboard</h1>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <div class="relative">
+              <button id="seller-notif-btn" class="text-2xl focus:outline-none">
+                <span class="bx bxs-bell"></span>
+                {% set seller_unread = notifications|selectattr('is_read', 'equalto', False)|list|length if notifications else 0 %}
+                {% if seller_unread > 0 %}
+                  <span class="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">{{ seller_unread }}</span>
+                {% endif %}
+              </button>
+              <div id="seller-notif-dropdown" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-gray-100 z-50">
+                <div class="p-4 border-b flex items-center justify-between">
+                  <div class="font-semibold text-gray-700">Notifications</div>
+                  <form method="post" action="{{ url_for('mark_all_notifications_read') }}">
+                    <button type="submit" class="text-xs text-blue-600 hover:underline">Mark all as read</button>
+                  </form>
+                </div>
+                <ul class="max-h-80 overflow-y-auto">
+                  {% for notif in notifications|sort(attribute='created_at', reverse=True) %}
+                    <li data-notif-id="{{ notif.id }}" data-target="{{ notif.target_url or '#' }}" class="px-4 py-3 border-b last:border-b-0 {{ 'bg-amber-50' if not notif.is_read else '' }} flex items-center justify-between gap-2 cursor-pointer">
+                      <div>
+                        <div class="text-sm text-gray-800">{{ notif.message }}</div>
+                        <div class="text-xs text-gray-400 mt-1">{{ notif.created_at.strftime('%b %d, %Y %I:%M %p') }}</div>
+                      </div>
+                      {% if not notif.is_read %}
+                        <form class="mark-notif-form" method="post" action="{{ url_for('mark_notification_read') }}">
+                          <input type="hidden" name="notification_id" value="{{ notif.id }}">
+                          <button type="submit" class="text-xs text-blue-600 hover:underline ml-2">Mark as read</button>
+                        </form>
+                      {% endif %}
+                    </li>
+                  {% else %}
+                    <li class="px-4 py-3 text-gray-500 text-sm">No notifications.</li>
+                  {% endfor %}
+                </ul>
+              </div>
+            </div>
+            <div class="relative">
+              <input
+                id="seller-search-input"
+                type="text"
+                placeholder="Search products..."
+                class="border rounded-full pl-4 pr-10 py-2 text-sm focus:ring-2 focus:ring-amber-400 outline-none"
+              />
+              <i class="bx bx-search absolute right-3 top-2.5 text-gray-500"></i>
+            </div>
+          </div>
+        <script>
+          document.addEventListener('DOMContentLoaded', function() {
+            const btn = document.getElementById('seller-notif-btn');
+            const dropdown = document.getElementById('seller-notif-dropdown');
+            if (btn && dropdown) {
+              btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                dropdown.classList.toggle('hidden');
+              });
+              document.addEventListener('click', function(e) {
+                if (!dropdown.classList.contains('hidden')) {
+                  dropdown.classList.add('hidden');
+                }
+              });
+            }
+          });
+          // Add click handlers for seller notifications to mark read and redirect
+          const sNotifDropdown = document.getElementById('seller-notif-dropdown');
+          if (sNotifDropdown) {
+            sNotifDropdown.addEventListener('click', async (ev) => {
+              const li = ev.target.closest('li[data-notif-id]');
+              if (!li) return;
+              if (ev.target.closest('form.mark-notif-form')) return;
+              const notifId = li.getAttribute('data-notif-id');
+              const target = li.getAttribute('data-target');
+              if (notifId) {
+                try {
+                  await fetch("{{ url_for('mark_notification_read') }}", { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' }, body: 'notification_id=' + encodeURIComponent(notifId) });
+                } catch(e) { /* ignore */ }
+              }
+              if (target && target !== '#') {
+                window.location.href = target;
+              }
+            });
+            // (function removed - use global showSellerReturnRequests instead)
+          }
+        </script>
+        </header>
+
+        <!-- 🧱 MAIN CONTENT -->
+        <main class="p-6 space-y-8 overflow-auto min-h-[120vh]">
+
+          <!-- ✅ SUCCESS / ERROR MESSAGES -->
+          <main class="flex-1 flex flex-col min-h-[120vh]">
+          {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+              <div id="flash-message" class="fixed top-5 right-5 bg-amber-500 text-white px-4 py-2 rounded-lg shadow-lg">
+                {% for category, message in messages %}
+                  {{ message }}
+                {% endfor %}
+              </div>
+              <script>
+                setTimeout(() => {
+                  const flash = document.getElementById('flash-message');
+                  if (flash) flash.remove();
+                }, 1000);
+              </script>
+            {% endif %}
+          {% endwith %}
+
+          <!-- DASHBOARD -->
+          <section id="dashboard" class="section">
+            <div
+              class="bg-gradient-to-r from-amber-500 to-amber-600 text-white p-6 rounded-2xl shadow-md"
+            >
+              <h1 class="text-2xl font-semibold mb-2">Welcome back, Seller!</h1>
+              <p class="text-sm opacity-90">
+                Here’s an overview of your store performance and inventory.
+              </p>
+            </div>
+            <section class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+              <div
+                class="bg-white p-4 rounded-xl shadow-sm text-center border border-amber-100"
+              >
+                <h3 class="text-sm text-gray-500">Total Sales</h3>
+                <p class="text-2xl font-semibold text-amber-600">₱{{ seller_total_income|default(0) | round(2) }}</p>
+                <p class="text-xs text-gray-400 mt-1">Today: ₱{{ seller_sales_today|default(0) | round(2) }}</p>
+              </div>
+              <div
+                class="bg-white p-4 rounded-xl shadow-sm text-center border border-amber-100"
+              >
+                <h3 class="text-sm text-gray-500">Orders</h3>
+                <p class="text-2xl font-semibold text-amber-600">{{ seller_orders|length if seller_orders else 0 }}</p>
+                <p class="text-xs text-gray-400 mt-1">Today: {{ seller_orders_today }}</p>
+              </div>
+              <div
+                class="bg-white p-4 rounded-xl shadow-sm text-center border border-amber-100"
+              >
+                <h3 class="text-sm text-gray-500">Products</h3>
+                <p class="text-2xl font-semibold text-amber-600">{{ products_count }}</p>
+              </div>
+              <div
+                class="bg-white p-4 rounded-xl shadow-sm text-center border border-amber-100"
+              >
+                <h3 class="text-sm text-gray-500">Pending Deliveries</h3>
+                <p class="text-2xl font-semibold text-amber-600">{{ pending_deliveries }}</p>
+              </div>
+            </section>
+
+            <!-- Income summary (Dashboard only) -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mt-4">
+              <h3 class="text-lg font-semibold mb-2">Income Summary</h3>
+              <div class="flex items-center gap-6">
+                <div class="text-sm text-gray-500">Total Income</div>
+                <div class="text-2xl font-bold text-amber-600">₱{{ seller_total_income|default(0) | round(2) }}</div>
+                <div class="text-sm text-gray-500">Completed Orders</div>
+                <div class="text-lg font-semibold text-gray-700">{{ seller_completed_orders }}</div>
+              </div>
+              <div class="mt-4">
+                <h4 class="text-sm text-gray-600 mb-2">Monthly Breakdown</h4>
+                <div class="grid grid-cols-2 md:grid-cols-6 gap-2">
+                  {% for m in monthly_income %}
+                    <div class="bg-gray-50 p-2 rounded text-xs text-center">{{ m.month }}<br/>₱{{ (m.monthly_amount)|float | round(2) }}</div>
+                  {% else %}
+                    <div class="text-gray-400 text-sm">No income history available.</div>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- REPORTS SECTION -->
+          <section id="reports" class="section hidden space-y-6">
+            <!-- Filters -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+              <h3 class="text-lg font-semibold mb-4">📊 Sales Report</h3>
+              
+              <!-- Filters -->
+              <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">Date Range</label>
+                  <select id="seller-date-range" class="w-full border rounded px-3 py-2 text-sm" onchange="applySellerDateRange()">
+                    <option value="all">All Time</option>
+                    <option value="today">Today</option>
+                    <option value="week">This Week</option>
+                    <option value="month">This Month</option>
+                    <option value="year">This Year</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">Product Name</label>
+                  <input type="text" id="seller-product-filter" class="w-full border rounded px-3 py-2 text-sm" placeholder="Search product..." onkeyup="filterSellerSalesReport()">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                  <select id="seller-category-filter" class="w-full border rounded px-3 py-2 text-sm" onchange="filterSellerSalesReport()">
+                    <option value="">All Categories</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">Custom From Date</label>
+                  <input type="date" id="seller-date-from" class="w-full border rounded px-3 py-2 text-sm" onchange="filterSellerSalesReport()">
+                </div>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">Custom To Date</label>
+                  <input type="date" id="seller-date-to" class="w-full border rounded px-3 py-2 text-sm" onchange="filterSellerSalesReport()">
+                </div>
+                <div></div>
+                <div></div>
+              </div>
+              <div class="flex mt-4 justify-end">
+                <button onclick="resetSellerFilters()" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 text-sm font-medium">Reset All</button>
+              </div>
+            </div>
+
+            <!-- Sales Table -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+              <div class="overflow-x-auto">
+                <table class="w-full text-sm border-collapse">
+                  <thead class="bg-amber-100 text-gray-700 uppercase text-xs">
+                    <tr>
+                      <th class="py-3 px-4 text-left">Product Name</th>
+                      <th class="py-3 px-4 text-left">Category</th>
+                      <th class="py-3 px-4 text-right">Units Sold</th>
+                      <th class="py-3 px-4 text-right">Total Sales</th>
+                      <th class="py-3 px-4 text-right">Revenue</th>
+                    </tr>
+                  </thead>
+                  <tbody id="seller-sales-tbody">
+                    <tr><td colspan="5" class="text-center py-4 text-gray-500">Loading sales data...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <script>
+              // Store original sales data
+              window.sellerSalesData = [];
+              window.sellerAllSalesData = [];
+              
+              function applySellerDateRange() {
+                const range = document.getElementById('seller-date-range').value;
+                const today = new Date();
+                let fromDate, toDate;
+                
+                if (range === 'today') {
+                  fromDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+                  toDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+                } else if (range === 'week') {
+                  const day = today.getDay();
+                  const diff = today.getDate() - day;
+                  fromDate = new Date(today.getFullYear(), today.getMonth(), diff);
+                  toDate = new Date(today.getFullYear(), today.getMonth(), diff + 6);
+                } else if (range === 'month') {
+                  fromDate = new Date(today.getFullYear(), today.getMonth(), 1);
+                  toDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+                } else if (range === 'year') {
+                  fromDate = new Date(today.getFullYear(), 0, 1);
+                  toDate = new Date(today.getFullYear(), 11, 31);
+                } else if (range === 'all') {
+                  document.getElementById('seller-date-from').value = '';
+                  document.getElementById('seller-date-to').value = '';
+                  filterSellerSalesReport();
+                  return;
+                }
+                
+                const pad = (num) => String(num).padStart(2, '0');
+                document.getElementById('seller-date-from').value = `${fromDate.getFullYear()}-${pad(fromDate.getMonth() + 1)}-${pad(fromDate.getDate())}`;
+                document.getElementById('seller-date-to').value = `${toDate.getFullYear()}-${pad(toDate.getMonth() + 1)}-${pad(toDate.getDate())}`;
+                filterSellerSalesReport();
+              }
+              
+              function resetSellerFilters() {
+                document.getElementById('seller-date-range').value = 'all';
+                document.getElementById('seller-date-from').value = '';
+                document.getElementById('seller-date-to').value = '';
+                document.getElementById('seller-product-filter').value = '';
+                document.getElementById('seller-category-filter').value = '';
+                filterSellerSalesReport();
+              }
+              
+              function filterSellerSalesReport() {
+                const dateFrom = document.getElementById('seller-date-from').value;
+                const dateTo = document.getElementById('seller-date-to').value;
+                const productFilter = document.getElementById('seller-product-filter').value.toLowerCase().trim();
+                const categoryFilter = document.getElementById('seller-category-filter').value.trim();
+                
+                // Apply filters to table
+                let filteredData = [...window.sellerAllSalesData];
+                
+                // Filter by date range if dates are provided
+                if (dateFrom) {
+                  const fromDate = new Date(dateFrom + 'T00:00:00').getTime();
+                  filteredData = filteredData.filter(row => {
+                    if (row.last_sale_date) {
+                      const rowDate = new Date(row.last_sale_date).getTime();
+                      return rowDate >= fromDate;
+                    }
+                    return true;
+                  });
+                }
+                
+                if (dateTo) {
+                  const toDate = new Date(dateTo + 'T23:59:59').getTime();
+                  filteredData = filteredData.filter(row => {
+                    if (row.last_sale_date) {
+                      const rowDate = new Date(row.last_sale_date).getTime();
+                      return rowDate <= toDate;
+                    }
+                    return true;
+                  });
+                }
+                
+                if (productFilter) {
+                  filteredData = filteredData.filter(row => 
+                    row.name && row.name.toLowerCase().includes(productFilter)
+                  );
+                }
+                
+                if (categoryFilter) {
+                  console.log('Filtering by category:', categoryFilter);
+                  filteredData = filteredData.filter(row => {
+                    const rowCategory = (row.category || '').trim();
+                    const match = rowCategory === categoryFilter;
+                    if (!match) {
+                      console.log('Row category:', rowCategory, 'Filter:', categoryFilter, 'Match:', match);
+                    }
+                    return match;
+                  });
+                }
+                
+                renderSellerSalesTable(filteredData);
+              }
+              
+              function renderSellerSalesTable(data) {
+                const tbody = document.getElementById('seller-sales-tbody');
+                
+                if (!data || data.length === 0) {
+                  tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-gray-500">No sales data available.</td></tr>';
+                  return;
+                }
+                
+                let totalSales = 0;
+                let totalRevenue = 0;
+                
+                const rows = data.map(item => {
+                  totalSales += parseInt(item.total_sales || 0);
+                  totalRevenue += parseFloat(item.revenue || 0);
+                  
+                  return `
+                    <tr class="border-t hover:bg-gray-50">
+                      <td class="py-3 px-4">${item.name || '-'}</td>
+                      <td class="py-3 px-4">${item.category || '-'}</td>
+                      <td class="py-3 px-4 text-right">${item.units_sold || 0}</td>
+                      <td class="py-3 px-4 text-right">${item.total_sales || 0}</td>
+                      <td class="py-3 px-4 text-right font-semibold text-green-600">₱${parseFloat(item.revenue || 0).toFixed(2)}</td>
+                    </tr>
+                  `;
+                });
+                
+                // Add totals row
+                rows.push(`
+                  <tr class="bg-amber-50 font-semibold">
+                    <td class="py-3 px-4">TOTAL</td>
+                    <td class="py-3 px-4"></td>
+                    <td class="py-3 px-4 text-right">${data.reduce((sum, item) => sum + (parseInt(item.units_sold || 0)), 0)}</td>
+                    <td class="py-3 px-4 text-right">${totalSales}</td>
+                    <td class="py-3 px-4 text-right text-green-600">₱${totalRevenue.toFixed(2)}</td>
+                  </tr>
+                `);
+                
+                tbody.innerHTML = rows.join('');
+              }
+              
+              // Fetch sales data on page load
+              async function loadSellerSalesReport() {
+                try {
+                  const response = await fetch('{{ url_for("api_seller_sales_report") }}');
+                  if (!response.ok) throw new Error('Failed to fetch sales data');
+                  
+                  const result = await response.json();
+                  console.log('Sales report API response:', result);
+                  
+                  if (result.success) {
+                    window.sellerAllSalesData = result.data || [];
+                    window.sellerSalesData = result.data || [];
+                    
+                    // Check if data has categories
+                    if (window.sellerAllSalesData.length > 0) {
+                      console.log('First product item:', window.sellerAllSalesData[0]);
+                      console.log('All categories in data:', window.sellerAllSalesData.map(item => item.category).filter((c, i, arr) => arr.indexOf(c) === i));
+                    }
+                    
+                    filterSellerSalesReport();
+                  }
+                } catch (error) {
+                  console.error('Error loading sales report:', error);
+                  document.getElementById('seller-sales-tbody').innerHTML = '<tr><td colspan="5" class="text-center py-4 text-red-500">Error loading data</td></tr>';
+                }
+              }
+              
+              async function loadSellerCategories() {
+                try {
+                  const response = await fetch('{{ url_for("api_seller_categories") }}');
+                  console.log('Categories API response status:', response.status);
+                  
+                  if (!response.ok) {
+                    console.error('Failed to fetch categories. Status:', response.status);
+                    throw new Error('Failed to fetch categories');
+                  }
+                  
+                  const result = await response.json();
+                  console.log('Categories API result:', result);
+                  
+                  if (result.success && result.categories && result.categories.length > 0) {
+                    const categorySelect = document.getElementById('seller-category-filter');
+                    // Clear existing options except "All Categories"
+                    categorySelect.innerHTML = '<option value="">All Categories</option>';
+                    
+                    // Add fetched categories
+                    result.categories.forEach(category => {
+                      const option = document.createElement('option');
+                      option.value = category;
+                      option.textContent = category;
+                      categorySelect.appendChild(option);
+                    });
+                    console.log('Categories loaded successfully:', result.categories);
+                  } else {
+                    console.log('No categories found or API returned empty list');
+                  }
+                } catch (error) {
+                  console.error('Error loading categories:', error);
+                }
+              }
+              
+              // Initialize on page load
+              document.addEventListener('DOMContentLoaded', function() {
+                loadSellerCategories();
+                loadSellerSalesReport();
+              });
+            </script>
+          </section>
+
+          <!-- RETURN REQUESTS (Dedicated Section) -->
+          <!-- PRODUCTS -->
+          <section id="products" class="section hidden">
+            <div class="flex justify-between items-center mb-4">
+              <h2 class="text-xl font-semibold">My Products</h2>
+              <button onclick="openAddProductModal()" class="bg-amber-500 text-white px-4 py-2 rounded-lg hover:bg-amber-600 transition">
+                + Add Product
+              </button>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+              <!-- Filter Buttons -->
+              <div class="mb-4 flex gap-3 flex-wrap">
+                <!-- Status Filter -->
+                {% set product_statuses = [('approved', 'Approved'), ('pending', 'Pending'), ('archived', 'Rejected'), ('deleted', 'Deleted')] %}
+                <div class="relative inline-block">
+                  <button id="seller-product-filter-btn" class="px-4 py-1.5 rounded-full bg-white border border-gray-300 text-gray-700 text-sm font-semibold focus:outline-none transition flex items-center gap-2 hover:bg-gray-50">
+                    <span id="seller-product-filter-label">Approved</span>
+                    <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+                  </button>
+                  <div id="seller-product-filter-dropdown" class="hidden absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-40 min-w-40 max-h-72 overflow-y-auto">
+                    {% for status, label in product_statuses %}
+                      <button type="button" class="product-tab-btn w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition {% if status == 'approved' %}bg-amber-100 text-amber-900 font-medium{% endif %}" data-status="{{ status }}" onclick="showProductSection('{{ status }}'); updateSellerProductLabel('{{ label }}', '{{ status }}'); toggleSellerProductFilterDropdown();">{{ label }}</button>
+                    {% endfor %}
+                  </div>
+                </div>
+                
+                <!-- Category Filter -->
+                <div class="relative inline-block">
+                  <button id="seller-product-category-btn" class="px-4 py-1.5 rounded-full bg-white border border-gray-300 text-gray-700 text-sm font-semibold focus:outline-none transition flex items-center gap-2 hover:bg-gray-50">
+                    <span id="seller-product-category-label">All Categories</span>
+                    <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+                  </button>
+                  <div id="seller-product-category-dropdown" class="hidden absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-40 min-w-48 max-h-72 overflow-y-auto">
+                    <button type="button" class="product-category-btn w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition bg-blue-100 text-blue-900 font-medium" data-category="" onclick="filterProductsByCategory(''); updateCategoryLabel('All Categories', ''); toggleSellerProductCategoryDropdown();">All Categories</button>
+                    <div id="category-list"></div>
+                  </div>
+                </div>
+              </div>
+              <script>
+                // Category filter functions
+                function toggleSellerProductCategoryDropdown() {
+                  const dropdown = document.getElementById('seller-product-category-dropdown');
+                  dropdown.classList.toggle('hidden');
+                }
+                
+                function updateCategoryLabel(label, category) {
+                  document.getElementById('seller-product-category-label').textContent = label;
+                  document.querySelectorAll('.product-category-btn').forEach(btn => {
+                    if (btn.dataset.category === category) {
+                      btn.classList.add('bg-blue-100', 'text-blue-900', 'font-medium');
+                      btn.classList.remove('text-gray-700');
+                    } else {
+                      btn.classList.remove('bg-blue-100', 'text-blue-900', 'font-medium');
+                      btn.classList.add('text-gray-700');
+                    }
+                  });
+                }
+                
+                function loadProductCategories() {
+                  fetch('{{ url_for("api_seller_categories") }}')
+                    .then(res => res.json())
+                    .then(data => {
+                      if (data.success && data.categories) {
+                        const categoryList = document.getElementById('category-list');
+                        categoryList.innerHTML = '';
+                        data.categories.forEach(category => {
+                          const btn = document.createElement('button');
+                          btn.type = 'button';
+                          btn.className = 'product-category-btn w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition';
+                          btn.dataset.category = category;
+                          btn.textContent = category;
+                          btn.onclick = () => { 
+                            filterProductsByCategory(category);
+                            updateCategoryLabel(category, category);
+                            toggleSellerProductCategoryDropdown();
+                          };
+                          categoryList.appendChild(btn);
+                        });
+                      }
+                    })
+                    .catch(err => console.error('Error loading categories:', err));
+                }
+                
+                function filterProductsByCategory(category) {
+                  const rows = document.querySelectorAll('tbody tr');
+                  rows.forEach(row => {
+                    const categoryCell = row.querySelector('td:nth-child(3)');
+                    if (!category || categoryCell.textContent.trim() === category) {
+                      row.style.display = '';
+                    } else {
+                      row.style.display = 'none';
+                    }
+                  });
+                }
+                
+                document.getElementById('seller-product-category-btn').addEventListener('click', toggleSellerProductCategoryDropdown);
+                document.addEventListener('click', function(event) {
+                  const dropdown = document.getElementById('seller-product-category-dropdown');
+                  const btn = document.getElementById('seller-product-category-btn');
+                  if (!btn.contains(event.target) && !dropdown.contains(event.target)) {
+                    dropdown.classList.add('hidden');
+                  }
+                });
+                
+                // Load categories when products section is opened
+                document.addEventListener('DOMContentLoaded', loadProductCategories);
+                
+                // Status filter functions
+                function toggleSellerProductFilterDropdown() {
+                  const dropdown = document.getElementById('seller-product-filter-dropdown');
+                  dropdown.classList.toggle('hidden');
+                }
+                
+                function updateSellerProductLabel(label, status) {
+                  document.getElementById('seller-product-filter-label').textContent = label;
+                  document.querySelectorAll('.product-tab-btn').forEach(btn => {
+                    if (btn.dataset.status === status) {
+                      btn.classList.add('bg-amber-100', 'text-amber-900', 'font-medium');
+                      btn.classList.remove('text-gray-700');
+                    } else {
+                      btn.classList.remove('bg-amber-100', 'text-amber-900', 'font-medium');
+                      btn.classList.add('text-gray-700');
+                    }
+                  });
+                }
+                
+                document.getElementById('seller-product-filter-btn').addEventListener('click', toggleSellerProductFilterDropdown);
+                document.addEventListener('click', function(event) {
+                  const dropdown = document.getElementById('seller-product-filter-dropdown');
+                  const btn = document.getElementById('seller-product-filter-btn');
+                  if (!btn.contains(event.target) && !dropdown.contains(event.target)) {
+                    dropdown.classList.add('hidden');
+                  }
+                });
+              </script>
+
+              <!-- Products Table -->
+              <div class="overflow-x-auto">
+              <table class="w-full border-collapse text-sm">
+                <thead class="bg-amber-100 text-gray-700 uppercase text-xs">
+                  <tr>
+                    <th class="py-3 px-4 text-left">Image</th>
+                    <th class="py-3 px-4 text-left">Product</th>
+                    <th class="py-3 px-4 text-left">Category</th>
+                    <th class="py-3 px-4 text-left">Price</th>
+                    <th class="py-3 px-4 text-left">Stock</th>
+                    <th class="py-3 px-4 text-left">Variants</th>
+                    <th class="py-3 px-4 text-left">Actions</th>
+                  </tr>
+                </thead>
+
+                {% for status in ['approved', 'pending', 'archived', 'deleted'] %}
+                <tbody id="{{ status }}-products" class="{% if status != 'approved' %}hidden{% endif %}">
+                  {% set filtered = products|selectattr('status', 'equalto', status)|list %}
+                  {% if filtered %}
+                    {% for product in filtered %}
+                    <tr class="border-t hover:bg-gray-50">
+                      <!-- Main Product Image -->
+                      <td>
+                        <img src="{{ media_url(product.image, 'image/dog.webp') }}" class="w-12 h-12 object-cover rounded-lg">
+                      </td>
+                      <td>{{ product.name }}</td>
+                      <td>{{ product.category or '-' }}</td>
+                      <td>₱{{ product.price }}</td>
+                      <td>{{ product.stock }}</td>
+
+                      <!-- Variants Column -->
+                      <td>
+                        {% if variants.get(product.id) %}
+                          <ul class="text-xs">
+                            {% for v in variants[product.id] %}
+                              <li class="flex items-center space-x-1">
+                                <span>
+                                  {% if v.color and not v.size %}
+                                    Color: {{ v.color }}
+                                  {% elif v.size and not v.color %}
+                                    Size: {{ v.size }}
+                                  {% elif v.color and v.size %}
+                                    Color: {{ v.color }}, Size: {{ v.size }}
+                                  {% else %}
+                                    -
+                                  {% endif %}
+                                </span>
+                                {% if v.image %}
+                                  <img src="{{ media_url(v.image, 'image/dog.webp') }}" class="w-6 h-6 object-cover rounded ml-1"/>
+                                {% endif %}
+                                {% if v.price %}<span>(₱{{ v.price }})</span>{% endif %}
+                              </li>
+                            {% endfor %}
+                          </ul>
+                        {% else %}
+                          -
+                        {% endif %}
+                      </td>
+
+                      <!-- Actions -->
+                  <td>
+                    {% if status not in ['archived', 'deleted'] %}
+                      <button 
+                        class="px-3 py-1 bg-amber-500 text-white rounded-lg text-xs hover:bg-amber-600"
+                        onclick="openEditModal(this)"
+                        data-id="{{ product.id }}"
+                        data-name="{{ product.name }}"
+                        data-category="{{ product.category }}"
+                        data-description="{{ product.description }}"
+                        data-price="{{ product.price }}"
+                        data-stock="{{ product.stock }}"
+                        data-variants='{{ variants.get(product.id, []) | tojson }}'>
+                        Edit
+                      </button>
+                      <form action="{{ url_for('delete_product', product_id=product.id) }}" method="POST" class="inline">
+                        <button class="px-3 py-1 bg-red-500 text-white rounded-lg text-xs hover:bg-red-600">Delete</button>
+                      </form>
+                    {% elif status == 'deleted' %}
+                      <form action="{{ url_for('restore_product', product_id=product.id) }}" method="POST" class="inline">
+                        <button type="submit" class="px-3 py-1 bg-green-500 text-white rounded-lg text-xs hover:bg-green-600">Restore</button>
+                      </form>
+                    {% else %}
+                      <span class="text-gray-400 text-xs italic">Archived</span>
+                    {% endif %}
+                  </td>
+                    </tr>
+                    {% endfor %}
+                  {% else %}
+                    <tr>
+                      <td colspan="7" class="text-center py-4 text-gray-500">No {{ status }} products.</td>
+                    </tr>
+                  {% endif %}
+                </tbody>
+                {% endfor %}
+              </table>
+              </div>
+            </div>
+          </section>
+
+          <!-- 🟠 EDIT PRODUCT MODAL -->
+<div id="editModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-2xl p-6 w-[32rem] shadow-lg overflow-y-auto max-h-[90vh]">
+    <h2 class="text-lg font-semibold mb-3">Edit Product</h2>
+    <form id="editForm" action="{{ url_for('edit_product') }}" method="POST" enctype="multipart/form-data" class="space-y-3">
+      <input type="hidden" name="product_id" id="editProductId">
+
+      <input type="text" name="name" id="editName" placeholder="Product Name" class="w-full border rounded px-3 py-2" required>
+      <select name="category" id="editCategory" class="w-full border rounded px-3 py-2" required>
+        <option value="">-- Select Category --</option>
+        <option>Dog Food & Treats</option>
+        <option>Cat Litter & Accessories</option>
+        <option>Aquarium & Fish Supplies</option>
+        <option>Bird Feeders & Food</option>
+        <option>Pet Grooming Products</option>
+        <option>Pet Health & Wellness</option>
+      </select>
+
+      <textarea name="description" id="editDescription" rows="2" placeholder="Description" class="w-full border rounded px-3 py-2"></textarea>
+
+  <script src="{{ url_for('static', filename='js/richtext.js') }}"></script>
+
+      <input type="number" name="price" id="editPrice" step="0.01" placeholder="Base Price (₱)" class="w-full border rounded px-3 py-2" required>
+      <input type="number" name="stock" id="editStock" placeholder="Base Stock" class="w-full border rounded px-3 py-2" required>
+      <!-- main product weight removed -->
+      <input type="file" name="image" accept="image/*" class="w-full border rounded px-3 py-2">
+
+      <!-- 🧩 Variant Mode -->
+      <label class="block font-semibold text-sm text-gray-700">Does this product have variants?</label>
+      <select id="editVariantMode" name="variant_mode" class="border rounded px-3 py-2 w-full" onchange="toggleEditVariantMode()">
+        <option value="none">No Variants</option>
+        <option value="single">Single Variant (Color or Size)</option>
+        <option value="double">Two Combined Variants (Color + Size)</option>
+      </select>
+
+      <!-- 🟢 Single Variant Section -->
+      <div id="editSingleVariantSection" class="hidden mt-2">
+        <label class="font-semibold text-sm text-gray-700">Variant Type:</label>
+        <select name="variant_type" id="editVariantType" class="border rounded px-2 py-1 w-full mt-1"></select>
+
+        <div id="editSingleVariantList"></div>
+
+        <button type="button" onclick="addEditSingleVariant({}, document.getElementById('editVariantType').value)" class="text-xs bg-green-400 text-white px-2 py-1 rounded mt-2">
+          + Add Variant
+        </button>
+      </div>
+
+      <!-- 🟣 Double Variant Section -->
+      <div id="editDoubleVariantSection" class="hidden mt-2">
+        <div id="editDoubleVariantList"></div>
+        <button type="button" onclick="addEditDoubleVariant()" class="text-xs bg-green-400 text-white px-2 py-1 rounded mt-2">
+          + Add Variant Combo
+        </button>
+      </div>
+
+      <div class="flex justify-end space-x-2 pt-2">
+        <button type="button" onclick="closeEditModal()" class="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400 text-xs">Cancel</button>
+        <button type="submit" class="px-3 py-1 bg-amber-500 text-white rounded hover:bg-amber-600 text-xs">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+          <!-- 🟡 ADD PRODUCT MODAL -->
+          <div id="addProductModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-2xl p-6 w-[30rem] shadow-lg overflow-y-auto max-h-[90vh]">
+              <h2 class="text-lg font-semibold mb-3">Add Product</h2>
+              <form action="{{ url_for('add_product') }}" method="POST" enctype="multipart/form-data" class="space-y-3">
+                <input type="text" name="name" placeholder="Product Name" class="w-full border rounded px-3 py-2" required>
+                <select name="category" class="w-full border rounded px-3 py-2" required>
+                  <option value="">-- Select Category --</option>
+                  <option>Dog Food & Treats</option>
+                  <option>Cat Litter & Accessories</option>
+                  <option>Aquarium & Fish Supplies</option>
+                  <option>Bird Feeders & Food</option>
+                  <option>Pet Grooming Products</option>
+                  <option>Pet Health & Wellness</option>
+                </select>
+                <textarea name="description" rows="2" placeholder="Description" class="w-full border rounded px-3 py-2"></textarea>
+
+                <!-- Base Price & Stock -->
+                <input type="number" name="price" step="0.01" placeholder="Base Price (₱)" class="w-full border rounded px-3 py-2" required>
+                <input type="number" id="baseStockInput" name="stock" placeholder="Base Stock" class="w-full border rounded px-3 py-2" required>
+                <!-- main product weight removed -->
+                <input type="file" name="image" accept="image/*" class="w-full border rounded px-3 py-2">
+
+                <!-- 🧩 Variant Type Toggle -->
+                <label class="block font-semibold text-sm text-gray-700">Does this product have variants?</label>
+                <select id="variantMode" name="variant_mode" class="border rounded px-3 py-2 w-full" onchange="toggleVariantMode()">
+                  <option value="none">No Variants</option>
+                  <option value="single">Single Variant (Color or Size)</option>
+                  <option value="double">Two Combined Variants (Color + Size)</option>
+                </select>
+
+                <!-- Single Variant -->
+                <div id="singleVariantSection" class="hidden">
+                  <select name="variant_type" class="border rounded px-2 py-1 w-full mt-2">
+                    <option value="color">Color</option>
+                    <option value="size">Size</option>
+                  </select>
+                  <div id="singleVariantList"></div>
+                  <button type="button" onclick="addSingleVariant()" class="text-xs bg-green-400 text-white px-2 py-1 rounded mt-2">+ Add Variant</button>
+                </div>
+
+                <!-- Double Variant -->
+                <div id="doubleVariantSection" class="hidden">
+                  <input type="hidden" name="has_two_variants" value="yes">
+                  <div id="doubleVariantList"></div>
+                  <button type="button" onclick="addDoubleVariant()" class="text-xs bg-green-400 text-white px-2 py-1 rounded mt-2">+ Add Variant Combo</button>
+                </div>
+
+                <div class="flex justify-end space-x-2 pt-2">
+                  <button type="button" onclick="closeAddProductModal()" class="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400 text-xs">Cancel</button>
+                  <button type="submit" class="px-3 py-1 bg-amber-500 text-white rounded hover:bg-amber-600 text-xs">Add Product</button>
+                </div>
+              </form>
+              <script src="{{ url_for('static', filename='js/richtext.js') }}"></script>
+              </form>
+            </div>
+          </div>  
+
+          <!-- ORDERS, MESSAGES (hidden placeholders) -->
+
+          <section id="orders" class="section hidden">
+            <h2 class="text-xl font-semibold mb-4">Orders</h2>
+            
+            <!-- ALL ORDERS TAB -->
+            <div id="all-orders" class="orders-tab-content">
+              <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                <div class="mb-4">
+                  {% set steps = [('all', 'All'), ('processing', 'Processing'), ('ready_for_pickup', 'Ready for Pickup'), ('shipped', 'Shipped'), ('delivered', 'Delivered'), ('completed', 'Completed'), ('cancelled', 'Cancelled'), ('refund_request', 'Refund Request'), ('refunded', 'Refunded')] %}
+                  <div class="relative inline-block">
+                    <button id="seller-order-filter-btn" class="px-4 py-1.5 rounded-full bg-amber-500 text-white text-sm font-semibold focus:outline-none transition flex items-center gap-2 hover:bg-amber-600">
+                      <span id="seller-order-filter-label">All</span>
+                      <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+                    </button>
+                    <div id="seller-order-filter-dropdown" class="hidden absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-40 min-w-40 max-h-96 overflow-y-auto">
+                      {% for status, label in steps %}
+                        <button type="button" class="order-status-filter-btn w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition {% if status == 'all' %}bg-amber-100 text-amber-900 font-medium{% endif %}" data-status="{{ status }}" onclick="filterSellerOrders('{{ status }}'); toggleSellerOrderFilterDropdown();">{{ label }}</button>
+                      {% endfor %}
+                    </div>
+                  </div>
+                </div>
+                <script>
+                  function toggleSellerOrderFilterDropdown() {
+                    const dropdown = document.getElementById('seller-order-filter-dropdown');
+                    dropdown.classList.toggle('hidden');
+                  }
+                  function updateSellerOrderFilterLabel(status) {
+                    const stepLabels = {
+                      'all': 'All',
+                      'processing': 'Processing',
+                      'ready_for_pickup': 'Ready for Pickup',
+                      'shipped': 'Shipped',
+                      'delivered': 'Delivered',
+                      'completed': 'Completed',
+                      'cancelled': 'Cancelled',
+                      'refund_request': 'Refund Request',
+                      'refunded': 'Refunded'
+                    };
+                    document.getElementById('seller-order-filter-label').textContent = stepLabels[status] || status;
+                    document.querySelectorAll('.order-status-filter-btn').forEach(btn => {
+                      if (btn.dataset.status === status) {
+                        btn.classList.add('bg-amber-100', 'text-amber-900', 'font-medium');
+                        btn.classList.remove('text-gray-700');
+                      } else {
+                        btn.classList.remove('bg-amber-100', 'text-amber-900', 'font-medium');
+                        btn.classList.add('text-gray-700');
+                      }
+                    });
+                  }
+                  document.getElementById('seller-order-filter-btn').addEventListener('click', toggleSellerOrderFilterDropdown);
+                  const sellerOrderButtons = document.querySelectorAll('#seller-order-filter-dropdown .order-status-filter-btn');
+                  sellerOrderButtons.forEach(btn => {
+                    btn.addEventListener('click', function() {
+                      updateSellerOrderFilterLabel(this.dataset.status);
+                    });
+                  });
+                  document.addEventListener('click', function(event) {
+                    const dropdown = document.getElementById('seller-order-filter-dropdown');
+                    const btn = document.getElementById('seller-order-filter-btn');
+                    if (!btn.contains(event.target) && !dropdown.contains(event.target)) {
+                      dropdown.classList.add('hidden');
+                    }
+                  });
+                </script>
+                <div class="overflow-x-auto">
+                <table class="w-full border-collapse text-sm">
+                  <thead class="bg-amber-100 text-gray-700 uppercase text-xs">
+                    <tr>
+                        <th class="py-3 px-4 text-left">Order #</th>
+                        <th class="py-3 px-4 text-left">Customer</th>
+                        <th class="py-3 px-4 text-left">Seller(s)</th>
+                        <th class="py-3 px-4 text-left">Status</th>
+                        <th class="py-3 px-4 text-left">Vehicle</th>
+                        <th class="py-3 px-4 text-left">Weight</th>
+                        <th class="py-3 px-4 text-left">Total</th>
+                      <th class="py-3 px-4 text-left">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% if seller_orders %}
+                      {% for order in seller_orders %}
+                      <tr class="border-t hover:bg-gray-50 seller-order-row" data-status="{{ order.status }}">
+                        <td class="py-2 px-4 font-semibold">{{ order.shop_order_number or order.id }}</td>
+                        <td class="py-2 px-4">{{ order.customer_name or order.user_id }}</td>
+                        <td class="py-2 px-4">{{ order.sellers_display or '-' }}</td>
+                        <td class="py-2 px-4">{{ order.status|capitalize }}{% if order.return_request %} <span class="ml-2 px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs">Return</span>{% endif %}</td>
+                        <td class="py-2 px-4">{{ order.vehicle or '-' }}</td>
+                        <td class="py-2 px-4">{{ order.total_weight or '-' }} kg</td>
+                        <td class="py-2 px-4">₱{{ order.total_amount or '?' }}</td>
+                        <td class="py-2 px-4 flex gap-2">
+                          <button class="bg-blue-500 text-white px-3 py-1 rounded text-xs hover:bg-blue-600 view-order-btn" data-order-id="{{ order.id }}">View</button>
+                        </td>
+                      </tr>
+                    {% endfor %}
+                    {% else %}
+                      <tr><td colspan="8" class="text-center py-4 text-gray-500">No orders yet.</td></tr>
+                    {% endif %}
+                  </tbody>
+                </table>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Order Details Modal -->
+            <div id="orderDetailsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
+              <div class="bg-white rounded-2xl p-6 w-[32rem] shadow-lg overflow-y-auto max-h-[90vh]">
+                <h2 class="text-lg font-semibold mb-3">Order Details</h2>
+                <div id="orderDetailsContent"></div>
+                <div id="orderDetailsActions" class="flex gap-2 mt-4"></div>
+                <button onclick="closeOrderDetails()" class="mt-4 bg-gray-300 px-4 py-2 rounded hover:bg-gray-400">Close</button>
+              </div>
+            </div>
+              <!-- Return Request Modal (Seller) - same layout as Order Modal -->
+              <div id="returnRequestModal" class="hidden fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
+                <div class="bg-white rounded-2xl p-6 w-[32rem] shadow-lg overflow-y-auto max-h-[90vh]">
+                  <h2 class="text-lg font-semibold mb-3">Return Request Details</h2>
+                  <div id="returnRequestContent"></div>
+                  <div id="returnRequestActions" class="flex gap-2 mt-4"></div>
+                  <button onclick="closeReturnRequestModal()" class="mt-4 bg-gray-300 px-4 py-2 rounded hover:bg-gray-400">Close</button>
+                </div>
+              </div>
+            <script id="seller-orders-data" type="application/json">
+              {{ seller_orders|tojson|safe }}
+            </script>
+            <script id="seller-order-items-data" type="application/json">
+              {{ seller_order_items|tojson|safe }}
+            </script>
+            <script id="seller-return-requests-data" type="application/json">
+              {{ seller_return_requests|tojson|safe }}
+            </script>
+            <script>
+              // Parse order data from JSON script tags
+              window.sellerOrders = JSON.parse(document.getElementById('seller-orders-data').textContent);
+              window.sellerOrderItems = JSON.parse(document.getElementById('seller-order-items-data').textContent);
+              window.sellerReturnRequests = JSON.parse(document.getElementById('seller-return-requests-data').textContent);
+              window.sellerReturnRequestsMap = {};
+              function sellerProofUrl(filePath) {
+                const raw = String(filePath || '').trim();
+                if (!raw) return '';
+                if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
+                if (raw.startsWith('/media/') || raw.startsWith('/static/')) return raw;
+
+                const encodeObjectPath = (path) => String(path || '')
+                  .split('/')
+                  .filter(Boolean)
+                  .map(encodeURIComponent)
+                  .join('/');
+
+                if (raw.startsWith('storage://')) {
+                  const storagePath = raw.slice('storage://'.length);
+                  const separatorIndex = storagePath.indexOf('/');
+                  if (separatorIndex > 0 && separatorIndex < storagePath.length - 1) {
+                    const bucket = encodeURIComponent(storagePath.slice(0, separatorIndex));
+                    const objectPath = encodeObjectPath(storagePath.slice(separatorIndex + 1));
+                    return `/media/${bucket}/${objectPath}`;
+                  }
+                }
+
+                const normalized = raw.replace(/\\/g, '/').replace(/^\/+/, '');
+                const storagePublicMatch = normalized.match(/^storage\/v1\/object\/(?:public|sign)\/([^/]+)\/(.+)$/i);
+                if (storagePublicMatch) {
+                  return `/media/${encodeURIComponent(storagePublicMatch[1])}/${encodeObjectPath(storagePublicMatch[2].split('?')[0])}`;
+                }
+                if (normalized.startsWith('petopia-documents/')) {
+                  return `/media/petopia-documents/${encodeObjectPath(normalized.slice('petopia-documents/'.length))}`;
+                }
+                if (normalized.startsWith('static/')) return `/${normalized}`;
+                return `/static/${normalized}`;
+              }
+              try {
+                const _rrs = Array.isArray(window.sellerReturnRequests) ? window.sellerReturnRequests : Object.values(window.sellerReturnRequests || {});
+                for (const r of _rrs) {
+                  if (!r) continue;
+                  if (r.order_id) window.sellerReturnRequestsMap[r.order_id] = r;
+                  if (r.id) window.sellerReturnRequestsMap[r.id] = r;
+                }
+              } catch(e) { window.sellerReturnRequestsMap = {}; }
+              // Use event delegation to reliably handle clicks for dynamically visible
+              // view buttons (covers Orders and Return Requests sections)
+              // Handler moved to global script to ensure it's available regardless of page section
+                
+                // attach click handlers to proof thumbnails to open modal
+                try {
+                  document.querySelectorAll('#orderDetailsContent img.proof-thumb').forEach(img => {
+                    img.addEventListener('click', function() {
+                      const src = this.dataset.fullsrc || this.src;
+                      openProofModal(src);
+                    });
+                  });
+                } catch (e) {
+                  console.error('Failed to attach proof thumbnail handlers', e);
+                }
+
+                // actions handling moved into showOrderDetails
+              // showOrderDetails function - used by delegated click handlers
+              function showOrderDetails(orderId, rrId) {
+                console.debug('showOrderDetails called', {orderId, rrId});
+                const orders = window.sellerOrders || [];
+                const itemsByOrder = window.sellerOrderItems || {};
+                let order = orders.find(o => o.id === orderId);
+                let rr = null;
+                try {
+                  if (window.sellerReturnRequestsMap && window.sellerReturnRequestsMap[orderId]) rr = window.sellerReturnRequestsMap[orderId];
+                  if (!rr && rrId && window.sellerReturnRequestsMap && window.sellerReturnRequestsMap[rrId]) rr = window.sellerReturnRequestsMap[rrId];
+                  if (!rr && window.sellerReturnRequests) {
+                    const _rrs = Array.isArray(window.sellerReturnRequests) ? window.sellerReturnRequests : Object.values(window.sellerReturnRequests || {});
+                    for (const v of _rrs) { if (v && (v.order_id === orderId || String(v.id) === String(rrId))) { rr = v; break; } }
+                  }
+                } catch(e) { /* ignore */ }
+                if (!order && rr) {
+                  order = { id: orderId, shop_order_number: orderId, customer_name: rr.requested_by_name || rr.requested_by, customer_full_address: '-', vehicle: '-', total_amount: rr.refund_amount || '-', total_weight: '-' };
+                }
+                const items = itemsByOrder[orderId] || [];
+                if (!order) return alert('Order not found');
+                let orderNumber = order.shop_order_number || order.id;
+                const shipFee = (order.shipping_fee !== undefined && order.shipping_fee !== null) ? Number(order.shipping_fee) : 0;
+                let html = `
+                  <div class="grid grid-cols-1 gap-4">
+                    <div class="flex items-center gap-2 text-lg font-semibold text-amber-600">
+                      <i class="bx bxs-truck text-2xl"></i> Order #${orderNumber}
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div class="md:col-span-2 space-y-2">
+                        <div class="flex gap-2 items-center">
+                          <span class="font-medium text-gray-700">Status:</span>
+                          <span class="px-2 py-1 rounded ${order.status === 'delivered' ? 'bg-green-100 text-green-700 text-xs' : (['processing','ready_for_pickup','shipped'].includes(order.status) ? 'bg-amber-100 text-amber-700 text-xs' : 'bg-gray-100 text-gray-700 text-xs')}">${order.status || 'N/A'}</span>
+                        </div>
+                        <div class="flex gap-3 items-start">
+                          <i class="bx bxs-home text-xl text-gray-500"></i>
+                          <div>
+                            <div class="font-medium text-gray-700">Customer:</div>
+                            <div class="font-medium text-gray-800">${order.customer_name || 'Customer'}</div>
+                            <div class="text-sm text-gray-500 mt-1">${order.customer_full_address || '-'}</div>
+                          </div>
+                        </div>
+                        <div class="flex gap-2 items-center">
+                          <i class="bx bxs-car text-xl text-gray-500"></i>
+                          <span class="font-medium text-gray-700">Vehicle:</span>
+                          <span class="text-gray-800">${order.vehicle || order.vehicle_type || '-'}</span>
+                        </div>
+                        <div class="flex gap-2 items-center">
+                          <i class="bx bxs-package text-xl text-gray-500"></i>
+                          <span class="font-medium text-gray-700">Items:</span>
+                        </div>
+                        <div class="space-y-2 mt-1">
+                `;
+                for (const item of items) {
+                  const name = item.product_name || 'Product';
+                  const attrs = `${item.color ? ' • ' + item.color : ''}${item.size ? ' • ' + item.size : ''}`;
+                  html += `<div class="p-3 border rounded-lg flex items-center justify-between bg-white">
+                              <div>
+                                <div class="font-medium">${name}${attrs}</div>
+                                <div class="text-xs text-gray-500">Qty: ${item.quantity} · Price: ₱${item.price}</div>
+                              </div>
+                              <div class="text-sm font-semibold">₱${(Number(item.price) * Number(item.quantity)).toFixed(2)}</div>
+                            </div>`;
+                }
+                html += `</div></div>`;
+                html += `<div class="md:col-span-1 space-y-3">
+                          <div class="p-3 border rounded-lg bg-white">
+                            <div class="text-sm text-gray-500">Summary</div>
+                            <div class="mt-2 text-sm"><strong>Total Amount:</strong> ₱${order.total_amount || '?'}</div>
+                            <div class="text-sm mt-1"><strong>Shipping Fee:</strong> ₱${shipFee.toFixed(2)}</div>
+                            ${ order.seller_earning !== undefined ? `<div class="text-sm mt-1"><strong>Seller Earning:</strong> ₱${(Number(order.seller_earning) || 0).toFixed(2)}</div>` : '' }
+                            <div class="text-sm mt-1"><strong>Weight:</strong> ${order.total_weight || '-'} kg</div>
+                          </div>`;
+                if (order.proofs && order.proofs.length) {
+                  html += `<div class="p-3 border rounded-lg bg-white">
+                             <div class="text-sm text-gray-500">Delivery Proofs</div>
+                             <div class="mt-2 flex gap-2 flex-wrap">`;
+                  for (const pf of order.proofs) {
+                    const src = sellerProofUrl(pf);
+                    html += `<div class="w-24 h-24 rounded overflow-hidden border cursor-pointer">
+                               <img src="${src}" data-fullsrc="${src}" alt="proof" class="w-full h-full object-cover proof-thumb" />
+                             </div>`;
+                  }
+                  html += `</div></div>`;
+                }
+                html += `</div></div>`;
+                if (rr) {
+                  html += `<div class="mt-3 p-3 border rounded-lg bg-white text-sm">
+                             <div class="font-medium mb-1">Return Request</div>
+                             <div><strong>Reason:</strong> ${rr.reason || '-'}</div>
+                             <div><strong>Status:</strong> ${rr.status || '-'}</div>
+                             ${ rr.requested_by_name ? `<div><strong>Requested by:</strong> ${rr.requested_by_name}</div>` : '' }
+                             ${ rr.pickup_rider_id ? `<div><strong>Assigned Rider ID:</strong> ${rr.pickup_rider_id}</div>` : '' }
+                           </div>`;
+                }
+                document.getElementById('orderDetailsContent').innerHTML = html;
+                // Actions: Ready for Pickup (if processing); seller-side cancel remains available while processing.
+                let actions = '';
+                if (order.status === 'processing') {
+                  actions += `<form method="POST" action="/order/update_status" class="inline ready-order-form" style="display:inline">` +
+                             `<input type="hidden" name="order_id" value="${order.id}">` +
+                             `<input type="hidden" name="new_status" value="ready_for_pickup">` +
+                             `<button type="submit" class="bg-amber-500 text-white px-3 py-1 rounded text-xs hover:bg-amber-600 mr-2">Ready for Pickup</button></form>`;
+                }
+                if (['ready_for_pickup', 'assigned'].includes(order.status)) {
+                  const riderAccepted = order.rider_accepted || order.rider_assigned || order.status === 'assigned';
+                  actions += `<form method="POST" action="/order/update_status" class="inline shipped-order-form" style="display:inline">` +
+                             `<input type="hidden" name="order_id" value="${order.id}">` +
+                             `<input type="hidden" name="new_status" value="shipped">` +
+                             `<button type="submit" class="bg-blue-500 text-white px-3 py-1 rounded text-xs hover:bg-blue-600 mr-2" ${!riderAccepted ? 'disabled style="opacity:0.5;cursor:not-allowed"' : ''}>Shipped</button></form>`;
+                }
+                if (order.status === 'processing') {
+                  actions += `<form method="POST" action="/order/update_status" class="inline cancel-order-form" style="display:inline">` +
+                             `<input type="hidden" name="order_id" value="${order.id}">` +
+                             `<input type="hidden" name="new_status" value="cancelled">` +
+                             `<button type="submit" class="bg-red-500 text-white px-3 py-1 rounded text-xs hover:bg-red-600">Cancel</button></form>`;
+                }
+                // Show approve/reject in modal when order is a cancel_request
+                if (order.status === 'cancel_request') {
+                  actions += `<button type="button" class="bg-green-500 text-white px-3 py-1 rounded text-xs hover:bg-green-600 approve-cancel-btn" data-order-id="${order.id}">Approve</button>`;
+                  actions += `<button type="button" class="bg-red-500 text-white px-3 py-1 rounded text-xs hover:bg-red-600 reject-cancel-btn" data-order-id="${order.id}">Reject</button>`;
+                }
+                // Show seller refund response options. Admin makes the final refund decision.
+                if (order.status === 'refund_request') {
+                  actions += `<button type="button" class="bg-green-500 text-white px-3 py-1 rounded text-xs hover:bg-green-600 approve-refund-btn" data-order-id="${order.id}">Accept</button>`;
+                  actions += `<button type="button" class="bg-red-500 text-white px-3 py-1 rounded text-xs hover:bg-red-600 reject-refund-btn" data-order-id="${order.id}">Request to Decline</button>`;
+                }
+                // If this order is part of a return flow and the return has been delivered to the seller, show a finalize refund button
+                if (order.return_request && order.return_request.status === 'delivered') {
+                  actions += `<button type="button" class="bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700 finalize-refund-btn" data-order-id="${order.id}">Confirm Return Received & Refund</button>`;
+                }
+                document.getElementById('orderDetailsActions').innerHTML = actions;
+                // Ensure shipped action posts to /order/mark_shipped so server enforces permission checks
+                (function(){
+                  const container = document.getElementById('orderDetailsActions');
+                  const shippedForm = container.querySelector('.shipped-order-form');
+                  if (shippedForm) {
+                    shippedForm.action = '/order/mark_shipped';
+                    const ns = shippedForm.querySelector('input[name="new_status"]');
+                    if (ns) ns.remove();
+                  }
+                })();
+
+                // Intercept action form submissions to use AJAX and reload page on success
+                const actionsContainer = document.getElementById('orderDetailsActions');
+                actionsContainer.querySelectorAll('form').forEach(f => {
+                  f.addEventListener('submit', async (ev) => {
+                    ev.preventDefault();
+                    const form = ev.currentTarget;
+                    const action = form.action || '/order/update_status';
+                    const formData = new FormData(form);
+                    try {
+                      // Intercept seller/admin initiated cancel (sent via update_status form) to collect reason
+                      const isCancelUpdate = (action && action.includes('/order/update_status')) && (formData.get('new_status') === 'cancelled');
+                      let resp;
+                      if (isCancelUpdate) {
+                        // Show modal to collect required reason + optional notes
+                        const reasonHtml = `
+                          <label class="block text-left text-sm font-medium mb-1">Reason</label>
+                          <select id="swal-seller-cancel-reason" class="w-full border rounded px-2 py-1 mb-2">\n\
+                            <option value="">-- Select reason --</option>\n\
+                            <option value="Out of stock">Out of stock</option>\n\
+                            <option value="Product defect found during inspection">Product defect found during inspection</option>\n\
+                            <option value="Wrong price listing (pricing error)">Wrong price listing (pricing error)</option>\n\
+                            <option value="Seller unable to fulfill due to logistics issues">Seller unable to fulfill due to logistics issues</option>\n\
+                            <option value="Verification or fraud concerns">Verification or fraud concerns</option>\n\
+                            <option value="Other">Other</option>\n\
+                          </select>\n\
+                          <label class="block text-left text-sm font-medium mb-1">Notes (optional)</label>\n\
+                          <textarea id="swal-seller-cancel-notes" class="w-full border rounded px-2 py-1" rows="3" placeholder="Additional details (optional)"></textarea>\n\
+                        `;
+                        const modal = await Swal.fire({ title: 'Cancel Order', html: reasonHtml, showCancelButton: true, confirmButtonText: 'Cancel Order', focusConfirm: false, preConfirm: () => {
+                          const reasonEl = document.getElementById('swal-seller-cancel-reason');
+                          const notesEl = document.getElementById('swal-seller-cancel-notes');
+                          const reasonVal = reasonEl ? reasonEl.value.trim() : '';
+                          const notesVal = notesEl ? notesEl.value.trim() : '';
+                          if (!reasonVal) {
+                            Swal.showValidationMessage('Please select a reason');
+                            return false;
+                          }
+                          if (reasonVal === 'Other' && !notesVal) {
+                            Swal.showValidationMessage('Please provide details for "Other"');
+                            return false;
+                          }
+                          return { reason: reasonVal, notes: notesVal };
+                        }});
+                        if (!modal.isConfirmed) {
+                          // user cancelled the modal; abort
+                          return;
+                        }
+                        const payload = { order_id: formData.get('order_id'), reason: modal.value.reason, notes: modal.value.notes };
+                        resp = await fetch('/order/seller_cancel', {
+                          method: 'POST',
+                          credentials: 'same-origin',
+                          headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                          body: JSON.stringify(payload)
+                        });
+                      } else {
+                        resp = await fetch(action, {
+                          method: 'POST',
+                          body: new URLSearchParams(formData),
+                          credentials: 'same-origin',
+                          headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                          }
+                        });
+                      }
+                      const j = await resp.json();
+                      if (j && j.success) {
+                        // close modal and reload seller page to reflect new status
+                        closeOrderDetails();
+                        window.location.reload();
+                      } else {
+                        alert((j && j.error) || 'Failed to update order status');
+                      }
+                    } catch (err) {
+                      console.error('Order status update failed', err);
+                      alert('Failed to update order status');
+                    }
+                  });
+                });
+
+                // Attach dynamic modal-level action handlers for cancel/refund approve/reject
+                try {
+                  actionsContainer.querySelectorAll('.approve-cancel-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                      const orderId = this.dataset.orderId;
+                      Swal.fire({ title: 'Approve Cancellation?', text: 'The order will be marked as cancelled.', icon: 'warning', showCancelButton: true, confirmButtonText: 'Yes, Approve' }).then(result => {
+                        if (result.isConfirmed) {
+                          fetch('/order/cancel_decision', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, body: JSON.stringify({ order_id: orderId, decision: 'confirm' }) })
+                            .then(r => r.json()).then(j => { if (j.success) Swal.fire('Approved!', 'Cancellation approved.', 'success').then(() => location.reload()); else Swal.fire('Error', j.error || j.message || 'Failed.', 'error'); }).catch(e => Swal.fire('Error', e.message || 'Network error', 'error'));
+                        }
+                      });
+                    });
+                  });
+                  actionsContainer.querySelectorAll('.reject-cancel-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                      const orderId = this.dataset.orderId;
+                      const rejectHtml = `
+                        <label class="block text-left text-sm font-medium mb-1">Reason</label>
+                        <select id="swal-reject-reason" class="w-full border rounded px-2 py-1 mb-2">
+                          <option value="">-- Select reason --</option>
+                          <option value="Order has already been packed or shipped">Order has already been packed or shipped</option>
+                          <option value="Custom/personalized product already in production">Custom/personalized product already in production</option>
+                          <option value="Item is non-cancellable based on store policy">Item is non-cancellable based on store policy</option>
+                          <option value="Buyer requested cancellation too late">Buyer requested cancellation too late</option>
+                          <option value="Seller has already incurred preparation costs">Seller has already incurred preparation costs</option>
+                        </select>
+                        <label class="block text-left text-sm font-medium mb-1">Notes (optional)</label>
+                        <textarea id="swal-reject-notes" class="w-full border rounded px-2 py-1" rows="3" placeholder="Additional details (optional)"></textarea>
+                      `;
+                      Swal.fire({ title: 'Reject Cancellation? Provide a reason', html: rejectHtml, showCancelButton: true, confirmButtonText: 'Reject', focusConfirm: false, preConfirm: () => {
+                        const reasonEl = document.getElementById('swal-reject-reason');
+                        const notesEl = document.getElementById('swal-reject-notes');
+                        const reasonVal = reasonEl ? reasonEl.value.trim() : '';
+                        const notesVal = notesEl ? notesEl.value.trim() : '';
+                        if (!reasonVal) { Swal.showValidationMessage('Please select a reason'); return false; }
+                        return { reason: reasonVal, notes: notesVal };
+                      }}).then(result => {
+                        if (result.isConfirmed && result.value) {
+                          const clickedBtn = this;
+                          clickedBtn.disabled = true;
+                          fetch('/order/cancel_decision', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, body: JSON.stringify({ order_id: orderId, decision: 'reject', rejection_reason: result.value.reason, rejection_notes: result.value.notes }) })
+                            .then(r => r.json()).then(j => { if (j.success) Swal.fire('Rejected!', 'Cancellation request rejected.', 'success').then(() => location.reload()); else { clickedBtn.disabled = false; Swal.fire('Error', j.error || j.message || 'Failed.', 'error'); } }).catch(e => { clickedBtn.disabled = false; Swal.fire('Error', e.message || 'Network error', 'error'); });
+                        }
+                      });
+                    });
+                  });
+                  actionsContainer.querySelectorAll('.approve-refund-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                      const orderId = this.dataset.orderId;
+                      const approvalHtml = `
+                        <label class=\"block text-left text-sm font-medium mb-2\">Require return pickup?</label>
+                        <div class=\"flex gap-2 items-center\"><input type=\"checkbox\" id=\"swal-refund-return-required\"/> <label for=\"swal-refund-return-required\" class=\"text-sm text-gray-700\">Yes, the customer must return the product before refund</label></div>
+                      `;
+                      Swal.fire({ title: 'Accept Refund Request?', html: approvalHtml, icon: 'warning', showCancelButton: true, confirmButtonText: 'Accept', focusConfirm: false, preConfirm: () => {
+                        const cb = document.getElementById('swal-refund-return-required');
+                        return { return_required: cb ? cb.checked : false };
+                      }}).then(result => {
+                        if (result.isConfirmed) {
+                          fetch('/order/comply_refund', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, body: JSON.stringify({ order_id: orderId, comply: true, return_required: !!result.value.return_required, notes: (result.value.return_required ? 'Return required' : '') }) })
+                            .then(r => r.json()).then(j => { if (j.success) Swal.fire('Accepted!', j.message || 'Refund accepted and processed.', 'success').then(() => location.reload()); else Swal.fire('Error', j.error || j.message || 'Failed.', 'error'); }).catch(e => Swal.fire('Error', e.message || 'Network error', 'error'));
+                        }
+                      });
+                    });
+                  });
+                  actionsContainer.querySelectorAll('.reject-refund-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                      const orderId = this.dataset.orderId;
+                      const rejectHtml = `
+                        <label class=\"block text-left text-sm font-medium mb-1\">Reason</label>
+                        <select id=\"swal-refund-reject-reason\" class=\"w-full border rounded px-2 py-1 mb-2\">\n\
+                          <option value=\"\">-- Select reason --</option>\n\
+                          <option value=\"Item not defective\">Item not defective</option>\n\
+                          <option value=\"Buyer requested outside of refund window\">Buyer requested outside of refund window</option>\n\
+                          <option value=\"Missing evidence or photos\">Missing evidence or photos</option>\n\
+                          <option value=\"Non-refundable item\">Non-refundable item</option>\n\
+                          <option value=\"Other\">Other</option>\n\
+                        </select>\n\
+                        <label class=\"block text-left text-sm font-medium mb-1\">Notes (optional)</label>\n\
+                        <textarea id=\"swal-refund-reject-notes\" class=\"w-full border rounded px-2 py-1\" rows=\"3\" placeholder=\"Additional details (optional)\"></textarea>\n\
+                      `;
+                      Swal.fire({ title: 'Request Refund Decline?', html: rejectHtml, showCancelButton: true, confirmButtonText: 'Request to Decline', focusConfirm: false, preConfirm: () => {
+                        const reasonEl = document.getElementById('swal-refund-reject-reason');
+                        const notesEl = document.getElementById('swal-refund-reject-notes');
+                        const reasonVal = reasonEl ? reasonEl.value.trim() : '';
+                        const notesVal = notesEl ? notesEl.value.trim() : '';
+                        if (!reasonVal) { Swal.showValidationMessage('Please select a reason'); return false; }
+                        if (reasonVal === 'Other' && !notesVal) { Swal.showValidationMessage('Please provide details for "Other"'); return false; }
+                        return { reason: reasonVal, notes: notesVal };
+                      }}).then(result => {
+                        if (result.isConfirmed && result.value) {
+                          const clickedBtn = this;
+                          clickedBtn.disabled = true;
+                          fetch('/order/comply_refund', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, body: JSON.stringify({ order_id: orderId, comply: false, notes: (result.value.reason || '') + (result.value.notes ? ' — ' + result.value.notes : '') }) })
+                            .then(r => r.json()).then(j => { if (j.success) Swal.fire('Request Sent!', 'Decline request sent to admin for final decision.', 'success').then(() => location.reload()); else { clickedBtn.disabled = false; Swal.fire('Error', j.error || j.message || 'Failed.', 'error'); } }).catch(e => { clickedBtn.disabled = false; Swal.fire('Error', e.message || 'Network error', 'error'); });
+                        }
+                      });
+                    });
+                  });
+                  // Seller finalize refund (when return has been delivered to seller)
+                  actionsContainer.querySelectorAll('.finalize-refund-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                      const orderId = this.dataset.orderId;
+                      Swal.fire({ title: 'Confirm & Refund?', text: 'Mark returned items as received and issue a refund to the customer.', icon: 'warning', showCancelButton: true, confirmButtonText: 'Confirm & Refund' }).then(result => {
+                        if (result.isConfirmed) {
+                          const clickedBtn = this;
+                          clickedBtn.disabled = true;
+                          fetch('/order/seller_finalize_refund', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, body: JSON.stringify({ order_id: orderId }) })
+                            .then(r => r.json()).then(j => { if (j.success) Swal.fire('Refunded!', 'Order has been refunded.', 'success').then(() => location.reload()); else { clickedBtn.disabled = false; Swal.fire('Error', j.error || j.message || 'Failed to finalize refund.', 'error'); } }).catch(e => { clickedBtn.disabled = false; Swal.fire('Error', e.message || 'Network error', 'error'); });
+                        }
+                      });
+                    });
+                  });
+                } catch (e) { console.error('Failed to attach modal-level action handlers', e); }
+                try {
+                  document.querySelectorAll('#orderDetailsContent img.proof-thumb').forEach(img => {
+                    img.addEventListener('click', function() {
+                      const src = this.dataset.fullsrc || this.src;
+                      openProofModal(src);
+                    });
+                  });
+                } catch(e) { /* ignore */ }
+                try { const md = document.getElementById('orderDetailsModal'); if (md && md.parentNode !== document.body) document.body.appendChild(md); } catch(e) { /* ignore */ }
+                document.getElementById('orderDetailsModal').classList.remove('hidden');
+              }
+              // Event delegation for seller view-order-btn
+              (function initSellerViewOrderBtnDelegation() {
+                function onClick(ev) {
+                  const btn = ev.target.closest('.view-order-btn');
+                  if (!btn) return;
+                  ev.preventDefault();
+                  ev.stopPropagation();
+                  ev.stopImmediatePropagation();
+                  console.debug('seller view clicked', {dataset: btn.dataset});
+                  const orderId = parseInt(btn.getAttribute('data-order-id'));
+                  const rrId = (btn.dataset.rrId || btn.getAttribute('data-rr-id') || null);
+                  const effectiveRrId = (rrId === 'null' || rrId === 'undefined') ? null : rrId;
+                  if (effectiveRrId) {
+                    console.debug('seller opening return request modal', {rrId: effectiveRrId});
+                    showReturnRequestModal(effectiveRrId);
+                  } else {
+                    showOrderDetails(orderId, null);
+                  }
+                }
+                if (document.readyState === 'loading') {
+                  document.addEventListener('DOMContentLoaded', function() { document.addEventListener('click', onClick, true); });
+                } else {
+                  document.addEventListener('click', onClick, true);
+                }
+              })();
+              function closeReturnRequestModal() {
+                const md = document.getElementById('returnRequestModal');
+                if (md) md.classList.add('hidden');
+                const content = document.getElementById('returnRequestContent');
+                if (content) content.innerHTML = '';
+              }
+
+              function showReturnRequestModal(rrId) {
+                const rrMap = window.sellerReturnRequestsMap || {};
+                let rr = rrMap[rrId] || null;
+                if (!rr && window.sellerReturnRequests) {
+                  const arr = Array.isArray(window.sellerReturnRequests) ? window.sellerReturnRequests : Object.values(window.sellerReturnRequests || {});
+                  rr = arr.find(r => r && (String(r.id) === String(rrId) || String(r.order_id) === String(rrId)));
+                }
+                if (!rr) {
+                  console.debug('seller RR not found', {rrId, rrMapKeys: Object.keys(rrMap || {})});
+                  return alert('Return request not found.');
+                }
+                console.debug('showReturnRequestModal rr', rr);
+                // Build a layout similar to order modal, but without showing the rider
+                const orders = window.sellerOrders || [];
+                const itemsByOrder = window.sellerOrderItems || {};
+                const orderId = rr.order_id;
+                let order = orders.find(o => o.id === orderId) || null;
+                if (!order) {
+                  order = { id: orderId, shop_order_number: orderId, customer_name: rr.requested_by_name || rr.requested_by, customer_full_address: '-', vehicle: '-', total_amount: rr.refund_amount || '-', total_weight: '-' };
+                }
+                const items = itemsByOrder[orderId] || [];
+                let orderNumber = order.shop_order_number || order.id;
+                const shipFee = (order.shipping_fee !== undefined && order.shipping_fee !== null) ? Number(order.shipping_fee) : 0;
+                let html = `
+                  <div class="grid grid-cols-1 gap-4">
+                    <div class="flex items-center gap-2 text-lg font-semibold text-amber-600">
+                      <i class="bx bxs-truck text-2xl"></i> Order #${orderNumber}
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div class="md:col-span-2 space-y-2">
+                        <div class="flex gap-2 items-center">
+                          <span class="font-medium text-gray-700">Status:</span>
+                          <span class="px-2 py-1 rounded ${rr.status === 'delivered' ? 'bg-green-100 text-green-700 text-xs' : 'bg-gray-100 text-gray-700 text-xs'}">${rr.status || 'N/A'}</span>
+                        </div>
+                        <div class="flex gap-3 items-start">
+                          <i class="bx bxs-home text-xl text-gray-500"></i>
+                          <div>
+                            <div class="font-medium text-gray-700">Customer:</div>
+                            <div class="font-medium text-gray-800">${order.customer_name || 'Customer'}</div>
+                            <div class="text-sm text-gray-500 mt-1">${order.customer_full_address || '-'}</div>
+                          </div>
+                        </div>
+                        <div class="flex gap-2 items-center">
+                          <i class="bx bxs-package text-xl text-gray-500"></i>
+                          <span class="font-medium text-gray-700">Items:</span>
+                        </div>
+                        <div class="space-y-2 mt-1">
+                `;
+                for (const item of items) {
+                  const name = item.product_name || 'Product';
+                  const attrs = `${item.color ? ' • ' + item.color : ''}${item.size ? ' • ' + item.size : ''}`;
+                  html += `<div class="p-3 border rounded-lg flex items-center justify-between bg-white">
+                              <div>
+                                <div class="font-medium">${name}${attrs}</div>
+                                <div class="text-xs text-gray-500">Qty: ${item.quantity} · Price: ₱${item.price}</div>
+                              </div>
+                              <div class="text-sm font-semibold">₱${(Number(item.price) * Number(item.quantity)).toFixed(2)}</div>
+                            </div>`;
+                }
+                html += `</div></div>`;
+                html += `<div class="md:col-span-1 space-y-3">
+                          <div class="p-3 border rounded-lg bg-white">
+                            <div class="text-sm text-gray-500">Summary</div>
+                            <div class="mt-2 text-sm"><strong>Total Amount:</strong> ₱${order.total_amount || '?'}</div>
+                            <div class="text-sm mt-1"><strong>Shipping Fee:</strong> ₱${shipFee.toFixed(2)}</div>
+                            <div class="text-sm mt-1"><strong>Weight:</strong> ${order.total_weight || '-'} kg</div>
+                          </div>`;
+                if (order.proofs && order.proofs.length) {
+                  html += `<div class="p-3 border rounded-lg bg-white">
+                             <div class="text-sm text-gray-500">Delivery Proofs</div>
+                             <div class="mt-2 flex gap-2 flex-wrap">`;
+                  for (const pf of order.proofs) {
+                    const src = sellerProofUrl(pf);
+                    html += `<div class="w-24 h-24 rounded overflow-hidden border cursor-pointer">
+                               <img src="${src}" data-fullsrc="${src}" alt="proof" class="w-full h-full object-cover proof-thumb" />
+                             </div>`;
+                  }
+                  html += `</div></div>`;
+                }
+                html += `</div></div>`;
+                html += `<div class="mt-3 p-3 border rounded-lg bg-white text-sm">
+                           <div class="font-medium mb-1">Return Request</div>
+                           <div><strong>Reason:</strong> ${rr.reason || '-'}</div>
+                           <div><strong>Status:</strong> ${rr.status || '-'}</div>
+                           ${ rr.requested_at ? `<div><strong>Requested at:</strong> ${rr.requested_at}</div>` : '' }
+                           <div><strong>Notes:</strong> ${rr.notes || rr.notes_text || '-'}</div>
+                           ${ rr.processed_by_name ? `<div><strong>Processed by:</strong> ${rr.processed_by_name}</div>` : '' }
+                         </div>`;
+                const requestedByVal = rr.requested_by_role === 'admin' ? 'Admin' : (rr.requested_by_name || rr.requested_by || '-');
+                document.getElementById('returnRequestContent').innerHTML = html + `<div class="mt-2 text-sm text-gray-700"><strong>Requested by:</strong> ${requestedByVal}</div>`;
+                // Attach click to proofs to open full image if any
+                try {
+                  document.querySelectorAll('#returnRequestContent img.proof-thumb').forEach(img => { img.addEventListener('click', function() { const s = this.dataset.fullsrc || this.src; openProofModal(s); }); });
+                } catch(e) { /* ignore */ }
+                // Move modal to body so it's visible regardless of section container
+                try { const md = document.getElementById('returnRequestModal'); if (md && md.parentNode !== document.body) document.body.appendChild(md); } catch(e) { /* ignore */ }
+                document.getElementById('returnRequestModal').classList.remove('hidden');
+              }
+              console.debug('initSellerViewOrderBtnDelegation initialized');
+              function closeOrderDetails() {
+                document.getElementById('orderDetailsModal').classList.add('hidden');
+              }
+            </script>
+            
+            <script>
+              function filterSellerOrders(status) {
+                const rows = document.querySelectorAll('.seller-order-row');
+                rows.forEach(row => {
+                  if (status === 'all' || row.dataset.status === status) {
+                    row.style.display = '';
+                  } else {
+                    row.style.display = 'none';
+                  }
+                });
+                // highlight active button
+                document.querySelectorAll('.order-status-filter-btn').forEach(btn => {
+                  btn.classList.remove('bg-amber-500','border-amber-500','text-white');
+                  btn.classList.add('bg-white','border-gray-300','text-gray-600');
+                });
+                const activeBtn = document.querySelector('.order-status-filter-btn[data-status="' + status + '"]');
+                if (activeBtn) {
+                  activeBtn.classList.add('bg-amber-500','border-amber-500','text-white');
+                  activeBtn.classList.remove('bg-white','border-gray-300','text-gray-600');
+                }
+              }
+              
+              // Approve/Reject cancel requests
+              document.addEventListener('DOMContentLoaded', function() {
+                // ensure sellers orders default to 'all'
+                filterSellerOrders('all');
+                
+                // Cancel request approve buttons
+                document.querySelectorAll('.approve-cancel-btn').forEach(btn => {
+                  btn.addEventListener('click', function() {
+                    const orderId = this.dataset.orderId;
+                    Swal.fire({
+                      title: 'Approve Cancellation?',
+                      text: 'The order will be marked as cancelled.',
+                      icon: 'warning',
+                      showCancelButton: true,
+                      confirmButtonText: 'Yes, Approve',
+                      cancelButtonText: 'Cancel',
+                      buttonsStyling: false,
+                      customClass: {
+                        popup: "rounded-2xl shadow-lg p-4 bg-white border border-gray-200",
+                        title: "text-lg font-semibold text-gray-800",
+                        htmlContainer: "text-sm text-gray-600",
+                        confirmButton: "bg-green-500 text-white px-3 py-1.5 rounded-md text-xs hover:bg-green-600 mx-1",
+                        cancelButton: "bg-gray-300 text-gray-700 px-3 py-1.5 rounded-md text-xs hover:bg-gray-400 mx-1"
+                      }
+                    }).then(result => {
+                        if (result.isConfirmed) {
+                        const clickedBtn = this;
+                        clickedBtn.disabled = true;
+                        fetch('/order/cancel_decision', {
+                          method: 'POST',
+                          credentials: 'same-origin',
+                          headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                          body: JSON.stringify({ order_id: orderId, decision: 'confirm' })
+                        })
+                        .then(res => res.json())
+                        .then(data => {
+                          if (data.success) {
+                            Swal.fire('Approved!', 'Cancellation approved.', 'success').then(() => location.reload());
+                          } else {
+                            clickedBtn.disabled = false;
+                            Swal.fire('Error', data.message || 'Failed to approve.', 'error');
+                          }
+                        })
+                        .catch(err => { clickedBtn.disabled = false; Swal.fire('Error', err.message, 'error'); });
+                      }
+                    });
+                  });
+                });
+                
+                // Cancel request reject buttons
+                document.querySelectorAll('.reject-cancel-btn').forEach(btn => {
+                  btn.addEventListener('click', function() {
+                    const orderId = this.dataset.orderId;
+                    const rejectHtml = `
+                      <label class="block text-left text-sm font-medium mb-1">Reason</label>
+                      <select id="swal-reject-reason" class="w-full border rounded px-2 py-1 mb-2">
+                        <option value="">-- Select reason --</option>
+                        <option value="Order has already been packed or shipped">Order has already been packed or shipped</option>
+                        <option value="Custom/personalized product already in production">Custom/personalized product already in production</option>
+                        <option value="Item is non-cancellable based on store policy">Item is non-cancellable based on store policy</option>
+                        <option value="Buyer requested cancellation too late">Buyer requested cancellation too late</option>
+                        <option value="Seller has already incurred preparation costs">Seller has already incurred preparation costs</option>
+                      </select>
+                      <label class="block text-left text-sm font-medium mb-1">Notes (optional)</label>
+                      <textarea id="swal-reject-notes" class="w-full border rounded px-2 py-1" rows="3" placeholder="Additional details (optional)"></textarea>
+                    `;
+                    Swal.fire({ title: 'Reject Cancellation? Provide a reason', html: rejectHtml, showCancelButton: true, confirmButtonText: 'Reject', cancelButtonText: 'Cancel', buttonsStyling: false, customClass: { popup: "rounded-2xl shadow-lg p-4 bg-white border border-gray-200", title: "text-lg font-semibold text-gray-800", htmlContainer: "text-sm text-gray-600", confirmButton: "bg-red-500 text-white px-3 py-1.5 rounded-md text-xs hover:bg-red-600 mx-1", cancelButton: "bg-gray-300 text-gray-700 px-3 py-1.5 rounded-md text-xs hover:bg-gray-400 mx-1" }, focusConfirm: false, preConfirm: () => {
+                      const reasonEl = document.getElementById('swal-reject-reason');
+                      const notesEl = document.getElementById('swal-reject-notes');
+                      const reasonVal = reasonEl ? reasonEl.value.trim() : '';
+                      const notesVal = notesEl ? notesEl.value.trim() : '';
+                      if (!reasonVal) { Swal.showValidationMessage('Please select a reason'); return false; }
+                      return { reason: reasonVal, notes: notesVal };
+                    }}).then(result => {
+                        if (result.isConfirmed && result.value) {
+                        const clickedBtn = this;
+                        clickedBtn.disabled = true;
+                        fetch('/order/cancel_decision', {
+                          method: 'POST',
+                          credentials: 'same-origin',
+                          headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                          body: JSON.stringify({ order_id: orderId, decision: 'reject', rejection_reason: result.value.reason, rejection_notes: result.value.notes })
+                        })
+                        .then(res => res.json())
+                        .then(data => {
+                          if (data.success) {
+                            Swal.fire('Rejected!', 'Cancellation request rejected.', 'success').then(() => location.reload());
+                          } else {
+                            clickedBtn.disabled = false;
+                            Swal.fire('Error', data.message || 'Failed to reject.', 'error');
+                          }
+                        })
+                        .catch(err => { clickedBtn.disabled = false; Swal.fire('Error', err.message, 'error'); });
+                      }
+                    });
+                  });
+                });
+                
+                // Refund request approve buttons
+                document.querySelectorAll('.approve-refund-btn').forEach(btn => {
+                  btn.addEventListener('click', function() {
+                    const orderId = this.dataset.orderId;
+                    Swal.fire({
+                      title: 'Accept Refund Request?',
+                      text: 'The refund will be accepted immediately.',
+                      icon: 'warning',
+                      showCancelButton: true,
+                      confirmButtonText: 'Accept',
+                      cancelButtonText: 'Cancel',
+                      buttonsStyling: false,
+                      customClass: {
+                        popup: "rounded-2xl shadow-lg p-4 bg-white border border-gray-200",
+                        title: "text-lg font-semibold text-gray-800",
+                        htmlContainer: "text-sm text-gray-600",
+                        confirmButton: "bg-green-500 text-white px-3 py-1.5 rounded-md text-xs hover:bg-green-600 mx-1",
+                        cancelButton: "bg-gray-300 text-gray-700 px-3 py-1.5 rounded-md text-xs hover:bg-gray-400 mx-1"
+                      }
+                    }).then(result => {
+                        if (result.isConfirmed) {
+                        const clickedBtn = this;
+                        clickedBtn.disabled = true;
+                        fetch('/order/comply_refund', {
+                          method: 'POST',
+                          credentials: 'same-origin',
+                          headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                          body: JSON.stringify({ order_id: orderId, comply: true })
+                        })
+                        .then(res => res.json())
+                        .then(data => {
+                          if (data.success) {
+                            Swal.fire('Accepted!', data.message || 'Refund accepted and processed.', 'success').then(() => location.reload());
+                          } else {
+                            clickedBtn.disabled = false;
+                            Swal.fire('Error', data.message || data.error || 'Failed to accept.', 'error');
+                          }
+                        })
+                        .catch(err => { clickedBtn.disabled = false; Swal.fire('Error', err.message, 'error'); });
+                      }
+                    });
+                  });
+                });
+                
+                // Refund request reject buttons
+                document.querySelectorAll('.reject-refund-btn').forEach(btn => {
+                  btn.addEventListener('click', function() {
+                    const orderId = this.dataset.orderId;
+                    Swal.fire({
+                      title: 'Request Refund Decline?',
+                      text: 'Your decline request will be sent to admin for final decision.',
+                      icon: 'warning',
+                      showCancelButton: true,
+                      confirmButtonText: 'Request to Decline',
+                      cancelButtonText: 'Cancel',
+                      buttonsStyling: false,
+                      customClass: {
+                        popup: "rounded-2xl shadow-lg p-4 bg-white border border-gray-200",
+                        title: "text-lg font-semibold text-gray-800",
+                        htmlContainer: "text-sm text-gray-600",
+                        confirmButton: "bg-red-500 text-white px-3 py-1.5 rounded-md text-xs hover:bg-red-600 mx-1",
+                        cancelButton: "bg-gray-300 text-gray-700 px-3 py-1.5 rounded-md text-xs hover:bg-gray-400 mx-1"
+                      }
+                    }).then(result => {
+                        if (result.isConfirmed) {
+                        const clickedBtn = this;
+                        clickedBtn.disabled = true;
+                        fetch('/order/comply_refund', {
+                          method: 'POST',
+                          credentials: 'same-origin',
+                          headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                          body: JSON.stringify({ order_id: orderId, comply: false })
+                        })
+                        .then(res => res.json())
+                        .then(data => {
+                          if (data.success) {
+                            Swal.fire('Request Sent!', 'Decline request sent to admin for final decision.', 'success').then(() => location.reload());
+                          } else {
+                            clickedBtn.disabled = false;
+                            Swal.fire('Error', data.message || data.error || 'Failed to request decline.', 'error');
+                          }
+                        })
+                        .catch(err => { clickedBtn.disabled = false; Swal.fire('Error', err.message, 'error'); });
+                      }
+                    });
+                  });
+                });
+                // Table-level finalize refund buttons (Seller Return Requests table)
+                document.querySelectorAll('#seller-return-requests-body .finalize-refund-btn').forEach(btn => {
+                  btn.addEventListener('click', function() {
+                    const orderId = this.dataset.orderId;
+                    Swal.fire({ title: 'Confirm & Refund?', text: 'Mark returned items as received and issue a refund to the customer.', icon: 'warning', showCancelButton: true, confirmButtonText: 'Confirm & Refund' }).then(result => {
+                      if (result.isConfirmed) {
+                        const clickedBtn = this;
+                        clickedBtn.disabled = true;
+                        fetch('/order/seller_finalize_refund', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, body: JSON.stringify({ order_id: orderId }) })
+                          .then(r => r.json()).then(j => { if (j.success) Swal.fire('Refunded!', 'Order has been refunded.', 'success').then(() => location.reload()); else { clickedBtn.disabled = false; Swal.fire('Error', j.error || j.message || 'Failed to finalize refund.', 'error'); } }).catch(e => { clickedBtn.disabled = false; Swal.fire('Error', e.message || 'Network error', 'error'); });
+                      }
+                    });
+                  });
+                });
+              });
+            </script>
+          </section>
+          <!--SETTINGS-->
+          <section id="settings" class="section hidden">
+            <h2 class="text-2xl font-semibold mb-6">⚙️ Seller Settings</h2>
+
+            <!-- 🧭 Settings Tabs -->
+            <div class="flex flex-wrap gap-3 mb-6">
+              <button onclick="showSettingsTab('profileTab')"
+                class="settings-btn bg-amber-100 text-amber-700 px-4 py-2 rounded-lg font-medium hover:bg-amber-200 transition">
+                👤 Profile
+              </button>
+              <button onclick="showSettingsTab('addressTab')"
+                class="settings-btn bg-white border border-gray-200 px-4 py-2 rounded-lg hover:bg-gray-100 transition">
+                📍 Address
+              </button>
+              <button onclick="showSettingsTab('securityTab')"
+                class="settings-btn bg-white border border-gray-200 px-4 py-2 rounded-lg hover:bg-gray-100 transition">
+                🔒 Security
+              </button>
+            </div>
+
+            <!-- 👤 Profile Settings -->
+            <div id="profileTab" class="settings-section">
+              <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                <form method="POST" action="{{ url_for('update_profile') }}" enctype="multipart/form-data" class="space-y-6">
+                <!-- Profile Picture -->
+                <div class="flex items-center gap-4 mb-4">
+                        <img id="seller-profile-preview" src="{{ media_url(user_info.profile_pic, 'image/default-avatar.png') }}" 
+                          alt="Profile" class="w-20 h-20 rounded-full object-cover border border-gray-200">
+                      <div>
+                        <p class="text-sm text-gray-600">Upload a new profile picture</p>
+                        <input id="seller_profile_picture" type="file" name="profile_picture" accept="image/*" class="mt-2 text-sm" />
+                      </div>
+                    </div>
+
+                <!-- Full Name -->
+                <div>
+                    <label class="block text-sm text-gray-600 mb-1">Full Name</label>
+                    <input
+                        type="text"
+                        name="fullname"
+                        value="{{ user_info.fullname or '' }}"
+                        class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-400 outline-none"
+                        placeholder="John Doe"
+                        required
+                    />
+                </div>
+
+                <button type="button" onclick="showConfirmation('Are you sure you want to update your profile?', () => document.querySelector('#profileTab form').submit())" class="mt-4 bg-amber-500 text-white px-5 py-2 rounded-lg hover:bg-amber-600 transition">
+                    Save Changes
+                </button>
+            </form>
+              </div>
+            </div>
+
+            <!-- 📍 Address Information -->
+            <div id="addressTab" class="settings-section hidden">
+              <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                <h3 class="text-lg font-semibold mb-4 text-gray-700">Address Information</h3>
+
+                {% if addresses %}
+                  <div class="space-y-3">
+                    {% for a in addresses %}
+                      <div class="p-4 border rounded-lg bg-gray-50 flex justify-between items-start">
+                        <div>
+                          <p class="font-medium">{{ a.street }}</p>
+                          <p class="text-sm text-gray-600">
+                            {{ a.barangay_name }}, {{ a.city_name }}, {{ a.province_name }}, {{ a.region_name }}
+                          </p>
+                          {% if a.is_default %}
+                            <span class="text-green-600 text-xs font-semibold">Default</span>
+                          {% endif %}
+                        </div>
+                        <div class="flex gap-2">
+                          {% if not a.is_default %}
+                            <form action="{{ url_for('set_default_address', address_id=a.id) }}" method="POST">
+                              <button type="submit" class="text-blue-600 text-sm hover:underline">Set as default</button>
+                            </form>
+                          {% endif %}
+                          <form action="{{ url_for('seller_delete_address', address_id=a.id) }}" method="POST" onsubmit="return confirm('Delete this address?');">
+                              <button type="submit" class="text-red-500 text-sm hover:underline">Delete</button>
+                          </form>
+                        </div>
+                      </div>
+                    {% endfor %}
+                  </div>
+                {% else %}
+                  <p class="text-gray-500 text-sm mb-4">No addresses saved yet.</p>
+                {% endif %}
+
+                <form method="POST" action="{{ url_for('seller_save_address') }}" id="addressForm" class="space-y-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Region</label>
+                  <select id="region" name="region" class="w-full p-2 border rounded"></select>
+                  <input type="hidden" id="region_name" name="region_name">
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Province</label>
+                  <select id="province" name="province" class="w-full p-2 border rounded"></select>
+                  <input type="hidden" id="province_name" name="province_name">
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">City / Municipality</label>
+                  <select id="city" name="city" class="w-full p-2 border rounded"></select>
+                  <input type="hidden" id="city_name" name="city_name">
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Barangay</label>
+                  <select id="barangay" name="barangay" class="w-full p-2 border rounded"></select>
+                  <input type="hidden" id="barangay_name" name="barangay_name">
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Street</label>
+                  <input type="text" name="street" class="w-full p-2 border rounded" placeholder="Street name">
+                </div>
+
+                <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Save Address</button>
+              </form>
+              </div>
+            </div>
+
+            <div id="securityTab" class="settings-section hidden">
+              <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                <h3 class="text-lg font-semibold mb-4 text-gray-700">Security Settings</h3>
+                <form method="POST" action="{{ url_for('update_profile') }}" class="space-y-4">
+                  <div>
+                    <label class="block text-sm text-gray-600 mb-1">Current Password</label>
+                    <input type="password" name="current_password" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-400 outline-none" />
+                  </div>
+                  <div>
+                    <label class="block text-sm text-gray-600 mb-1">New Password</label>
+                    <input type="password" name="new_password" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-400 outline-none" />
+                  </div>
+                  <div>
+                    <label class="block text-sm text-gray-600 mb-1">Confirm New Password</label>
+                    <input type="password" name="confirm_new_password" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-400 outline-none" />
+                  </div>
+                  <button type="button" onclick="showConfirmation('Are you sure you want to change your password?', () => document.querySelector('#securityTab form').submit())" class="mt-4 bg-amber-500 text-white px-5 py-2 rounded-lg hover:bg-amber-600 transition">Update Password</button>
+                </form>
+              </div>
+            </div>
+          </section>
+
+
+        </main>
+      </div>
+
+      <!-- Confirmation Dialog -->
+      <div id="confirmationModal" class="hidden fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-2xl p-6 max-w-sm">
+          <p id="confirmationMessage" class="text-gray-700 mb-6"></p>
+          <div class="flex gap-3 justify-end">
+            <button onclick="closeConfirmation()" class="px-4 py-2 rounded-lg bg-gray-300 text-gray-800 hover:bg-gray-400 transition">
+              Cancel
+            </button>
+            <button id="confirmButton" onclick="confirmAction()" class="px-4 py-2 rounded-lg bg-amber-500 text-white hover:bg-amber-600 transition">
+              Confirm
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <script>
+      let confirmationAction = null;
+
+      function showConfirmation(message, action) {
+        document.getElementById('confirmationMessage').textContent = message;
+        confirmationAction = action;
+        document.getElementById('confirmationModal').classList.remove('hidden');
+      }
+
+      function closeConfirmation() {
+        document.getElementById('confirmationModal').classList.add('hidden');
+        confirmationAction = null;
+      }
+
+      function confirmAction() {
+        if (confirmationAction) {
+          confirmationAction();
+        }
+        closeConfirmation();
+      }
+      </script>
+
+      <!-- Logout Confirmation Modal -->
+    <div
+      id="logout-modal"
+      class="fixed inset-0 bg-black/40 hidden z-[100] flex items-center justify-center"
+    >
+      <div
+        class="bg-white rounded-xl p-6 w-[90%] max-w-sm text-center shadow-lg transform scale-95 opacity-0 transition-all duration-300"
+      >
+        <i class="bx bx-log-out text-5xl text-amber-500 mb-3"></i>
+        <h2 class="text-xl font-semibold mb-2">Confirm Logout</h2>
+        <p class="text-gray-600 mb-6">
+          Are you sure you want to log out of your account?
+        </p>
+
+        <div class="flex justify-center gap-3">
+          <button
+            id="cancel-logout"
+            class="px-5 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition"
+          >
+            Cancel
+          </button>
+          <a
+            href="{{ url_for('logout') }}"
+            id="confirm-logout"
+            class="px-5 py-2 rounded-lg bg-amber-500 text-white hover:bg-amber-600 transition"
+          >
+            Yes, Logout
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Proof Image Modal -->
+    <div id="proofImageModal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-[9999]">
+      <div class="relative">
+        <button onclick="closeProofModal()" class="absolute right-2 top-2 text-white bg-black/30 rounded-full p-1">✕</button>
+        <img id="proofImageModalImg" src="" alt="Proof Image" class="max-h-[80vh] max-w-[90vw] rounded-lg shadow-lg" />
+      </div>
+    </div>
+
+      <!-- 🧠 SCRIPT -->
+      <script>
+  /* =========================
+     🌟 SECTION MANAGEMENT
+  ========================== */
+  function showSection(id) {
+    document.querySelectorAll(".section").forEach(sec => sec.classList.add("hidden"));
+    const section = document.getElementById(id);
+    if (section) section.classList.remove("hidden");
+
+    // Highlight sidebar buttons
+    document.querySelectorAll(".nav-btn").forEach(btn => {
+      btn.classList.remove("bg-amber-100", "text-amber-600");
+    });
+    document.querySelectorAll(`button[onclick="showSection('${id}')"]`).forEach(btn => {
+      btn.classList.add("bg-amber-100", "text-amber-600");
+    });
+
+    // Save current section and update the URL hash without automatic scrolling
+    localStorage.setItem("lastSection", id);
+    if (history.replaceState) {
+      history.replaceState(null, '', '#' + id);
+    } else {
+      window.location.hash = id;
+    }
+    // Ensure the viewport and internal content container start at the top of the page after switching sections
+    try { window.scrollTo({ top: 0, behavior: 'auto' }); } catch (e) { window.scrollTo(0,0); }
+    const mainEl = document.querySelector('main') || document.querySelector('.flex-1');
+    if (mainEl) try { mainEl.scrollTop = 0; } catch(e) { /* ignore */ }
+  }
+
+  // Shortcut to show Return Requests section (used from notification links)
+  function showSellerReturnRequests() {
+    showSection('return_requests');
+  }
+
+  /* =========================
+     ⚙️ SETTINGS TAB MANAGEMENT
+  ========================== */
+  // Proof image modal controls
+  function openProofModal(src) {
+    const modal = document.getElementById('proofImageModal');
+    const img = document.getElementById('proofImageModalImg');
+    if (!modal || !img) return;
+    img.src = src || '';
+    // ensure modal is last in body so it stacks above other modals
+    try { document.body.appendChild(modal); } catch(e) { /* ignore */ }
+    // ensure very high z-index in case other stacking contexts exist
+    modal.style.zIndex = 9999;
+    modal.classList.remove('hidden');
+    // click backdrop to close
+    modal.addEventListener('click', function backdropClose(e) {
+      if (e.target === modal) {
+        closeProofModal();
+        modal.removeEventListener('click', backdropClose);
+      }
+    });
+  }
+
+  function closeProofModal() {
+    const modal = document.getElementById('proofImageModal');
+    const img = document.getElementById('proofImageModalImg');
+    if (modal) modal.classList.add('hidden');
+    if (img) img.src = '';
+  }
+  function showSettingsTab(tabId) {
+    document.querySelectorAll(".settings-section").forEach(tab => tab.classList.add("hidden"));
+    const tabEl = document.getElementById(tabId);
+    if (tabEl) tabEl.classList.remove("hidden");
+
+    // Button style update
+    document.querySelectorAll(".settings-btn").forEach(btn => {
+      btn.classList.remove("bg-amber-100", "text-amber-700");
+      btn.classList.add("bg-white", "border", "border-gray-200");
+    });
+    const activeTab = document.querySelector(`button[onclick="showSettingsTab('${tabId}')"]`);
+    if (activeTab) {
+      activeTab.classList.add("bg-amber-100", "text-amber-700");
+      activeTab.classList.remove("border", "border-gray-200");
+    }
+
+    // Save last tab
+    localStorage.setItem("lastSettingsTab", tabId);
+    if (history.replaceState) {
+      history.replaceState(null, '', '#settings/' + tabId);
+    } else {
+      window.location.hash = 'settings/' + tabId;
+    }
+    // scroll main content to top (account for internal scrolling)
+    const mainEl = document.querySelector('main') || document.querySelector('.flex-1');
+    if (mainEl) try { mainEl.scrollTop = 0; } catch(e) { /* ignore */ }
+  }
+
+  /* =========================
+     🔍 PRODUCT SEARCH
+  ========================== */
+  (function() {
+    const searchInput = document.getElementById('seller-search-input');
+    if (!searchInput) return;
+    
+    function performSearch() {
+      const query = searchInput.value.toLowerCase().trim();
+      const allRows = document.querySelectorAll('tbody tr');
+      
+      allRows.forEach(row => {
+        // Skip empty state rows (colspan rows)
+        if (row.querySelector('[colspan]')) return;
+        
+        // Get product name from the second column (td[1])
+        const nameCell = row.cells[1];
+        const productName = nameCell ? nameCell.textContent.toLowerCase() : '';
+        
+        // Show row if query matches product name, or if query is empty
+        if (query === '' || productName.includes(query)) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    }
+    
+    searchInput.addEventListener('input', performSearch);
+    searchInput.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        performSearch();
+      }
+    });
+  })();
+
+  /* =========================
+     🛒 PRODUCT SUB-TABS
+     (approved / pending / archived / deleted)
+  ========================== */
+  function showProductSection(section) {
+    const sections = ['approved', 'pending', 'archived', 'deleted'];
+    sections.forEach(s => {
+      const el = document.getElementById(`${s}-products`);
+      if (el) el.classList.add("hidden");
+    });
+
+    const active = document.getElementById(`${section}-products`);
+    if (active) active.classList.remove("hidden");
+
+    // Highlight active tab button (pill-style)
+    document.querySelectorAll(".product-tab-btn").forEach(btn => {
+      btn.classList.remove('bg-amber-500','border-amber-500','text-white');
+      btn.classList.add('bg-white','border-gray-300','text-gray-600');
+    });
+    const activeBtn = document.querySelector(`button[onclick="showProductSection('${section}')"]`);
+    if (activeBtn) {
+      activeBtn.classList.add('bg-amber-500','border-amber-500','text-white');
+      activeBtn.classList.remove('bg-white','border-gray-300','text-gray-600');
+    }
+
+    // Save which product sub-tab is open
+    localStorage.setItem("lastProductTab", section);
+  }
+
+  /* =========================
+     🔁 RESTORE LAST VIEW
+  ========================== */
+  document.addEventListener("DOMContentLoaded", function () {
+    // Always default to dashboard on page load (fresh login)
+    showSection('dashboard');
+
+    // Default product tab
+    showProductSection("approved");
+
+    // Default settings tab
+    const lastSettings = localStorage.getItem('lastSettingsTab') || 'profileTab';
+    showSettingsTab(lastSettings);
+});
+      </script>
+
+      <!-- Logout Modal Script -->
+    <script>
+      const logoutLinks = document.querySelectorAll(
+        "a[href='{{ url_for('logout') }}']:not(#confirm-logout)"
+      );
+      const modal = document.getElementById("logout-modal");
+      const modalBox = modal.querySelector("div");
+      const cancelBtn = document.getElementById("cancel-logout");
+      const confirmBtn = document.getElementById("confirm-logout");
+
+      // Show modal on logout link click (excluding modal button)
+      logoutLinks.forEach((link) => {
+        link.addEventListener("click", (e) => {
+          e.preventDefault();
+          modal.classList.remove("hidden");
+          setTimeout(() => {
+            modalBox.classList.remove("opacity-0", "scale-95");
+            modalBox.classList.add("opacity-100", "scale-100");
+          }, 10);
+        });
+      });
+
+      // Hide modal on cancel
+      cancelBtn.addEventListener("click", () => {
+        modalBox.classList.remove("opacity-100", "scale-100");
+        modalBox.classList.add("opacity-0", "scale-95");
+        setTimeout(() => modal.classList.add("hidden"), 200);
+      });
+
+      // Hide modal when clicking outside the box
+      modal.addEventListener("click", (e) => {
+        if (e.target === modal) cancelBtn.click();
+      });
+
+      // Proceed with logout when confirmed
+      confirmBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        window.location.href = confirmBtn.href;
+      });
+    </script>
+
+      <script>
+    // ⚙️ Settings tab switching
+    function showSettingsTab(tabId) {
+      document.querySelectorAll('.settings-section').forEach(sec => sec.classList.add('hidden'));
+      document.getElementById(tabId).classList.remove('hidden');
+
+      // Update button styles
+      document.querySelectorAll('.settings-btn').forEach(btn => {
+        btn.classList.remove('bg-amber-100', 'text-amber-700');
+        btn.classList.add('bg-white', 'border', 'border-gray-200');
+      });
+      document
+        .querySelector(`button[onclick="showSettingsTab('${tabId}')"]`)
+        .classList.add('bg-amber-100', 'text-amber-700');
+      // prevent hash jumping and scroll main area to top
+      if (history.replaceState) {
+        history.replaceState(null, '', '#settings/' + tabId);
+      } else {
+        window.location.hash = 'settings/' + tabId;
+      }
+      const mainEl = document.querySelector('main') || document.querySelector('.flex-1');
+      if (mainEl) try { mainEl.scrollTop = 0; } catch(e) { /* ignore */ }
+    }
+
+    // Default active settings tab
+    document.addEventListener('DOMContentLoaded', () => showSettingsTab('profileTab'));
+    
+    // Profile picture preview
+    try {
+      const sellerInput = document.getElementById('seller_profile_picture');
+      const sellerPreview = document.getElementById('seller-profile-preview');
+      if (sellerInput && sellerPreview) {
+        sellerInput.addEventListener('change', (e) => {
+          const f = e.target.files && e.target.files[0];
+          if (!f) return;
+          try {
+            const url = URL.createObjectURL(f);
+            sellerPreview.src = url;
+          } catch (err) {
+            // fallback to reader
+            const reader = new FileReader();
+            reader.onload = function(ev) { sellerPreview.src = ev.target.result; };
+            reader.readAsDataURL(f);
+          }
+        });
+      }
+    } catch (e) { console.error('seller preview attach failed', e); }
+      </script> 
+
+      <script>
+  async function fetchRegions() {
+    const response = await fetch("https://psgc.gitlab.io/api/regions/");
+    const regions = await response.json();
+    const regionSelect = document.getElementById("region");
+    regions.forEach(region => {
+      const option = document.createElement("option");
+      option.value = region.code;
+      option.textContent = region.name;
+      regionSelect.appendChild(option);
+    });
+  }
+
+  async function fetchProvinces(regionCode) {
+    const response = await fetch(`https://psgc.gitlab.io/api/regions/${regionCode}/provinces/`);
+    const provinces = await response.json();
+    const provinceSelect = document.getElementById("province");
+    provinceSelect.innerHTML = '<option value="">Select Province</option>';
+    provinces.forEach(province => {
+      const option = document.createElement("option");
+      option.value = province.code;
+      option.textContent = province.name;
+      provinceSelect.appendChild(option);
+    });
+    provinceSelect.disabled = false;
+  }
+
+  async function fetchCities(provinceCode) {
+    const response = await fetch(`https://psgc.gitlab.io/api/provinces/${provinceCode}/cities-municipalities/`);
+    const cities = await response.json();
+    const citySelect = document.getElementById("city");
+    citySelect.innerHTML = '<option value="">Select City/Municipality</option>';
+    cities.forEach(city => {
+      const option = document.createElement("option");
+      option.value = city.code;
+      option.textContent = city.name;
+      citySelect.appendChild(option);
+    });
+    citySelect.disabled = false;
+  }
+
+  async function fetchBarangays(cityCode) {
+    const response = await fetch(`https://psgc.gitlab.io/api/cities-municipalities/${cityCode}/barangays/`);
+    const barangays = await response.json();
+    const barangaySelect = document.getElementById("barangay");
+    barangaySelect.innerHTML = '<option value="">Select Barangay</option>';
+    barangays.forEach(brgy => {
+      const option = document.createElement("option");
+      option.value = brgy.code;
+      option.textContent = brgy.name;
+      barangaySelect.appendChild(option);
+    });
+    barangaySelect.disabled = false;
+  }
+
+  // 🧩 Event Listeners for Dependent Dropdowns
+  document.getElementById("region").addEventListener("change", (e) => {
+    const regionCode = e.target.value;
+    document.getElementById("province").disabled = true;
+    document.getElementById("city").disabled = true;
+    document.getElementById("barangay").disabled = true;
+    if (regionCode) fetchProvinces(regionCode);
+  });
+
+  document.getElementById("province").addEventListener("change", (e) => {
+    const provinceCode = e.target.value;
+    document.getElementById("city").disabled = true;
+    document.getElementById("barangay").disabled = true;
+    if (provinceCode) fetchCities(provinceCode);
+  });
+
+  document.getElementById("city").addEventListener("change", (e) => {
+    const cityCode = e.target.value;
+    document.getElementById("barangay").disabled = true;
+    if (cityCode) fetchBarangays(cityCode);
+  });
+
+  // Initialize Regions on Load
+  fetchRegions();
+      </script>
+
+      <script>
+    // 🕒 Automatically hide flash messages after 2 seconds
+    document.addEventListener("DOMContentLoaded", () => {
+      const flash = document.getElementById("flashMessage");
+      if (flash) {
+        setTimeout(() => {
+          flash.style.transition = "opacity 0.5s ease";
+          flash.style.opacity = "0";
+          setTimeout(() => flash.remove(), 500);
+        }, 1000); // 👈 2 seconds delay before fade starts
+      }
+    });
+      </script>
+
+      <script>
+    const regionSelect = document.getElementById("region");
+    const provinceSelect = document.getElementById("province");
+    const citySelect = document.getElementById("city");
+    const barangaySelect = document.getElementById("barangay");
+
+    const regionNameInput = document.getElementById("region_name");
+    const provinceNameInput = document.getElementById("province_name");
+    const cityNameInput = document.getElementById("city_name");
+    const barangayNameInput = document.getElementById("barangay_name");
+
+    // Whenever a dropdown changes, store its selected text into the hidden input
+    regionSelect.addEventListener("change", () => {
+      regionNameInput.value = regionSelect.options[regionSelect.selectedIndex].text;
+    });
+
+    provinceSelect.addEventListener("change", () => {
+      provinceNameInput.value = provinceSelect.options[provinceSelect.selectedIndex].text;
+    });
+
+    citySelect.addEventListener("change", () => {
+      cityNameInput.value = citySelect.options[citySelect.selectedIndex].text;
+    });
+
+    barangaySelect.addEventListener("change", () => {
+      barangayNameInput.value = barangaySelect.options[barangaySelect.selectedIndex].text;
+    });
+      </script>
+        
+      <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+      <script>
+  /* 🟡 Confirmation for Editing */
+  document.getElementById("editForm").addEventListener("submit", function(event) {
+    event.preventDefault(); // Stop form for confirmation
+
+    Swal.fire({
+      title: "Save Changes?",
+      text: "Your edits will be sent for admin review.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, Save",
+      cancelButtonText: "Cancel",
+      buttonsStyling: false,
+      customClass: {
+        popup: "rounded-2xl shadow-lg p-4 bg-white border border-gray-200",
+        title: "text-lg font-semibold text-gray-800",
+        htmlContainer: "text-sm text-gray-600",
+        confirmButton: "bg-amber-500 text-white px-3 py-1.5 rounded-md text-xs hover:bg-amber-600 mx-1",
+        cancelButton: "bg-gray-300 text-gray-700 px-3 py-1.5 rounded-md text-xs hover:bg-gray-400 mx-1"
+      },
+      width: "22rem"
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.submit();
+      }
+    });
+  });
+
+
+  /* 🔴 Confirmation for Deleting */
+  document.querySelectorAll("form[action*='delete_product']").forEach(form => {
+    form.addEventListener("submit", function(event) {
+      event.preventDefault(); // Stop immediate submission
+
+      Swal.fire({
+        title: "Delete Product?",
+        text: "This will move the product to Deleted status.",
+        icon: "error",
+        showCancelButton: true,
+        confirmButtonText: "Yes, Delete",
+        cancelButtonText: "Cancel",
+        buttonsStyling: false,
+        customClass: {
+          popup: "rounded-2xl shadow-lg p-4 bg-white border border-gray-200",
+          title: "text-lg font-semibold text-gray-800",
+          htmlContainer: "text-sm text-gray-600",
+          confirmButton: "bg-red-500 text-white px-3 py-1.5 rounded-md text-xs hover:bg-red-600 mx-1",
+          cancelButton: "bg-gray-300 text-gray-700 px-3 py-1.5 rounded-md text-xs hover:bg-gray-400 mx-1"
+        },
+        width: "22rem"
+      }).then((result) => {
+        if (result.isConfirmed) {
+          this.submit();
+        }
+      });
+    });
+  });
+      </script>
+
+      <script>
+      function openAddProductModal() {
+        document.getElementById('addProductModal').classList.remove('hidden');
+      }
+      function closeAddProductModal() {
+        document.getElementById('addProductModal').classList.add('hidden');
+      }
+      </script>
+      
+      <!-- variants-->
+      <script>
+      function toggleVariantMode() {
+        const mode = document.getElementById("variantMode").value;
+        const single = document.getElementById("singleVariantSection");
+        const double = document.getElementById("doubleVariantSection");
+        const baseStock = document.getElementById("baseStockInput");
+
+        // Toggle variant sections
+        single.classList.toggle("hidden", mode !== "single");
+        double.classList.toggle("hidden", mode !== "double");
+
+        // Hide base stock if any variant exists
+        if (mode === "none") {
+          baseStock.classList.remove("hidden");
+          baseStock.required = true;
+        } else {
+          baseStock.classList.add("hidden");
+          baseStock.required = false;
+        }
+      }
+
+      const variantTypeSelect = document.querySelector('#singleVariantSection select[name="variant_type"]');
+variantTypeSelect.addEventListener('change', () => {
+    const variantType = variantTypeSelect.value;
+    const rows = document.querySelectorAll('#singleVariantList .variant-row');
+
+    rows.forEach(row => {
+        const nameFieldContainer = row.querySelector('.variant-name-container');
+        let value = row.querySelector('input, select')?.value || '';
+
+        // Replace content based on variant type
+        if (variantType === "size") {
+            nameFieldContainer.innerHTML = `
+                <select name="variant_name[]" class="border rounded px-2 py-1 w-1/4 variant-name-field" required>
+                    <option value="">--Select Size--</option>
+                    <option value="Small" ${value==="Small" ? "selected":""}>Small</option>
+                    <option value="Medium" ${value==="Medium" ? "selected":""}>Medium</option>
+                    <option value="Large" ${value==="Large" ? "selected":""}>Large</option>
+                </select>
+            `;
+        } else {
+            nameFieldContainer.innerHTML = `
+                <input type="text" name="variant_name[]" value="${value}" placeholder="Color (e.g. Red)" class="border rounded px-2 py-1 w-1/4 variant-name-field" required>
+            `;
+        }
+    });
+});
+
+function addSingleVariant() {
+    const variantType = variantTypeSelect.value;
+    const container = document.getElementById("singleVariantList");
+    const div = document.createElement("div");
+    div.classList.add("border", "rounded", "p-2", "mt-1", "variant-row");
+
+    // Container for variant name input/select
+    let variantInput = "";
+    if (variantType === "size") {
+        variantInput = `
+            <div class="variant-name-container">
+                <select name="variant_name[]" class="border rounded px-2 py-1 w-1/4 variant-name-field" required>
+                    <option value="">--Select Size--</option>
+                    <option value="Small">Small</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Large">Large</option>
+                </select>
+            </div>
+        `;
+    } else {
+        variantInput = `
+            <div class="variant-name-container">
+                <input type="text" name="variant_name[]" placeholder="Color (e.g. Red)" class="border rounded px-2 py-1 w-1/4 variant-name-field" required>
+            </div>
+        `;
+    }
+
+    div.innerHTML = `
+      ${variantInput}
+      <input type="number" name="variant_price[]" step="0.01" placeholder="₱ Price" class="border rounded px-2 py-1 w-1/4" required>
+      <input type="number" name="variant_stock[]" placeholder="Stock" class="border rounded px-2 py-1 w-1/4">
+      <input type="number" name="variant_weight[]" step="0.01" min="0" placeholder="Weight (kg)" class="border rounded px-2 py-1 w-1/4" required>
+      <input type="file" name="variant_image[]" accept="image/*" class="border rounded px-2 py-1 mt-1 w-full">
+      <button type="button" onclick="this.parentElement.remove()" class="text-xs text-red-500 mt-1">Remove</button>
+    `;
+    container.appendChild(div);
+}
+
+      function addDoubleVariant() {
+    const container = document.getElementById("doubleVariantList");
+    const div = document.createElement("div");
+    div.classList.add("border", "rounded", "p-2", "mt-1");
+
+    div.innerHTML = `
+      <input type="text" name="variant_color[]" placeholder="Color (e.g. White)" class="border rounded px-2 py-1 w-1/5" required>
+      <select name="variant_size[]" class="border rounded px-2 py-1 w-1/5">
+        <option value="">--Select Size--</option>
+        <option value="Small">Small</option>
+        <option value="Medium">Medium</option>
+        <option value="Large">Large</option>
+      </select>
+      <input type="number" name="variant_price[]" step="0.01" placeholder="₱ Price" class="border rounded px-2 py-1 w-1/5" required>
+      <input type="number" name="variant_stock[]" placeholder="Stock" class="border rounded px-2 py-1 w-1/5">
+      <input type="number" name="variant_weight[]" step="0.01" min="0" placeholder="Weight (kg)" class="border rounded px-2 py-1 w-1/5" required>
+      <input type="file" name="variant_image[]" accept="image/*" class="border rounded px-2 py-1 mt-1 w-full">
+      <button type="button" onclick="this.parentElement.remove()" class="text-xs text-red-500 mt-1">Remove</button>
+    `;
+    container.appendChild(div);
+}
+
+      </script>
+
+      <script>
+function toggleEditVariantMode() {
+  const mode = document.getElementById("editVariantMode").value;
+  const single = document.getElementById("editSingleVariantSection");
+  const double = document.getElementById("editDoubleVariantSection");
+  const stock = document.getElementById("editStock");
+
+  single.classList.toggle("hidden", mode !== "single");
+  double.classList.toggle("hidden", mode !== "double");
+
+  stock.classList.toggle("hidden", mode !== "none");
+  stock.required = (mode === "none");
+}
+
+// --- Add/Edit single variant row ---
+function addEditSingleVariant(variant = {}, variantType = "color") {
+  const container = document.getElementById("editSingleVariantList");
+  const div = document.createElement("div");
+  div.classList.add("border", "rounded", "p-2", "mt-1", "variant-row");
+
+  const value = variant.name || "";
+
+  let variantInput = "";
+  if (variantType === "size") {
+    variantInput = `
+      <div class="variant-name-container">
+        <select name="variant_name[]" class="border rounded px-2 py-1 w-1/4 variant-name-field" required>
+          <option value="">--Select Size--</option>
+          <option value="Small" ${value==="Small" ? "selected":""}>Small</option>
+          <option value="Medium" ${value==="Medium" ? "selected":""}>Medium</option>
+          <option value="Large" ${value==="Large" ? "selected":""}>Large</option>
+        </select>
+      </div>
+    `;
+  } else {
+    variantInput = `
+      <div class="variant-name-container">
+        <input type="text" name="variant_name[]" value="${value}" placeholder="Color (e.g. Red)" class="border rounded px-2 py-1 w-1/4 variant-name-field" required>
+      </div>
+    `;
+  }
+
+  div.innerHTML = `
+    <input type="hidden" name="variant_id[]" value="${variant.id || ''}">
+    ${variantInput}
+    <input type="number" name="variant_price[]" step="0.01" value="${variant.price || ''}" placeholder="₱ Price" class="border rounded px-2 py-1 w-1/4" required>
+    <input type="number" name="variant_stock[]" value="${variant.stock || ''}" placeholder="Stock" class="border rounded px-2 py-1 w-1/4">
+    <input type="number" name="variant_weight[]" step="0.01" min="0" value="${variant.weight || variant.weight_kg || ''}" placeholder="Weight (kg)" class="border rounded px-2 py-1 w-1/4">
+    <input type="file" name="variant_image[]" accept="image/*" class="border rounded px-2 py-1 mt-1 w-full">
+    <button type="button" onclick="this.parentElement.remove()" class="text-xs text-red-500 mt-1">Remove</button>
+  `;
+  container.appendChild(div);
+}
+
+// --- Add/Edit double variant row ---
+function addEditDoubleVariant(data = {}) {
+  const container = document.getElementById("editDoubleVariantList");
+  const div = document.createElement("div");
+  div.classList.add("border", "rounded", "p-2", "mt-1");
+
+  div.innerHTML = `
+    <input type="hidden" name="variant_id[]" value="${data.id || ''}">
+    <input type="text" name="variant_color[]" value="${data.color || ''}" placeholder="Color" class="border rounded px-2 py-1 w-1/5" required>
+    <input type="text" name="variant_size[]" value="${data.size || ''}" placeholder="Size" class="border rounded px-2 py-1 w-1/5">
+    <input type="number" name="variant_price[]" value="${data.price || ''}" step="0.01" placeholder="₱ Price" class="border rounded px-2 py-1 w-1/5" required>
+    <input type="number" name="variant_stock[]" value="${data.stock || ''}" placeholder="Stock" class="border rounded px-2 py-1 w-1/5">
+    <input type="number" name="variant_weight[]" step="0.01" min="0" value="${data.weight || data.weight_kg || ''}" placeholder="Weight (kg)" class="border rounded px-2 py-1 w-1/5">
+    <input type="file" name="variant_image[]" accept="image/*" class="border rounded px-2 py-1 mt-1 w-1/5">
+    <button type="button" onclick="this.parentElement.remove()" class="text-xs text-red-500 mt-1">Remove</button>
+  `;
+  container.appendChild(div);
+}
+
+// --- Open modal and populate data ---
+function openEditModal(button) {
+  const id = button.dataset.id;
+  const name = button.dataset.name;
+  const category = button.dataset.category;
+  const description = button.dataset.description;
+  const price = button.dataset.price;
+  const stock = button.dataset.stock;
+  const variants = JSON.parse(button.dataset.variants || "[]");
+
+  document.getElementById("editProductId").value = id;
+  document.getElementById("editName").value = name;
+  document.getElementById("editCategory").value = category;
+  if (window.tinymce && tinymce.get("editDescription")) {
+    tinymce.get("editDescription").setContent(description || "");
+  } else {
+    document.getElementById("editDescription").value = description;
+  }
+  document.getElementById("editPrice").value = price;
+  document.getElementById("editStock").value = stock;
+
+  let mode = "none";
+  let variantType = "color";
+
+  if (variants.length > 0) {
+    if (variants[0].color && variants[0].size) mode = "double";
+    else {
+      mode = "single";
+      variantType = variants[0].color ? "color" : "size";
+    }
+  }
+
+  document.getElementById("editVariantMode").value = mode;
+  toggleEditVariantMode();
+
+  document.getElementById("editVariantType").innerHTML = `
+    <option value="color" ${variantType==="color"?"selected":""}>Color</option>
+    <option value="size" ${variantType==="size"?"selected":""}>Size</option>
+  `;
+
+  document.getElementById("editSingleVariantList").innerHTML = "";
+  document.getElementById("editDoubleVariantList").innerHTML = "";
+
+  if (mode === "single") {
+    variants.forEach(v => addEditSingleVariant({
+      id: v.id,
+      name: v.color || v.size || "",
+      price: v.price,
+      stock: v.stock,
+      weight: v.weight || v.weight_kg
+    }, variantType));
+  } else if (mode === "double") {
+    variants.forEach(v => addEditDoubleVariant({
+      id: v.id,
+      color: v.color,
+      size: v.size,
+      price: v.price,
+      stock: v.stock,
+      weight: v.weight || v.weight_kg
+    }));
+  }
+  
+  document.getElementById("editModal").classList.remove("hidden");
+}
+
+// --- Close modal ---
+function closeEditModal() {
+  document.getElementById("editModal").classList.add("hidden");
+}
+
+// --- Change variant type dynamically ---
+document.getElementById("editVariantType").addEventListener("change", (e) => {
+  const variantType = e.target.value;
+  const rows = document.querySelectorAll('#editSingleVariantList .variant-row');
+  rows.forEach(row => {
+    const v = {
+      id: row.querySelector('input[name="variant_id[]"]').value,
+      name: row.querySelector('input[name="variant_name[]"], select[name="variant_name[]"]').value,
+      price: row.querySelector('input[name="variant_price[]"]').value,
+      stock: row.querySelector('input[name="variant_stock[]"]').value,
+      weight: row.querySelector('input[name="variant_weight[]"]').value
+    };
+    row.remove();
+    addEditSingleVariant(v, variantType);
+  });
+});
+
+// ===== SELLER MESSAGING SYSTEM =====
+let sellerMessagingInterval = null;
+let sellerSelectedConvo = null;
+
+async function initSellerMessaging() {
+  // Load conversations when Messages section is shown
+  const messagesSection = document.getElementById('messages');
+  if (!messagesSection) return;
+  
+  // Load conversations on page load and set up periodic refresh
+  await fetchSellerConversations();
+  
+  // Set up message send form
+  const sendForm = document.getElementById('seller-send-form');
+  if (sendForm) {
+    sendForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      await sendSellerMessage();
+    });
+  }
+  
+  // Set up periodic refresh
+  if (sellerMessagingInterval) clearInterval(sellerMessagingInterval);
+  sellerMessagingInterval = setInterval(async () => {
+    if (sellerSelectedConvo) {
+      await loadSellerConversation(sellerSelectedConvo);
+    }
+  }, 2000);
+}
+
+async function fetchSellerConversations() {
+  try {
+    const res = await fetch('/api/conversations');
+    const data = await res.json();
+    
+    const convoList = document.getElementById('seller-convo-list');
+    if (!convoList) return;
+    
+    if (!data.conversations || data.conversations.length === 0) {
+      convoList.innerHTML = '<div class="text-gray-400 text-sm text-center py-4">No conversations yet</div>';
+      return;
+    }
+    
+    convoList.innerHTML = data.conversations.map(conv => `
+      <div class="p-3 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-50 transition ${sellerSelectedConvo === conv.id ? 'bg-amber-50 border-amber-300' : ''}" 
+           onclick="loadSellerConversation(${conv.id})">
+        <div class="font-semibold text-sm text-gray-800">${conv.other_user_name || 'Customer'}</div>
+        <div class="text-xs text-gray-500 truncate">${conv.last_message_body ? conv.last_message_body.substring(0, 30) + '...' : 'No messages yet'}</div>
+        <div class="text-xs text-gray-400 mt-1">${new Date(conv.updated_at).toLocaleDateString()}</div>
+        ${conv.unread_count > 0 ? `<span class="text-xs bg-red-500 text-white px-2 py-1 rounded-full mt-1 inline-block">${conv.unread_count}</span>` : ''}
+      </div>
+    `).join('');
+  } catch (error) {
+    console.error('Error fetching seller conversations:', error);
+  }
+}
+
+async function loadSellerConversation(convoId) {
+  try {
+    sellerSelectedConvo = convoId;
+    
+    // Fetch messages for this conversation
+    const res = await fetch(`/api/conversations/${convoId}/messages`);
+    const data = await res.json();
+    
+    if (data.conversation) {
+      // Update header
+      const header = document.getElementById('seller-chat-header');
+      const avatar = document.getElementById('seller-chat-avatar');
+      const name = document.getElementById('seller-chat-name');
+      const product = document.getElementById('seller-chat-product');
+      
+      avatar.textContent = (data.conversation.other_user_name || 'U')[0].toUpperCase();
+      name.textContent = data.conversation.other_user_name || 'Customer';
+      product.textContent = data.conversation.product_name ? `📦 ${data.conversation.product_name}` : '';
+      
+      // Update conversation ID for sending
+      document.getElementById('seller-conversation-id').value = convoId;
+    }
+    
+    // Display messages
+    const messagesDiv = document.getElementById('seller-messages');
+    if (!data.messages || data.messages.length === 0) {
+      messagesDiv.innerHTML = '<div class="text-gray-400 text-center py-8">No messages yet. Start the conversation!</div>';
+      return;
+    }
+    
+    messagesDiv.innerHTML = data.messages.map(msg => `
+      <div class="flex ${msg.is_mine ? 'justify-end' : 'justify-start'}">
+        <div class="max-w-xs ${msg.is_mine ? 'bg-amber-500 text-white' : 'bg-gray-200 text-gray-800'} rounded-lg px-4 py-2">
+          <div class="text-sm">${escapeHtml(msg.body)}</div>
+          <div class="text-xs ${msg.is_mine ? 'text-amber-100' : 'text-gray-600'} mt-1">${new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+        </div>
+      </div>
+    `).join('');
+    
+    // Scroll to bottom
+    messagesDiv.parentElement.scrollTop = messagesDiv.parentElement.scrollHeight;
+    
+    // Refresh conversation list
+    await fetchSellerConversations();
+  } catch (error) {
+    console.error('Error loading seller conversation:', error);
+  }
+}
+
+async function sendSellerMessage() {
+  const convoId = document.getElementById('seller-conversation-id').value;
+  const body = document.getElementById('seller-message-body').value.trim();
+  
+  if (!convoId || !body) return;
+  
+  try {
+    const res = await fetch('/message/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'conversation_id=' + encodeURIComponent(convoId) + '&body=' + encodeURIComponent(body)
+    });
+    
+    if (res.ok) {
+      document.getElementById('seller-message-body').value = '';
+      await loadSellerConversation(convoId);
+    }
+  } catch (error) {
+    console.error('Error sending message:', error);
+  }
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// ===== START NEW CHAT MODAL =====
+let allCustomers = [];
+
+function openStartChatModal() {
+  document.getElementById('startChatModal').classList.remove('hidden');
+  fetchAvailableCustomers();
+  document.getElementById('customerSearchInput').value = '';
+}
+
+function closeStartChatModal() {
+  document.getElementById('startChatModal').classList.add('hidden');
+}
+
+async function fetchAvailableCustomers() {
+  try {
+    const res = await fetch('/api/seller/customers');
+    const data = await res.json();
+    
+    if (data.success && data.customers) {
+      allCustomers = data.customers;
+      renderCustomerList(allCustomers);
+    }
+  } catch (error) {
+    console.error('Error fetching customers:', error);
+  }
+}
+
+function renderCustomerList(customers) {
+  const customerList = document.getElementById('customerList');
+  
+  if (customers.length === 0) {
+    customerList.innerHTML = '<div class="text-gray-400 text-sm text-center py-4">No customers yet</div>';
+    return;
+  }
+  
+  customerList.innerHTML = customers.map(customer => `
+    <div class="p-3 border border-gray-200 rounded-lg hover:bg-amber-50 cursor-pointer transition" 
+         onclick="startChatWithCustomer(${customer.id}, '${escapeHtml(customer.fullname)}')">
+      <div class="flex items-center gap-3">
+        ${customer.profile_pic ? `<img src="${customer.profile_pic}" alt="${customer.fullname}" class="w-10 h-10 rounded-full object-cover">` : `<div class="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center font-semibold text-gray-700">${customer.fullname[0].toUpperCase()}</div>`}
+        <div>
+          <div class="font-semibold text-sm text-gray-900">${escapeHtml(customer.fullname)}</div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+document.getElementById('customerSearchInput').addEventListener('input', (e) => {
+  const searchTerm = e.target.value.toLowerCase();
+  const filtered = allCustomers.filter(c => c.fullname.toLowerCase().includes(searchTerm));
+  renderCustomerList(filtered);
+});
+
+function startChatWithCustomer(customerId, customerName) {
+  closeStartChatModal();
+  window.location.href = `/seller/chat/${customerId}`;
+}
+
+// Initialize messaging when page loads
+document.addEventListener('DOMContentLoaded', initSellerMessaging);
+      </script>
+
+    </body>
+  </html>

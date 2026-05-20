@@ -1,0 +1,2595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Petopia Admin Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Custom style for product description HTML */
+    #product-description-html ul {
+      list-style-type: disc;
+      margin-left: 1.5em;
+      margin-bottom: 1em;
+    }
+    #product-description-html ol {
+      list-style-type: decimal;
+      margin-left: 1.5em;
+      margin-bottom: 1em;
+    }
+    #product-description-html li {
+      margin-bottom: 0.25em;
+    }
+    #product-description-html p {
+      margin-bottom: 0.5em;
+    }
+    /* Active tab styles for admin filter buttons */
+    .product-tab-btn.active,
+    .user-tab-btn.active,
+    .archived-tab-btn.active {
+      background-color: #f59e0b !important; /* Tailwind amber-500 */
+      border-color: #f59e0b !important;
+      color: #fff !important;
+    }
+  </style>
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='image/petopia-favicon.svg') }}" />
+
+
+</head>
+<body class="flex bg-gray-50 min-h-screen text-gray-800">
+
+  <!-- Sidebar -->
+  <aside class="w-64 bg-white shadow-lg hidden md:flex flex-col p-6">
+  <a href="{{ url_for('homepage') }}" class="mb-4 inline-flex">
+    <img src="{{ url_for('static', filename='image/petopia-logo.png') }}" alt="Petopia" class="h-28 w-auto max-w-none" />
+  </a>
+
+  {% if session.get("fullname") %}<div class="text-center mb-6"><p class="text-lg font-semibold text-gray-700">{{ session.fullname }}</p></div>{% endif %}
+
+  <ul class="space-y-1">
+  <li><button onclick="showSection('dashboard')" class="nav-btn w-full flex items-center gap-2 p-2 rounded-lg bg-amber-100 text-amber-600 font-normal"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M3 3h8v8H3V3zm0 10h8v8H3v-8zm10-10h8v8h-8V3zm0 10h8v8h-8v-8z"/></svg> Dashboard</button></li>
+  <li><button onclick="showSection('orders')" class="nav-btn w-full flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 text-gray-800 font-normal"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h12v2H3v-2z"/></svg> Orders</button></li>
+  <li><button onclick="showSection('products')" class="nav-btn w-full flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 text-gray-800 font-normal"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M4 6l8-4 8 4-8 4-8-4zm0 2l8 4 8-4v8l-8 4-8-4V8z"/></svg> Products</button></li>
+  <li><button onclick="showSection('users')" class="nav-btn w-full flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 text-gray-800 font-normal"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.67 0 8 1.34 8 4v4H4v-4c0-2.66 5.33-4 8-4zm0-2a4 4 0 100-8 4 4 0 000 8z"/></svg> Users</button></li>
+  <li><button onclick="showSection('archived')" class="nav-btn w-full flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 text-gray-800 font-normal"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M3 3h18v4H3V3zm0 6h18v12H3V9zm6 2v8l6-4-6-4z"/></svg> Archived</button></li>
+  <li><button onclick="showSection('reports')" class="nav-btn w-full flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 text-gray-800 font-normal"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M3 3h2v18H3V3zm4 6h2v12H7V9zm4-4h2v16h-2V5zm4 8h2v8h-2v-8zm4-6h2v14h-2V7z"/></svg> Reports</button></li>
+  <li><button onclick="showSection('settings')" class="nav-btn w-full flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 text-gray-800 font-normal"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M19.14 12.936a7.988 7.988 0 000-1.872l2.036-1.576a.5.5 0 00.121-.637l-1.928-3.336a.5.5 0 00-.607-.22l-2.396.96a7.953 7.953 0 00-1.62-.936l-.36-2.52A.5.5 0 0014.25 2h-4.5a.5.5 0 00-.494.432l-.36 2.52a7.953 7.953 0 00-1.62.936l-2.396-.96a.5.5 0 00-.607.22L2.7 8.851a.5.5 0 00.121.637l2.036 1.576a7.988 7.988 0 000 1.872l-2.036 1.576a.5.5 0 00-.121.637l1.928 3.336a.5.5 0 00.607.22l2.396-.96a7.953 7.953 0 001.62.936l.36 2.52a.5.5 0 00.494.432h4.5a.5.5 0 00.494-.432l.36-2.52a7.953 7.953 0 001.62-.936l2.396.96a.5.5 0 00.607-.22l1.928-3.336a.5.5 0 00-.121-.637l-2.036-1.576zM12 15.5a3.5 3.5 0 110-7 3.5 3.5 0 010 7z"/></svg> Settings</button></li>
+  <li><a href="{{ url_for('adminlogout') }}" id="logout-btn" class="block w-full flex items-center gap-2 p-2 rounded-lg hover:bg-red-100 text-red-500 font-normal"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M16 13v-2H7V8l-5 4 5 4v-3h9zM20 3h-8v2h8v14h-8v2h8a2 2 0 002-2V5a2 2 0 00-2-2z"/></svg> Logout</a></li>
+
+</ul>
+
+</aside>
+
+
+
+  <!-- Main Content -->
+  <main class="flex-1 flex flex-col min-h-[120vh]">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div id="flash-message" class="fixed top-5 right-5 bg-amber-500 text-white px-4 py-2 rounded-lg shadow-lg">
+          {% for category, message in messages %}
+            {{ message }}
+          {% endfor %}
+        </div>
+        <script>
+          setTimeout(() => {
+            const flash = document.getElementById('flash-message');
+            if (flash) flash.remove();
+          }, 1000);
+        </script>
+      {% endif %}
+    {% endwith %}
+
+    <!-- Top Bar -->
+    <header class="flex items-center justify-between bg-white shadow-sm px-6 py-4">
+      <div class="flex items-center gap-3">
+        <button id="menu-btn" class="text-2xl md:hidden">☰</button>
+        <h1 class="text-xl font-semibold text-gray-700">Admin Dashboard</h1>
+      </div>
+      <div class="flex items-center gap-6">
+        <div class="relative">
+          <button id="notif-btn" class="text-2xl focus:outline-none">
+            <span class="bx bxs-bell"></span>
+            {% set unread_count = notifications|selectattr('is_read', 'equalto', False)|list|length %}
+            {% if unread_count > 0 %}
+              <span class="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">{{ unread_count }}</span>
+            {% endif %}
+          </button>
+          <div id="notif-dropdown" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-gray-100 z-50">
+            <div class="p-4 border-b flex items-center justify-between">
+              <div class="font-semibold text-gray-700">Notifications</div>
+              <form method="post" action="{{ url_for('mark_all_notifications_read') }}">
+                <button type="submit" class="text-xs text-blue-600 hover:underline">Mark all as read</button>
+              </form>
+            </div>
+            <ul class="max-h-80 overflow-y-auto">
+              {% for notif in notifications|sort(attribute='created_at', reverse=True) %}
+                <li data-notif-id="{{ notif.id }}" data-target="{{ notif.target_url or '#' }}" class="px-4 py-3 border-b last:border-b-0 {{ 'bg-amber-50' if not notif.is_read else '' }} flex items-center justify-between gap-2 cursor-pointer">
+                  <div>
+                    <div class="text-sm text-gray-800">{{ notif.message }}</div>
+                    <div class="text-xs text-gray-400 mt-1">{{ notif.created_at.strftime('%b %d, %Y %I:%M %p') }}</div>
+                  </div>
+                  {% if not notif.is_read %}
+                  <form class="mark-notif-form" method="post" action="{{ url_for('mark_notification_read') }}">
+                    <input type="hidden" name="notification_id" value="{{ notif.id }}">
+                    <button type="submit" class="text-xs text-blue-600 hover:underline ml-2">Mark as read</button>
+                  </form>
+                  {% endif %}
+                </li>
+              {% else %}
+                <li class="px-4 py-3 text-gray-500 text-sm">No notifications.</li>
+              {% endfor %}
+            </ul>
+          </div>
+          <!-- Proof image modal (shared) -->
+          <div id="proofImageModal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-[9999]">
+            <img id="proofImageModalImg" src="" alt="Proof Image" class="max-h-[80vh] max-w-[90vw] rounded-lg shadow-lg" />
+          </div>
+        </div>
+        <input type="text" placeholder="Search..."
+          class="border rounded-full pl-4 pr-10 py-2 text-sm focus:ring-2 focus:ring-amber-400 outline-none" />
+        <span class="text-xl">🔍</span>
+      </div>
+        <script>
+          // Toggle notification dropdown
+          document.addEventListener('DOMContentLoaded', function() {
+            const btn = document.getElementById('notif-btn');
+            const dropdown = document.getElementById('notif-dropdown');
+            if (btn && dropdown) {
+              btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                dropdown.classList.toggle('hidden');
+              });
+              document.addEventListener('click', function(e) {
+                if (!dropdown.classList.contains('hidden')) {
+                  dropdown.classList.add('hidden');
+                }
+              });
+            }
+          });
+          // Add click handler for admin notifications to mark as read and redirect
+          const notifDropdownEl = document.getElementById('notif-dropdown');
+          if (notifDropdownEl) {
+            notifDropdownEl.addEventListener('click', async (ev) => {
+              const li = ev.target.closest('li[data-notif-id]');
+              if (!li) return;
+              if (ev.target.closest('form.mark-notif-form')) return;
+              const notifId = li.getAttribute('data-notif-id');
+              const target = li.getAttribute('data-target');
+              if (notifId) {
+                try {
+                  await fetch("{{ url_for('mark_notification_read') }}", { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' }, body: 'notification_id=' + encodeURIComponent(notifId) });
+                } catch (e) {}
+              }
+              if (target && target !== '#') {
+                window.location.href = target;
+              }
+            });
+          }
+        </script>
+    </header>
+
+    <!-- Content Sections -->
+    <section id="dashboard" class="section p-6 space-y-6">
+      <div class="bg-gradient-to-r from-amber-500 to-amber-600 text-white p-6 rounded-2xl shadow">
+        <h2 class="text-2xl font-semibold">Welcome back, Admin!</h2>
+        <p class="opacity-90 text-sm">Here’s an overview of your store performance today.</p>
+      </div>
+
+      <!-- Stats -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="bg-white p-5 rounded-xl shadow border border-amber-100 flex flex-col items-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mb-3 text-amber-600" fill="currentColor" viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-0.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-0.9-2-2-2z"/></svg>
+          <h3 class="text-2xl font-bold text-amber-600">{{ orders_today }}</h3>
+          <p class="text-gray-500 text-sm">Orders Today</p>
+        </div>
+        <div class="bg-white p-5 rounded-xl shadow border border-amber-100 flex flex-col items-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mb-3 text-amber-600" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+          <h3 class="text-2xl font-bold text-amber-600">{{ active_users }}</h3>
+          <p class="text-gray-500 text-sm">Active Users</p>
+        </div>
+        <div class="bg-white p-5 rounded-xl shadow border border-amber-100 flex flex-col items-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mb-3 text-amber-600" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+          <h3 class="text-2xl font-bold text-amber-600">₱{{ admin_total_income | default(0) | round(2) }}</h3>
+          <p class="text-xs text-gray-400 mt-1">Today: ₱{{ admin_earnings_today | default(0) | round(2) }}</p>
+          <p class="text-gray-500 text-sm">Revenue</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Seller Income Summary -->
+    <section class="section p-6">
+      <h2 class="text-xl font-semibold mb-4">Top Sellers by Income</h2>
+      <div class="overflow-x-auto bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+        <table class="w-full text-sm">
+          <thead class="bg-amber-100 text-gray-700 uppercase text-xs">
+            <tr>
+              <th class="py-3 px-4 text-left">Seller</th>
+              <th class="py-3 px-4 text-right">Total Income</th>
+              <th class="py-3 px-4 text-right">Completed Orders</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in sellers_income %}
+              <tr class="border-t hover:bg-gray-50">
+                <td class="py-2 px-4">{{ s.fullname or 'Unknown' }}</td>
+                <td class="py-2 px-4 text-right">₱{{ s.total_income | float | round(2) }}</td>
+                <td class="py-2 px-4 text-right">{{ s.completed_orders }}</td>
+              </tr>
+            {% else %}
+              <tr><td colspan="3" class="text-center py-4 text-gray-500">No seller data yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Orders -->
+    <section id="orders" class="section hidden p-6">
+      <div class="flex items-center gap-2 mb-4">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-amber-600" fill="currentColor" viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-0.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-0.9-2-2-2z"/></svg>
+        <h2 class="text-xl font-semibold">Orders</h2>
+      </div>
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+        <div class="mb-4">
+          {% set steps = [('all', 'All'), ('pending', 'Pending'), ('processing', 'Processing'), ('ready_for_pickup', 'Ready for Pickup'), ('shipped', 'Shipped'), ('delivered', 'Delivered'), ('completed', 'Completed'), ('cancel_request', 'Cancel Requests'), ('cancelled', 'Cancelled'), ('refund_request', 'Refund Requests'), ('refunded', 'Refunded')] %}
+          <div class="relative inline-block">
+            <button id="admin-order-filter-btn" class="px-4 py-1.5 rounded-full bg-white border border-gray-300 text-gray-700 text-sm font-semibold focus:outline-none transition flex items-center gap-2 hover:bg-gray-50">
+              <span id="admin-order-filter-label">All</span>
+              <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+            </button>
+            <div id="admin-order-filter-dropdown" class="hidden absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-40 min-w-40 max-h-96 overflow-y-auto">
+              {% for status, label in steps %}
+                <button type="button" class="order-status-filter-btn w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition {% if status == 'all' %}bg-amber-100 text-amber-900 font-medium{% endif %}" data-status="{{ status }}" onclick="filterAdminOrders('{{ status }}'); toggleAdminOrderFilterDropdown();">{{ label }}</button>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+        <script>
+          function toggleAdminOrderFilterDropdown() {
+            const dropdown = document.getElementById('admin-order-filter-dropdown');
+            dropdown.classList.toggle('hidden');
+          }
+          function updateAdminOrderFilterLabel(status) {
+            const stepLabels = {
+              'all': 'All',
+              'pending': 'Pending',
+              'processing': 'Processing',
+              'ready_for_pickup': 'Ready for Pickup',
+              'shipped': 'Shipped',
+              'delivered': 'Delivered',
+              'completed': 'Completed',
+              'cancel_request': 'Cancel Requests',
+              'cancelled': 'Cancelled',
+              'refund_request': 'Refund Requests',
+              'refunded': 'Refunded'
+            };
+            document.getElementById('admin-order-filter-label').textContent = stepLabels[status] || status;
+            document.querySelectorAll('.order-status-filter-btn').forEach(btn => {
+              if (btn.dataset.status === status) {
+                btn.classList.add('bg-amber-100', 'text-amber-900', 'font-medium');
+                btn.classList.remove('text-gray-700');
+              } else {
+                btn.classList.remove('bg-amber-100', 'text-amber-900', 'font-medium');
+                btn.classList.add('text-gray-700');
+              }
+            });
+          }
+          document.getElementById('admin-order-filter-btn').addEventListener('click', toggleAdminOrderFilterDropdown);
+          const adminOrderButtons = document.querySelectorAll('#admin-order-filter-dropdown .order-status-filter-btn');
+          adminOrderButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+              updateAdminOrderFilterLabel(this.dataset.status);
+            });
+          });
+          document.addEventListener('click', function(event) {
+            const dropdown = document.getElementById('admin-order-filter-dropdown');
+            const btn = document.getElementById('admin-order-filter-btn');
+            if (!btn.contains(event.target) && !dropdown.contains(event.target)) {
+              dropdown.classList.add('hidden');
+            }
+          });
+        </script>
+
+        <div class="overflow-x-auto">
+        <table class="w-full border-collapse text-sm">
+          <thead class="bg-amber-100 text-gray-700 uppercase text-xs">
+            <tr>
+              <th class="py-3 px-4 text-left">Order #</th>
+              <th class="py-3 px-4 text-left">Customer</th>
+              <th class="py-3 px-4 text-left">Seller(s)</th>
+              <th class="py-3 px-4 text-left">Status</th>
+              <th class="py-3 px-4 text-left">Vehicle</th>
+                <th class="py-3 px-4 text-left">Weight</th>
+                <th class="py-3 px-4 text-left">Total</th>
+                <!-- 'Comp.' column removed as per request -->
+                <th class="py-3 px-4 text-left">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if orders %}
+              {% for order in orders %}
+              <tr class="border-t hover:bg-gray-50 admin-order-row" data-status="{{ order.status }}">
+                <td class="py-2 px-4 font-semibold">{{ order.shop_order_number or order.id }}</td>
+                <td class="py-2 px-4">{{ order.customer_name or order.user_id }}</td>
+                <td class="py-2 px-4">{{ order.sellers_display or '-' }}</td>
+                <td class="py-2 px-4">{{ order.status|capitalize }}{% if order.return_request %} <span class="ml-2 px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs">Return</span>{% endif %}</td>
+                <td class="py-2 px-4">{{ order.vehicle or '-' }}</td>
+                <td class="py-2 px-4">{{ order.total_weight or '-' }} kg</td>
+                <td class="py-2 px-4">₱{{ order.total_amount or '?' }}</td>
+                <!-- Comp./refund_complied column intentionally removed -->
+                <td class="py-2 px-4 flex gap-2">
+                  <button class="bg-blue-500 text-white px-3 py-1 rounded text-xs hover:bg-blue-600 view-order-btn" data-order-id="{{ order.id }}">View</button>
+                </td>
+              </tr>
+              {% endfor %}
+            {% else %}
+              <tr><td colspan="8" class="text-center py-4 text-gray-500">No orders found.</td></tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Order Details Modal -->
+      <div id="adminOrderDetailsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
+        <div class="bg-white rounded-2xl p-6 w-[32rem] shadow-lg overflow-y-auto max-h-[90vh]">
+          <h2 class="text-lg font-semibold mb-3">Order Details</h2>
+          <div id="adminOrderDetailsContent"></div>
+          <div id="adminOrderDetailsActions" class="flex gap-2 mt-4"></div>
+          <button onclick="closeAdminOrderDetails()" class="mt-4 bg-gray-300 px-4 py-2 rounded hover:bg-gray-400">Close</button>
+        </div>
+      </div>
+      <!-- Return Request Modal (Admin) - same layout as Order Modal -->
+      <div id="adminReturnRequestModal" class="hidden fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
+        <div class="bg-white rounded-2xl p-6 w-[32rem] shadow-lg overflow-y-auto max-h-[90vh]">
+          <h2 class="text-lg font-semibold mb-3">Return Request Details</h2>
+          <div id="adminReturnRequestContent"></div>
+          <div id="adminReturnRequestActions" class="flex gap-2 mt-4"></div>
+          <button onclick="closeAdminReturnRequestModal()" class="mt-4 bg-gray-300 px-4 py-2 rounded hover:bg-gray-400">Close</button>
+        </div>
+      </div>
+
+      <script id="admin-orders-data" type="application/json">{{ orders|tojson|safe }}</script>
+      <script id="admin-order-items-data" type="application/json">{{ order_items|tojson|safe }}</script>
+      <script id="admin-return-requests-data" type="application/json">{{ admin_return_requests|tojson|safe }}</script>
+
+      <script>
+        window.adminOrders = JSON.parse(document.getElementById('admin-orders-data').textContent || '[]');
+        window.adminOrderItems = JSON.parse(document.getElementById('admin-order-items-data').textContent || '{}');
+        window.adminReturnRequests = JSON.parse(document.getElementById('admin-return-requests-data').textContent || '[]');
+        // Build a quick lookup mapping by order_id and rr id
+        window.adminReturnRequestsMap = {};
+        try {
+          const _rrs = Array.isArray(window.adminReturnRequests) ? window.adminReturnRequests : Object.values(window.adminReturnRequests || {});
+          for (const r of _rrs) {
+            if (!r) continue;
+            if (r.order_id) window.adminReturnRequestsMap[r.order_id] = r;
+            if (r.id) window.adminReturnRequestsMap[r.id] = r;
+          }
+        } catch(e) { window.adminReturnRequestsMap = {}; }
+
+        // Use event delegation for view-order-btns so buttons in hidden sections (e.g. return requests)
+        // still work immediately when clicked without having to rebind listeners.
+        (function initAdminViewOrderBtnDelegation() {
+          function onClick(ev) {
+            const btn = ev.target.closest('.view-order-btn');
+            if (!btn) return;
+            ev.preventDefault();
+            ev.stopPropagation();
+            ev.stopImmediatePropagation();
+            console.debug('admin view clicked', {dataset: btn.dataset});
+            const orderId = parseInt(btn.getAttribute('data-order-id'));
+            const rrId = (btn.dataset.rrId || btn.getAttribute('data-rr-id') || null);
+            const effectiveRrId = (rrId === 'null' || rrId === 'undefined') ? null : rrId;
+            if (effectiveRrId) {
+              console.debug('admin opening return request modal', {rrId: effectiveRrId});
+              showAdminReturnRequestModal(effectiveRrId);
+            } else {
+              showAdminOrderDetails(orderId, null);
+            }
+          }
+          if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() { document.addEventListener('click', onClick, true); });
+          } else {
+            document.addEventListener('click', onClick, true);
+          }
+          console.debug('initAdminViewOrderBtnDelegation initialized');
+        })();
+        function closeAdminReturnRequestModal() {
+          const md = document.getElementById('adminReturnRequestModal');
+          if (md) md.classList.add('hidden');
+          const content = document.getElementById('adminReturnRequestContent');
+          if (content) content.innerHTML = '';
+        }
+
+        function showAdminReturnRequestModal(rrId) {
+          const rrMap = window.adminReturnRequestsMap || {};
+          let rr = rrMap[rrId] || null;
+          if (!rr && window.adminReturnRequests) {
+            const arr = Array.isArray(window.adminReturnRequests) ? window.adminReturnRequests : Object.values(window.adminReturnRequests || {});
+            rr = arr.find(r => r && (String(r.id) === String(rrId) || String(r.order_id) === String(rrId)));
+          }
+          if (!rr) {
+            console.debug('admin RR not found', {rrId, rrMapKeys: Object.keys(rrMap || {})});
+            return alert('Return request not found.');
+          }
+          console.debug('showAdminReturnRequestModal rr', rr);
+          // Build content similar to order modal layout but without rider info
+          const orders = window.adminOrders || [];
+          const itemsByOrder = window.adminOrderItems || {};
+          const orderId = rr.order_id;
+          let order = orders.find(o => o.id === orderId) || null;
+          if (!order) {
+            order = { id: orderId, shop_order_number: orderId, customer_name: rr.requested_by_name || rr.requested_by, customer_full_address: '-', vehicle: '-', total_amount: rr.refund_amount || '-', total_weight: '-' };
+          }
+          const items = itemsByOrder[orderId] || [];
+          let orderNumber = order.shop_order_number || order.id;
+          const shipFee = (order.shipping_fee !== undefined && order.shipping_fee !== null) ? Number(order.shipping_fee) : 0;
+          let html = `
+            <div class="grid grid-cols-1 gap-4">
+              <div class="flex items-center gap-2 text-lg font-semibold text-amber-600">
+                <i class="bx bxs-truck text-2xl"></i> Order #${orderNumber}
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="md:col-span-2 space-y-2">
+                  <div class="flex gap-2 items-center">
+                    <span class="font-medium text-gray-700">Status:</span>
+                    <span class="px-2 py-1 rounded ${rr.status === 'delivered' ? 'bg-green-100 text-green-700 text-xs' : 'bg-gray-100 text-gray-700 text-xs'}">${rr.status || 'N/A'}</span>
+                  </div>
+                  <div class="flex gap-3 items-start">
+                    <i class="bx bxs-home text-xl text-gray-500"></i>
+                    <div>
+                      <div class="font-medium text-gray-700">Customer:</div>
+                      <div class="font-medium text-gray-800">${order.customer_name || 'Customer'}</div>
+                      <div class="text-sm text-gray-500 mt-1">${order.customer_full_address || '-'}</div>
+                    </div>
+                  </div>
+                  <div class="flex gap-2 items-center">
+                    <i class="bx bxs-package text-xl text-gray-500"></i>
+                    <span class="font-medium text-gray-700">Items:</span>
+                  </div>
+                  <div class="space-y-2 mt-1">
+          `;
+          for (const item of items) {
+            const name = item.product_name || 'Product';
+            const attrs = `${item.color ? ' • ' + item.color : ''}${item.size ? ' • ' + item.size : ''}`;
+            html += `<div class="p-3 border rounded-lg flex items-center justify-between bg-white">
+                        <div>
+                          <div class="font-medium">${name}${attrs}</div>
+                          <div class="text-xs text-gray-500">Qty: ${item.quantity} · Price: ₱${item.price}</div>
+                        </div>
+                        <div class="text-sm font-semibold">₱${(Number(item.price) * Number(item.quantity)).toFixed(2)}</div>
+                      </div>`;
+          }
+          html += `</div></div>`;
+          html += `<div class="md:col-span-1 space-y-3">
+                    <div class="p-3 border rounded-lg bg-white">
+                      <div class="text-sm text-gray-500">Summary</div>
+                      <div class="mt-2 text-sm"><strong>Total Amount:</strong> ₱${order.total_amount || '?'}</div>
+                      <div class="text-sm mt-1"><strong>Shipping Fee:</strong> ₱${shipFee.toFixed(2)}</div>
+                      ${ order.sellers_total_income !== undefined ? `<div class="text-sm mt-1"><strong>Seller Income:</strong> ₱${(Number(order.sellers_total_income) || 0).toFixed(2)}</div>` : '' }
+                      ${ order.admin_earning !== undefined ? `<div class="text-sm mt-1"><strong>Admin Fee:</strong> ₱${(Number(order.admin_earning) || 0).toFixed(2)}</div>` : '' }
+                      <div class="text-sm mt-1"><strong>Weight:</strong> ${order.total_weight || '-'} kg</div>
+                    </div>`;
+          if (order.proofs && order.proofs.length) {
+            html += `<div class="p-3 border rounded-lg bg-white">
+                       <div class="text-sm text-gray-500">Delivery Proofs</div>
+                       <div class="mt-2 flex gap-2 flex-wrap">`;
+            for (const pf of order.proofs) {
+              const normalized = pf && pf.length && pf.charAt(0) === '/' ? pf.slice(1) : pf;
+              const src = '/static/' + (normalized || pf);
+              html += `<div class="w-24 h-24 rounded overflow-hidden border cursor-pointer">
+                         <img src="${src}" data-fullsrc="${src}" alt="proof" class="w-full h-full object-cover proof-thumb" />
+                       </div>`;
+            }
+            html += `</div></div>`;
+          }
+          html += `</div></div>`;
+          html += `<div class="mt-3 p-3 border rounded-lg bg-white text-sm">
+                    <div class="font-medium mb-1">Return Request</div>
+                    <div><strong>Reason:</strong> ${rr.reason || '-'}</div>
+                    <div><strong>Status:</strong> ${rr.status || '-'}</div>
+                    ${ rr.requested_at ? `<div><strong>Requested at:</strong> ${rr.requested_at}</div>` : '' }
+                    <div><strong>Notes:</strong> ${rr.notes || rr.notes_text || '-'}</div>
+                    ${ rr.processed_by_name ? `<div><strong>Processed by:</strong> ${rr.processed_by_name}</div>` : '' }
+                  </div>`;
+        if (rr.proofs && rr.proofs.length) {
+          html += `<div class="p-3 border rounded-lg bg-white">
+                     <div class="text-sm text-gray-500">Proofs</div>
+                     <div class="mt-2 flex gap-2 flex-wrap">`;
+          for (const pf of rr.proofs) {
+            const normalized = pf && pf.length && pf.charAt(0) === '/' ? pf.slice(1) : pf;
+            const src = '/static/' + (normalized || pf);
+            html += `<div class="w-24 h-24 rounded overflow-hidden border cursor-pointer">
+                       <img src="${src}" data-fullsrc="${src}" alt="proof" class="w-full h-full object-cover proof-thumb" />
+                     </div>`;
+          }
+          html += `</div></div>`;
+        }
+          html += `</div>`;
+          // Show requested by value (avoid showing admin name directly)
+          const requestedByVal = rr.requested_by_role === 'admin' ? 'Admin' : (rr.requested_by_name || rr.requested_by || '-');
+          document.getElementById('adminReturnRequestContent').innerHTML = html + `<div class="mt-2 text-sm text-gray-700"><strong>Requested by:</strong> ${requestedByVal}</div>`;
+          // Show requested by / admin info
+          try { document.getElementById('adminReturnRequestContent').querySelectorAll('.requested-by').forEach(el => {}); } catch(e) {};
+          try { document.querySelectorAll('#adminReturnRequestContent img.proof-thumb').forEach(img => { img.addEventListener('click', function() { const s = this.dataset.fullsrc || this.src; openProofModal(s); }); }); } catch(e) { /* ignore */ }
+          // Move modal to body so it's visible regardless of section container
+          try { const md = document.getElementById('adminReturnRequestModal'); if (md && md.parentNode !== document.body) document.body.appendChild(md); } catch(e) { /* ignore */ }
+          document.getElementById('adminReturnRequestModal').classList.remove('hidden');
+        }
+
+        // Proof image modal controls (copied from seller view)
+        function openProofModal(src) {
+          const modal = document.getElementById('proofImageModal');
+          const img = document.getElementById('proofImageModalImg');
+          if (!modal || !img) return;
+          img.src = src || '';
+          try { document.body.appendChild(modal); } catch(e) { /* ignore */ }
+          modal.style.zIndex = 9999;
+          modal.classList.remove('hidden');
+          modal.addEventListener('click', function backdropClose(e) {
+            if (e.target === modal) {
+              closeProofModal();
+              modal.removeEventListener('click', backdropClose);
+            }
+          });
+        }
+
+        function closeProofModal() {
+          const modal = document.getElementById('proofImageModal');
+          const img = document.getElementById('proofImageModalImg');
+          if (modal) modal.classList.add('hidden');
+          if (img) img.src = '';
+        }
+          // Approve/Reject buttons in table
+          document.querySelectorAll('.approve-cancel-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+              const orderId = this.dataset.orderId;
+              Swal.fire({ title: 'Approve Cancellation?', text: 'The order will be marked as cancelled.', icon: 'warning', showCancelButton: true, confirmButtonText: 'Yes, Approve' }).then(result => {
+                if (result.isConfirmed) {
+                  const clickedBtn = this;
+                  clickedBtn.disabled = true;
+                  fetch('/order/cancel_decision', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, body: JSON.stringify({ order_id: orderId, decision: 'confirm' }) })
+                    .then(r => r.json()).then(j => { if (j.success) { Swal.fire('Approved!', 'Cancellation approved.', 'success').then(() => location.reload()); } else { clickedBtn.disabled = false; Swal.fire('Error', j.error || j.message || 'Failed to approve.', 'error'); } }).catch(e => { clickedBtn.disabled = false; Swal.fire('Error', e.message || 'Network error', 'error'); });
+                }
+              });
+            });
+          });
+          document.querySelectorAll('.reject-cancel-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+              const orderId = this.dataset.orderId;
+              const rejectHtml = `
+                <label class="block text-left text-sm font-medium mb-1">Reason</label>
+                <select id="swal-reject-reason" class="w-full border rounded px-2 py-1 mb-2">
+                  <option value="">-- Select reason --</option>
+                  <option value="Order has already been packed or shipped">Order has already been packed or shipped</option>
+                  <option value="Custom/personalized product already in production">Custom/personalized product already in production</option>
+                  <option value="Item is non-cancellable based on store policy">Item is non-cancellable based on store policy</option>
+                  <option value="Buyer requested cancellation too late">Buyer requested cancellation too late</option>
+                  <option value="Seller has already incurred preparation costs">Seller has already incurred preparation costs</option>
+                </select>
+                <label class="block text-left text-sm font-medium mb-1">Notes (optional)</label>
+                <textarea id="swal-reject-notes" class="w-full border rounded px-2 py-1" rows="3" placeholder="Additional details (optional)"></textarea>
+              `;
+              Swal.fire({ title: 'Reject Cancellation? Provide a reason', html: rejectHtml, showCancelButton: true, confirmButtonText: 'Reject', focusConfirm: false, preConfirm: () => {
+                const reasonEl = document.getElementById('swal-reject-reason');
+                const notesEl = document.getElementById('swal-reject-notes');
+                const reasonVal = reasonEl ? reasonEl.value.trim() : '';
+                const notesVal = notesEl ? notesEl.value.trim() : '';
+                if (!reasonVal) { Swal.showValidationMessage('Please select a reason'); return false; }
+                return { reason: reasonVal, notes: notesVal };
+              }}).then(result => {
+                if (result.isConfirmed && result.value) {
+                  const clickedBtn = this;
+                  clickedBtn.disabled = true;
+                  fetch('/order/cancel_decision', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, body: JSON.stringify({ order_id: orderId, decision: 'reject', rejection_reason: result.value.reason, rejection_notes: result.value.notes }) })
+                    .then(r => r.json()).then(j => { if (j.success) { Swal.fire('Rejected!', 'Cancellation rejected.', 'success').then(() => location.reload()); } else { clickedBtn.disabled = false; Swal.fire('Error', j.error || j.message || 'Failed to reject.', 'error'); } }).catch(e => { clickedBtn.disabled = false; Swal.fire('Error', e.message || 'Network error', 'error'); });
+                }
+              });
+            });
+          });
+          // Refund handlers
+          document.querySelectorAll('.approve-refund-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+              const orderId = this.dataset.orderId;
+              const approvalHtml = `\n                <label class="block text-left text-sm font-medium mb-2">Require return pickup?</label>\n                <div class="flex gap-2 items-center"><input type="checkbox" id="swal-admin-refund-return-required"/> <label for="swal-admin-refund-return-required" class="text-sm text-gray-700">Yes, the customer must return the product before refund</label></div>\n              `;
+              Swal.fire({ title: 'Approve Refund?', html: approvalHtml, icon: 'warning', showCancelButton: true, confirmButtonText: 'Confirm', focusConfirm: false, preConfirm: () => {
+                const el = document.getElementById('swal-admin-refund-return-required');
+                return { return_required: el ? el.checked : false };
+              }}).then(result => {
+                if (result.isConfirmed) {
+                  const clickedBtn = this;
+                  clickedBtn.disabled = true;
+                  fetch('/order/refund_decision', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, body: JSON.stringify({ order_id: orderId, decision: 'confirm', return_required: result.value.return_required }) })
+                    .then(r => r.json()).then(j => { if (j.success) { Swal.fire('Approved!', 'Refund approved.', 'success').then(() => location.reload()); } else { clickedBtn.disabled = false; Swal.fire('Error', j.error || j.message || 'Failed to approve.', 'error'); } }).catch(e => { clickedBtn.disabled = false; Swal.fire('Error', e.message || 'Network error', 'error'); });
+                }
+              });
+            });
+          });
+          document.querySelectorAll('.reject-refund-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+              const orderId = this.dataset.orderId;
+              const rejectHtml = `\n                <label class="block text-left text-sm font-medium mb-1">Reason</label>\n                <select id="swal-admin-refund-reason" class="w-full border rounded px-2 py-1 mb-2">\n                  <option value="">-- Select reason --</option>\n                  <option value="Item not defective">Item not defective</option>\n                  <option value="Buyer requested outside of refund window">Buyer requested outside of refund window</option>\n                  <option value="Missing evidence or photos">Missing evidence or photos</option>\n                  <option value="Non-refundable item">Non-refundable item</option>\n                  <option value="Other">Other</option>\n                </select>\n                <label class="block text-left text-sm font-medium mb-1">Notes (optional)</label>\n                <textarea id="swal-admin-refund-notes" class="w-full border rounded px-2 py-1" rows="3" placeholder="Additional details (optional)"></textarea>\n              `;
+              Swal.fire({ title: 'Reject Refund?', html: rejectHtml, showCancelButton: true, confirmButtonText: 'Reject', focusConfirm: false, preConfirm: () => {
+                const reasonEl = document.getElementById('swal-admin-refund-reason');
+                const notesEl = document.getElementById('swal-admin-refund-notes');
+                const reasonVal = reasonEl ? reasonEl.value.trim() : '';
+                const notesVal = notesEl ? notesEl.value.trim() : '';
+                if (!reasonVal) { Swal.showValidationMessage('Please select a reason'); return false; }
+                if (reasonVal === 'Other' && !notesVal) { Swal.showValidationMessage('Please provide details for "Other"'); return false; }
+                return { reason: reasonVal, notes: notesVal };
+              }}).then(result => {
+                if (result.isConfirmed) {
+                  const clickedBtn = this;
+                  clickedBtn.disabled = true;
+                  fetch('/order/refund_decision', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, body: JSON.stringify({ order_id: orderId, decision: 'reject', rejection_reason: result.value.reason, rejection_notes: result.value.notes }) })
+                    .then(r => r.json()).then(j => { if (j.success) { Swal.fire('Rejected!', 'Refund request rejected.', 'success').then(() => location.reload()); } else { clickedBtn.disabled = false; Swal.fire('Error', j.error || j.message || 'Failed to reject.', 'error'); } }).catch(e => { clickedBtn.disabled = false; Swal.fire('Error', e.message || 'Network error', 'error'); });
+                }
+              });
+            });
+          });
+          // default show all
+          filterAdminOrders('all');
+
+        function filterAdminOrders(status) {
+          const rows = document.querySelectorAll('.admin-order-row');
+          rows.forEach(row => {
+            if (status === 'all' || row.dataset.status === status) {
+              row.style.display = '';
+            } else {
+              row.style.display = 'none';
+            }
+          });
+          // active button highlight
+          document.querySelectorAll('.order-status-filter-btn').forEach(btn => {
+            btn.classList.remove('bg-amber-500','border-amber-500','text-white');
+            btn.classList.add('bg-white','border-gray-300','text-gray-600');
+          });
+          const activeBtn = document.querySelector('.order-status-filter-btn[data-status="' + status + '"]');
+          if (activeBtn) {
+            activeBtn.classList.add('bg-amber-500','border-amber-500','text-white');
+            activeBtn.classList.remove('bg-white','border-gray-300','text-gray-600');
+          }
+        }
+
+        function showAdminOrderDetails(orderId, rrId) {
+          console.debug('showAdminOrderDetails called', {orderId, rrId});
+          const orders = window.adminOrders || [];
+          const itemsByOrder = window.adminOrderItems || {};
+          let order = orders.find(o => o.id === orderId);
+          // Try to find rr record (if adminReturnRequests exists) to use as fallback when order is missing
+          let rr = null;
+          try {
+            if (window.adminReturnRequestsMap && window.adminReturnRequestsMap[orderId]) rr = window.adminReturnRequestsMap[orderId];
+            if (!rr && rrId && window.adminReturnRequestsMap && window.adminReturnRequestsMap[rrId]) rr = window.adminReturnRequestsMap[rrId];
+            if (!rr && window.adminReturnRequests) {
+              const _rrs = Array.isArray(window.adminReturnRequests) ? window.adminReturnRequests : Object.values(window.adminReturnRequests || {});
+              for (const v of _rrs) { if (v && (v.order_id === orderId || String(v.id) === String(rrId))) { rr = v; break; } }
+            }
+          } catch (e) { /* ignore */ }
+          // If order missing but we have rr, use minimal fallback data
+          if (!order && rr) {
+            const fallbackOrder = { id: orderId, shop_order_number: orderId, customer_name: rr.requested_by_name || rr.requested_by, customer_full_address: '-', vehicle: '-', total_amount: rr.refund_amount || '-', total_weight: '-' };
+            order = fallbackOrder;
+          }
+          const items = itemsByOrder[orderId] || [];
+          if (!order) return alert('Order not found');
+          // rr already computed above; we can reuse it here
+          let orderNumber = order.shop_order_number || order.id;
+          const shipFee = (order.shipping_fee !== undefined && order.shipping_fee !== null) ? Number(order.shipping_fee) : 0;
+
+          let html = `
+            <div class="grid grid-cols-1 gap-4">
+              <div class="flex items-center gap-2 text-lg font-semibold text-amber-600">
+                <i class="bx bxs-truck text-2xl"></i> Order #${orderNumber}
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="md:col-span-2 space-y-2">
+                  <div class="flex gap-2 items-center">
+                    <span class="font-medium text-gray-700">Status:</span>
+                    <span class="px-2 py-1 rounded ${order.status === 'delivered' ? 'bg-green-100 text-green-700 text-xs' : (['processing','ready_for_pickup','shipped'].includes(order.status) ? 'bg-amber-100 text-amber-700 text-xs' : 'bg-gray-100 text-gray-700 text-xs')}">${order.status}</span>
+                  </div>
+                  <div class="flex gap-3 items-start">
+                    <i class="bx bxs-home text-xl text-gray-500"></i>
+                    <div>
+                      <div class="font-medium text-gray-700">Customer:</div>
+                      <div class="font-medium text-gray-800">${order.customer_name || 'Customer'}</div>
+                      <div class="text-sm text-gray-500 mt-1">${order.customer_full_address || '-'}</div>
+                    </div>
+                  </div>
+                  <div class="flex gap-3 items-start">
+                    <i class="bx bxs-store text-xl text-gray-500"></i>
+                    <div>
+                      <div class="font-medium text-gray-700">Seller:</div>
+                      <div class="mt-2 text-gray-800 space-y-2">
+                        ${ (order.sellers_info && order.sellers_info.length) ? order.sellers_info.map(s => (`<div><div class="font-medium">${s.name||s.id}</div><div class="text-sm text-gray-500">${s.address||'-'}</div></div>`)).join('') : (`<div class="text-sm text-gray-500">${order.sellers_display || '-'}</div>`) }
+                      </div>
+                    </div>
+                  </div>
+                  <div class="flex gap-2 items-center">
+                    <i class="bx bxs-car text-xl text-gray-500"></i>
+                    <span class="font-medium text-gray-700">Vehicle:</span>
+                    <span class="text-gray-800">${order.vehicle || order.vehicle_type || '-'}</span>
+                  </div>
+                  <div class="flex gap-2 items-center">
+                    <i class="bx bxs-package text-xl text-gray-500"></i>
+                    <span class="font-medium text-gray-700">Items:</span>
+                  </div>
+                  <div class="space-y-2 mt-1">
+          `;
+          for (const item of items) {
+            const name = item.product_name || 'Product';
+            const attrs = `${item.color ? ' • ' + item.color : ''}${item.size ? ' • ' + item.size : ''}`;
+            html += `<div class="p-3 border rounded-lg flex items-center justify-between bg-white">
+                      <div>
+                        <div class="font-medium">${name}${attrs}</div>
+                        <div class="text-xs text-gray-500">Qty: ${item.quantity} · Price: ₱${item.price}</div>
+                      </div>
+                      <div class="text-sm font-semibold">₱${(Number(item.price) * Number(item.quantity)).toFixed(2)}</div>
+                    </div>`;
+          }
+          html += `</div></div>`;
+
+          html += `<div class="md:col-span-1 space-y-3">
+                    <div class="p-3 border rounded-lg bg-white">
+                      <div class="text-sm text-gray-500">Summary</div>
+                      <div class="mt-2 text-sm"><strong>Total Amount:</strong> ₱${order.total_amount || '?'}</div>
+                      <div class="text-sm mt-1"><strong>Shipping Fee:</strong> ₱${shipFee.toFixed(2)}</div>
+                      <div class="text-sm mt-1"><strong>Weight:</strong> ${order.total_weight || '-'} kg</div>
+                      ${ (['cancel_request','cancelled'].includes(order.status) && order.cancelled_reason) ? `<div class="text-sm mt-2 text-red-600"><strong>Cancel Reason:</strong> ${order.cancelled_reason}</div>` : '' }
+                      ${ (order.cancel_rejection_reason) ? `<div class="text-sm mt-2 text-red-600"><strong>Seller Rejection Reason:</strong> ${order.cancel_rejection_reason}</div>` : '' }
+                      ${ (order.cancel_rejection_notes) ? `<div class="text-sm mt-2 text-gray-600"><strong>Seller Rejection Notes:</strong> ${order.cancel_rejection_notes}</div>` : '' }
+                      ${ (order.cancel_rejected_at) ? `<div class="text-sm mt-2 text-gray-500"><strong>Rejected At:</strong> ${order.cancel_rejected_at}</div>` : '' }
+                      ${ (order.cancel_rejected_by) ? `<div class="text-sm mt-2 text-gray-500"><strong>Rejected By (ID):</strong> ${order.cancel_rejected_by}</div>` : '' }
+                      ${ (order.status === 'refund_request' && order.refund_reason) ? `<div class="text-sm mt-2 text-red-600"><strong>Refund Reason:</strong> ${order.refund_reason}</div>` : '' }
+                      ${ (order.refund_complied !== undefined && order.refund_complied !== null) ? `<div class="text-sm mt-2 ${order.refund_complied ? 'text-green-700' : 'text-red-600'}"><strong>Seller Response:</strong> ${order.refund_complied ? 'Complied' : 'Declined'}${order.refund_complied_by_name ? ' by ' + order.refund_complied_by_name : (order.refund_complied_by ? ' by ID: ' + order.refund_complied_by : '')}${order.refund_complied_at ? ' at ' + order.refund_complied_at : ''}</div><div class="text-sm mt-1 text-gray-600">${order.refund_comply_notes || ''}</div>` : '' }
+                      ${ (order.return_request) ? `<div class="mt-2 text-sm text-blue-700"><strong>Return Flow:</strong> Status: ${order.return_request.status || 'N/A'}</div>` : '' }
+                      ${order.rider_name ? `<div class="text-sm mt-1"><strong>Rider:</strong> ${order.rider_name}</div>` : ''}
+                    </div>`;
+
+          if (order.proofs && order.proofs.length) {
+            html += `<div class="p-3 border rounded-lg bg-white">
+                       <div class="text-sm text-gray-500">Delivery Proofs</div>
+                       <div class="mt-2 flex gap-2 flex-wrap">`;
+            for (const pf of order.proofs) {
+              const normalized = pf && pf.length && pf.charAt(0) === '/' ? pf.slice(1) : pf;
+              const src = '/static/' + (normalized || pf);
+              html += `<div class="w-24 h-24 rounded overflow-hidden border cursor-pointer">
+                         <img src="${src}" data-fullsrc="${src}" alt="proof" class="w-full h-full object-cover proof-thumb" />
+                       </div>`;
+            }
+            html += `</div></div>`;
+          }
+
+          html += `</div></div>`;
+          document.getElementById('adminOrderDetailsContent').innerHTML = html;
+          if (rr) {
+            const rrHtml = `<div class="mt-3 p-3 border rounded-lg bg-white text-sm">
+                              <div class="font-medium mb-1">Return Request</div>
+                              <div><strong>Reason:</strong> ${rr.reason || '-'}</div>
+                              <div><strong>Status:</strong> ${rr.status || '-'}</div>
+                              ${ rr.requested_by_name ? `<div><strong>Requested by:</strong> ${rr.requested_by_name}</div>` : '' }
+                            </div>`;
+            document.getElementById('adminOrderDetailsContent').insertAdjacentHTML('beforeend', rrHtml);
+          }
+
+          try {
+            document.querySelectorAll('#adminOrderDetailsContent img.proof-thumb').forEach(img => {
+              img.addEventListener('click', function() {
+                const src = this.dataset.fullsrc || this.src;
+                // Open proof using the site-wide image viewer/lightbox
+                if (typeof openImageViewer === 'function') {
+                  openImageViewer(src);
+                } else {
+                  // fallback: open in new tab if viewer not available
+                  window.open(src, '_blank');
+                }
+              });
+            });
+          } catch (e) { console.error('Failed to attach admin proof thumbnail handlers', e); }
+
+          // Actions for admin (minimal: allow cancel)
+          let actions = '';
+          if (order.status === 'pending' || order.status === 'processing') {
+            actions += `<form method="POST" action="/order/update_status" class="inline" style="display:inline">
+                          <input type="hidden" name="order_id" value="${order.id}">
+                          <input type="hidden" name="new_status" value="cancelled">
+                          <button type="submit" class="bg-red-500 text-white px-3 py-1 rounded text-xs hover:bg-red-600">Cancel</button>
+                        </form>`;
+          }
+          // Allow admin to approve/reject cancel/refund requests from the modal
+          if (order.status === 'cancel_request') {
+            actions += `<button type="button" class="bg-green-500 text-white px-3 py-1 rounded text-xs hover:bg-green-600 approve-cancel-btn" data-order-id="${order.id}">Approve</button>`;
+            actions += `<button type="button" class="bg-red-500 text-white px-3 py-1 rounded text-xs hover:bg-red-600 reject-cancel-btn" data-order-id="${order.id}">Reject</button>`;
+            // If seller already rejected, offer admin an override control
+            if (order.cancel_rejection_reason || order.cancel_rejected_at) {
+              actions += `<button type="button" class="bg-yellow-500 text-white px-3 py-1 rounded text-xs hover:bg-yellow-600 override-cancel-btn" data-order-id="${order.id}">Override</button>`;
+            }
+          }
+          if (order.status === 'refund_request') {
+            actions += `<button type="button" class="bg-green-500 text-white px-3 py-1 rounded text-xs hover:bg-green-600 approve-refund-btn" data-order-id="${order.id}">Approve</button>`;
+            actions += `<button type="button" class="bg-red-500 text-white px-3 py-1 rounded text-xs hover:bg-red-600 reject-refund-btn" data-order-id="${order.id}">Reject</button>`;
+          }
+          // Return pickup handling is done via the Return Requests admin section
+          document.getElementById('adminOrderDetailsActions').innerHTML = actions;
+          // Intercept admin cancel form submissions to require a reason and notes and call /order/seller_cancel instead
+          try {
+            const adminActionsContainer = document.getElementById('adminOrderDetailsActions');
+            adminActionsContainer.querySelectorAll('form').forEach(f => {
+              f.addEventListener('submit', async (ev) => {
+                ev.preventDefault();
+                const form = ev.currentTarget;
+                const action = form.action || '/order/update_status';
+                const formData = new FormData(form);
+                const isCancel = (action && action.includes('/order/update_status')) && (formData.get('new_status') === 'cancelled');
+                try {
+                  if (isCancel) {
+                    const reasonHtml = `
+                      <label class="block text-left text-sm font-medium mb-1">Reason</label>
+                      <select id="swal-admin-cancel-reason" class="w-full border rounded px-2 py-1 mb-2">
+                        <option value="">-- Select reason --</option>
+                        <option value="Out of stock">Out of stock</option>
+                        <option value="Product defect found during inspection">Product defect found during inspection</option>
+                        <option value="Wrong price listing (pricing error)">Wrong price listing (pricing error)</option>
+                        <option value="Seller unable to fulfill due to logistics issues">Seller unable to fulfill due to logistics issues</option>
+                        <option value="Verification or fraud concerns">Verification or fraud concerns</option>
+                        <option value="Other">Other</option>
+                      </select>
+                      <label class="block text-left text-sm font-medium mb-1">Notes (optional)</label>
+                      <textarea id="swal-admin-cancel-notes" class="w-full border rounded px-2 py-1" rows="3" placeholder="Additional details (optional)"></textarea>
+                    `;
+                    const modal = await Swal.fire({ title: 'Cancel Order', html: reasonHtml, showCancelButton: true, confirmButtonText: 'Cancel Order', focusConfirm: false, preConfirm: () => {
+                      const reasonEl = document.getElementById('swal-admin-cancel-reason');
+                      const notesEl = document.getElementById('swal-admin-cancel-notes');
+                      const reasonVal = reasonEl ? reasonEl.value.trim() : '';
+                      const notesVal = notesEl ? notesEl.value.trim() : '';
+                      if (!reasonVal) {
+                        Swal.showValidationMessage('Please select a reason');
+                        return false;
+                      }
+                      if (reasonVal === 'Other' && !notesVal) {
+                        Swal.showValidationMessage('Please provide details for "Other"');
+                        return false;
+                      }
+                      return { reason: reasonVal, notes: notesVal };
+                    }});
+                    if (!modal.isConfirmed) return;
+                    const payload = { order_id: formData.get('order_id'), reason: modal.value.reason, notes: modal.value.notes };
+                    const resp = await fetch('/order/seller_cancel', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, body: JSON.stringify(payload) });
+                    const j = await resp.json();
+                    if (j && j.success) {
+                      Swal.fire('Cancelled!', 'Order cancelled and customer notified.', 'success').then(() => location.reload());
+                    } else {
+                      Swal.fire('Error', j.error || j.message || 'Failed to cancel order.', 'error');
+                    }
+                  } else {
+                    // default action: submit original form content
+                    const resp2 = await fetch(action, { method: 'POST', body: new URLSearchParams(formData), credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                    const j2 = await resp2.json();
+                    if (j2 && j2.success) {
+                      location.reload();
+                    } else {
+                      Swal.fire('Error', j2.error || j2.message || 'Failed.', 'error');
+                    }
+                  }
+                } catch (e) {
+                  console.error(e); Swal.fire('Error', e.message || 'Network error', 'error');
+                }
+              });
+            });
+          } catch (e) { console.error('Apply intercept error', e); }
+          // Attach dynamic modal button handlers for admin modal
+          try {
+            const adminActionsContainer = document.getElementById('adminOrderDetailsActions');
+            adminActionsContainer.querySelectorAll('.approve-cancel-btn').forEach(btn => {
+              btn.addEventListener('click', function() {
+                const orderId = this.dataset.orderId;
+                Swal.fire({ title: 'Approve Cancellation?', text: 'The order will be marked as cancelled.', icon: 'warning', showCancelButton: true, confirmButtonText: 'Yes, Approve' }).then(result => {
+                  if (result.isConfirmed) {
+                    const clickedBtn = this;
+                    console.log('Admin approve cancel clicked for order', orderId);
+                    clickedBtn.disabled = true;
+                    fetch('/order/cancel_decision', {
+                      method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, body: JSON.stringify({ order_id: orderId, decision: 'confirm' })
+                    }).then(r => r.json()).then(j => { console.log('admin/cancel_decision response', j); if (j.success) { Swal.fire('Approved!', 'Cancellation approved.', 'success').then(() => location.reload()); } else { clickedBtn.disabled = false; Swal.fire('Error', j.error || j.message || 'Failed.', 'error'); } }).catch(e => { clickedBtn.disabled = false; console.error('admin/cancel_decision error', e); Swal.fire('Error', e.message || 'Network error', 'error'); });
+                  }
+                });
+              });
+            });
+            adminActionsContainer.querySelectorAll('.reject-cancel-btn').forEach(btn => {
+              btn.addEventListener('click', function() {
+                const orderId = this.dataset.orderId;
+                const rejectHtml = `
+                  <label class="block text-left text-sm font-medium mb-1">Reason</label>
+                  <select id="swal-reject-reason" class="w-full border rounded px-2 py-1 mb-2">
+                    <option value="">-- Select reason --</option>
+                    <option value="Order has already been packed or shipped">Order has already been packed or shipped</option>
+                    <option value="Custom/personalized product already in production">Custom/personalized product already in production</option>
+                    <option value="Item is non-cancellable based on store policy">Item is non-cancellable based on store policy</option>
+                    <option value="Buyer requested cancellation too late">Buyer requested cancellation too late</option>
+                    <option value="Seller has already incurred preparation costs">Seller has already incurred preparation costs</option>
+                  </select>
+                  <label class="block text-left text-sm font-medium mb-1">Notes (optional)</label>
+                  <textarea id="swal-reject-notes" class="w-full border rounded px-2 py-1" rows="3" placeholder="Additional details (optional)"></textarea>
+                `;
+                Swal.fire({ title: 'Reject Cancellation? Provide a reason', html: rejectHtml, showCancelButton: true, confirmButtonText: 'Reject', focusConfirm: false, preConfirm: () => {
+                  const reasonEl = document.getElementById('swal-reject-reason');
+                  const notesEl = document.getElementById('swal-reject-notes');
+                  const reasonVal = reasonEl ? reasonEl.value.trim() : '';
+                  const notesVal = notesEl ? notesEl.value.trim() : '';
+                  if (!reasonVal) { Swal.showValidationMessage('Please select a reason'); return false; }
+                  return { reason: reasonVal, notes: notesVal };
+                }}).then(result => {
+                  if (result.isConfirmed && result.value) {
+                    const clickedBtn = this;
+                    console.log('Admin reject cancel clicked for order', orderId);
+                    clickedBtn.disabled = true;
+                    fetch('/order/cancel_decision', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, body: JSON.stringify({ order_id: orderId, decision: 'reject', rejection_reason: result.value.reason, rejection_notes: result.value.notes }) }).then(r => r.json()).then(j => { console.log('admin/cancel_decision response', j); if (j.success) { Swal.fire('Rejected!', 'Cancellation rejected.', 'success').then(() => location.reload()); } else { clickedBtn.disabled = false; Swal.fire('Error', j.error || j.message || 'Failed.', 'error'); } }).catch(e => { clickedBtn.disabled = false; console.error('admin/cancel_decision error', e); Swal.fire('Error', e.message || 'Network error', 'error'); });
+                  }
+                });
+              });
+            });
+            adminActionsContainer.querySelectorAll('.override-cancel-btn').forEach(btn => {
+              btn.addEventListener('click', function() {
+                const orderId = this.dataset.orderId;
+                Swal.fire({ title: 'Override Seller Rejection?', text: 'This will cancel the order and override the seller decision.', icon: 'warning', showCancelButton: true, confirmButtonText: 'Override' }).then(result => {
+                  if (result.isConfirmed) {
+                    const clickedBtn = this;
+                    console.log('Admin override cancel clicked for order', orderId);
+                    clickedBtn.disabled = true;
+                    fetch('/order/cancel_override', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, body: JSON.stringify({ order_id: orderId }) }).then(r => r.json()).then(j => { console.log('admin/cancel_override response', j); if (j.success) { Swal.fire('Overridden!', 'Cancellation approved by admin override.', 'success').then(() => location.reload()); } else { clickedBtn.disabled = false; Swal.fire('Error', j.error || j.message || 'Failed.', 'error'); } }).catch(e => { clickedBtn.disabled = false; console.error('admin/cancel_override error', e); Swal.fire('Error', e.message || 'Network error', 'error'); });
+                  }
+                });
+              });
+            });
+            adminActionsContainer.querySelectorAll('.approve-refund-btn').forEach(btn => {
+              btn.addEventListener('click', function() {
+                const orderId = this.dataset.orderId;
+                const approvalHtml = `
+                  <label class="block text-left text-sm font-medium mb-2">Require return pickup?</label>
+                  <div class="flex gap-2 items-center"><input type="checkbox" id="swal-admin-refund-return-required-modal"/> <label for="swal-admin-refund-return-required-modal" class="text-sm text-gray-700">Yes, the customer must return the product before refund</label></div>
+                `;
+                Swal.fire({ title: 'Approve Refund?', html: approvalHtml, icon: 'warning', showCancelButton: true, confirmButtonText: 'Yes, Approve', focusConfirm: false, preConfirm: () => {
+                  const el = document.getElementById('swal-admin-refund-return-required-modal');
+                  return { return_required: el ? el.checked : false };
+                }}).then(result => {
+                  if (result.isConfirmed) {
+                    const clickedBtn = this;
+                    console.log('Admin approve refund clicked for order', orderId);
+                    clickedBtn.disabled = true;
+                    fetch('/order/refund_decision', {
+                      method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, body: JSON.stringify({ order_id: orderId, decision: 'confirm', return_required: result.value.return_required })
+                    }).then(r => r.json()).then(j => { console.log('admin/refund_decision response', j); if (j.success) { Swal.fire('Approved!', 'Refund approved.', 'success').then(() => location.reload()); } else { clickedBtn.disabled = false; Swal.fire('Error', j.error || j.message || 'Failed.', 'error'); } }).catch(e => { clickedBtn.disabled = false; console.error('admin/refund_decision error', e); Swal.fire('Error', e.message || 'Network error', 'error'); });
+                  }
+                });
+              });
+            });
+            adminActionsContainer.querySelectorAll('.reject-refund-btn').forEach(btn => {
+              btn.addEventListener('click', function() {
+                const orderId = this.dataset.orderId;
+                Swal.fire({ title: 'Reject Refund?', text: 'The refund request will be denied.', icon: 'warning', showCancelButton: true, confirmButtonText: 'Yes, Reject' }).then(result => {
+                  if (result.isConfirmed) {
+                    const clickedBtn = this;
+                    console.log('Admin reject refund clicked for order', orderId);
+                    clickedBtn.disabled = true;
+                    fetch('/order/refund_decision', {
+                      method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, body: JSON.stringify({ order_id: orderId, decision: 'reject' })
+                    }).then(r => r.json()).then(j => { console.log('admin/refund_decision response', j); if (j.success) { Swal.fire('Rejected!', 'Refund request rejected.', 'success').then(() => location.reload()); } else { clickedBtn.disabled = false; Swal.fire('Error', j.error || j.message || 'Failed.', 'error'); } }).catch(e => { clickedBtn.disabled = false; console.error('admin/refund_decision error', e); Swal.fire('Error', e.message || 'Network error', 'error'); });
+                  }
+                });
+              });
+            });
+            // Handlers for Return Requests are managed via the Return Requests section (we removed quick admin inline action)
+          } catch (e) { console.error('Failed to attach admin modal action handlers', e); }
+          try { const md = document.getElementById('adminOrderDetailsModal'); if (md && md.parentNode !== document.body) document.body.appendChild(md); } catch(e) { /* ignore */ }
+          document.getElementById('adminOrderDetailsModal').classList.remove('hidden');
+        }
+
+        function closeAdminOrderDetails() {
+          document.getElementById('adminOrderDetailsModal').classList.add('hidden');
+        }
+      </script>
+    </section>
+
+  <!-- Products -->
+<section id="products" class="section hidden p-6">
+  <div class="mb-4 flex flex-wrap gap-2">
+    <button id="btn-pending-products" class="product-tab-btn px-3 py-1 rounded-full border-2 text-sm font-semibold focus:outline-none transition bg-white border-gray-300 text-gray-600 hover:bg-amber-100 hover:border-amber-400 hover:text-amber-600">Pending</button>
+    <button id="btn-approved-products" class="product-tab-btn px-3 py-1 rounded-full border-2 text-sm font-semibold focus:outline-none transition bg-white border-gray-300 text-gray-600 hover:bg-amber-100 hover:border-amber-400 hover:text-amber-600">Approved</button>
+  </div>
+
+  <!-- Pending Products Table -->
+  <div id="pending-products-table" class="overflow-x-auto mb-6">
+    <div class="flex items-center gap-2 mb-4">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-amber-600" fill="currentColor" viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-0.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-0.9-2-2-2z"/></svg>
+      <h2 class="text-xl font-semibold">Pending Products</h2>
+    </div>
+    <table class="min-w-full bg-white border border-gray-200 shadow-md rounded-lg">
+      <thead class="bg-amber-100 text-amber-800">
+        <tr>
+          <th class="py-3 px-4 text-left">Product Name</th>
+          <th class="py-3 px-4 text-left">Category</th>
+          <th class="py-3 px-4 text-left">Price</th>
+          <th class="py-3 px-4 text-left">Stock</th>
+          <th class="py-3 px-4 text-left">Image</th>
+          <th class="py-3 px-4 text-left">All Information</th>
+          <th class="py-3 px-4 text-left">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for product in pending_products %}
+        <tr class="border-t">
+          <td class="py-2 px-4">{{ product.name }}</td>
+          <td class="py-2 px-4">{{ product.category or '—' }}</td>
+          <td class="py-2 px-4">₱{{ product.price }}</td>
+          <td class="py-2 px-4">{{ product.stock }}</td>
+          <td class="py-2 px-4">
+            {% if product.image %}
+              <img src="{{ media_url(product.image, 'image/dog.webp') }}" class="w-12 h-12 object-cover rounded" alt="product">
+            {% else %}
+              N/A
+            {% endif %}
+          </td>
+          <td class="py-2 px-4">
+            <button onclick="viewProduct('{{ product.id }}')" class="px-3 py-1 bg-blue-500 text-white rounded-lg text-xs hover:bg-blue-600">View</button>
+          </td>
+          <td class="py-2 px-4 space-x-2">
+            <form method="post" action="{{ url_for('update_product_status') }}" class="inline" data-admin-view="products-approved">
+              <input type="hidden" name="product_id" value="{{ product.id }}">
+              <input type="hidden" name="action" value="approve">
+              <button type="submit" class="px-3 py-1 bg-green-500 text-white rounded-lg text-xs hover:bg-green-600">Approve</button>
+            </form>
+            <form method="post" action="{{ url_for('reject_product') }}" class="inline" data-admin-view="products-pending">
+              <input type="hidden" name="product_id" value="{{ product.id }}">
+              <button type="submit" class="px-3 py-1 bg-red-500 text-white rounded-lg text-xs hover:bg-red-600">Reject</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" class="text-center py-4 text-gray-500">No pending products found.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Approved Products Table -->
+  <div id="approved-products-table" class="overflow-x-auto hidden">
+    <div class="flex items-center gap-2 mb-4">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-600" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+      <h2 class="text-xl font-semibold">Approved Products</h2>
+    </div>
+    <table class="min-w-full bg-white border border-gray-200 shadow-md rounded-lg">
+      <thead class="bg-green-100 text-green-800">
+        <tr>
+          <th class="py-3 px-4 text-left">Product Name</th>
+          <th class="py-3 px-4 text-left">Category</th>
+          <th class="py-3 px-4 text-left">Price</th>
+          <th class="py-3 px-4 text-left">Stock</th>
+          <th class="py-3 px-4 text-left">Image</th>
+          <th class="py-3 px-4 text-left">All Information</th>
+          <th class="py-3 px-4 text-left">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for product in approved_products %}
+        <tr class="border-t">
+          <td class="py-2 px-4">{{ product.name }}</td>
+          <td class="py-2 px-4">{{ product.category or '—' }}</td>
+          <td class="py-2 px-4">₱{{ product.price }}</td>
+          <td class="py-2 px-4">{{ product.stock }}</td>
+          <td class="py-2 px-4">
+            {% if product.image %}
+              <img src="{{ media_url(product.image, 'image/dog.webp') }}" class="w-12 h-12 object-cover rounded" alt="product">
+            {% else %}
+              N/A
+            {% endif %}
+          </td>
+          <td class="py-2 px-4">
+            <button onclick="viewProduct('{{ product.id }}')" class="px-3 py-1 bg-blue-500 text-white rounded-lg text-xs hover:bg-blue-600">View</button>
+          </td>
+          <td class="py-2 px-4 space-x-2">
+            <form method="post" action="{{ url_for('update_product_status') }}" class="inline" data-admin-view="archived-products">
+              <input type="hidden" name="product_id" value="{{ product.id }}">
+              <input type="hidden" name="action" value="archive">
+              <button type="submit" class="px-3 py-1 bg-red-500 text-white rounded-lg text-xs hover:bg-red-600">Suspend</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" class="text-center py-4 text-gray-500">No approved products found.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+    <!-- Return Requests -->
+    <!-- Users (Separated by Role) -->
+    <section id="users" class="section hidden p-6">
+      <!-- Role Navigation Tabs -->
+      <div class="mb-6 flex flex-wrap gap-2 border-b border-gray-300">
+        <button onclick="showUserRole('customers')" class="user-role-btn px-4 py-2 border-b-2 border-amber-600 text-amber-600 hover:text-amber-600 hover:border-amber-600 transition font-medium" data-role="customers">
+          <i class="bx bxs-user text-lg"></i> Customers
+        </button>
+        <button onclick="showUserRole('sellers')" class="user-role-btn px-4 py-2 border-b-2 border-transparent text-gray-600 hover:text-amber-600 hover:border-amber-600 transition font-medium" data-role="sellers">
+          <i class="bx bxs-store text-lg"></i> Sellers
+        </button>
+        <button onclick="showUserRole('riders')" class="user-role-btn px-4 py-2 border-b-2 border-transparent text-gray-600 hover:text-amber-600 hover:border-amber-600 transition font-medium" data-role="riders">
+          <i class="bx bxs-car text-lg"></i> Riders
+        </button>
+      </div>
+
+      <!-- CUSTOMERS SECTION -->
+      <div id="customers-section" class="user-role-section">
+        <div class="mb-4 flex flex-wrap gap-2">
+          <button onclick="showUserStatus('customers', 'pending')" class="user-status-btn px-3 py-1 rounded-full border-2 text-sm font-semibold focus:outline-none transition bg-amber-500 border-amber-500 text-white" data-role="customers" data-status="pending">Pending</button>
+          <button onclick="showUserStatus('customers', 'approved')" class="user-status-btn px-3 py-1 rounded-full border-2 text-sm font-semibold focus:outline-none transition bg-white border-gray-300 text-gray-600 hover:bg-amber-100 hover:border-amber-400 hover:text-amber-600" data-role="customers" data-status="approved">Approved</button>
+        </div>
+
+        <!-- Pending Customers -->
+        <div id="pending-customers-table" class="overflow-x-auto mb-6">
+          <div class="flex items-center gap-2 mb-3">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-700" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+            <h3 class="text-lg font-semibold">Pending Customers</h3>
+          </div>
+          <table class="min-w-full bg-white border border-gray-200 shadow-md rounded-lg text-sm">
+            <thead class="bg-amber-100 text-amber-800 sticky top-0">
+              <tr>
+                <th class="py-3 px-4 text-left">No.</th>
+                <th class="py-3 px-4 text-left">Name</th>
+                <th class="py-3 px-4 text-left">Email</th>
+                <th class="py-3 px-4 text-left">Phone</th>
+                <th class="py-3 px-4 text-left">Status</th>
+                <th class="py-3 px-4 text-left">View</th>
+                <th class="py-3 px-4 text-left">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for user in pending_users %}
+                {% if user.role == 'customer' %}
+                <tr class="border-t hover:bg-gray-50">
+                  <td class="py-2 px-4 text-gray-600 font-medium">{{ (pending_users | selectattr('role', 'equalto', 'customer') | list).index(user) + 1 }}</td>
+                  <td class="py-2 px-4 font-medium">{{ user.fullname }}</td>
+                  <td class="py-2 px-4">{{ user.email }}</td>
+                  <td class="py-2 px-4">{{ user.phone or '-' }}</td>
+                  <td class="py-2 px-4"><span class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs font-medium">{{ user.status or 'pending' }}</span></td>
+                  <td class="py-2 px-4">
+                    <button onclick="viewUser('{{ user.id }}')" class="px-3 py-1 bg-blue-500 text-white rounded-lg text-xs hover:bg-blue-600">View</button>
+                  </td>
+                  <td class="py-2 px-4 space-x-2 flex gap-1">
+                    <form method="post" action="{{ url_for('update_user_status') }}" class="inline" data-admin-view="users-riders-approved">
+                      <input type="hidden" name="user_id" value="{{ user.id }}">
+                      <input type="hidden" name="action" value="approve">
+                      <button type="submit" class="px-3 py-1 bg-green-500 text-white rounded-lg text-xs hover:bg-green-600">Approve</button>
+                    </form>
+                    <form method="post" action="{{ url_for('reject_user') }}" class="inline" data-admin-view="archived-users">
+                      <input type="hidden" name="user_id" value="{{ user.id }}">
+                      <input type="hidden" name="action" value="reject">
+                      <button type="submit" class="px-3 py-1 bg-orange-500 text-white rounded-lg text-xs hover:bg-orange-600">Reject</button>
+                    </form>
+                  </td>
+                </tr>
+                {% endif %}
+              {% else %}
+              <tr>
+                <td colspan="6" class="text-center py-4 text-gray-500">No pending customers.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Approved Customers -->
+        <div id="approved-customers-table" class="overflow-x-auto hidden">
+          <div class="flex items-center gap-2 mb-3">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-600" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+            <h3 class="text-lg font-semibold">Approved Customers</h3>
+          </div>
+          <table class="min-w-full bg-white border border-gray-200 shadow-md rounded-lg text-sm">
+            <thead class="bg-green-100 text-green-800 sticky top-0">
+              <tr>
+                <th class="py-3 px-4 text-left">No.</th>
+                <th class="py-3 px-4 text-left">Name</th>
+                <th class="py-3 px-4 text-left">Email</th>
+                <th class="py-3 px-4 text-left">Phone</th>
+                <th class="py-3 px-4 text-left">Status</th>
+                <th class="py-3 px-4 text-left">View</th>
+                <th class="py-3 px-4 text-left">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for user in approved_users %}
+                {% if user.role == 'customer' %}
+                <tr class="border-t hover:bg-gray-50">
+                  <td class="py-2 px-4 text-gray-600 font-medium">{{ (approved_users | selectattr('role', 'equalto', 'customer') | list).index(user) + 1 }}</td>
+                  <td class="py-2 px-4 font-medium">{{ user.fullname }}</td>
+                  <td class="py-2 px-4">{{ user.email }}</td>
+                  <td class="py-2 px-4">{{ user.phone or '-' }}</td>
+                  <td class="py-2 px-4"><span class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">{{ user.status or 'approved' }}</span></td>
+                  <td class="py-2 px-4">
+                    <button onclick="viewUser('{{ user.id }}')" class="px-3 py-1 bg-blue-500 text-white rounded-lg text-xs hover:bg-blue-600">View</button>
+                  </td>
+                  <td class="py-2 px-4">
+                    <form method="post" action="{{ url_for('update_user_status') }}" class="inline" data-admin-view="archived-users">
+                      <input type="hidden" name="user_id" value="{{ user.id }}">
+                      <input type="hidden" name="action" value="archive">
+                      <button type="submit" class="px-3 py-1 bg-red-500 text-white rounded-lg text-xs hover:bg-red-600">Suspend</button>
+                    </form>
+                  </td>
+                </tr>
+                {% endif %}
+              {% else %}
+              <tr>
+                <td colspan="8" class="text-center py-4 text-gray-500">No approved customers.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- SELLERS SECTION -->
+      <div id="sellers-section" class="user-role-section hidden">
+        <div class="mb-4 flex flex-wrap gap-2">
+          <button onclick="showUserStatus('sellers', 'pending')" class="user-status-btn px-3 py-1 rounded-full border-2 text-sm font-semibold focus:outline-none transition bg-white border-gray-300 text-gray-600 hover:bg-amber-100 hover:border-amber-400 hover:text-amber-600" data-role="sellers" data-status="pending">Pending</button>
+          <button onclick="showUserStatus('sellers', 'approved')" class="user-status-btn px-3 py-1 rounded-full border-2 text-sm font-semibold focus:outline-none transition bg-amber-500 border-amber-500 text-white" data-role="sellers" data-status="approved">Approved</button>
+        </div>
+
+        <!-- Pending Sellers -->
+        <div id="pending-sellers-table" class="overflow-x-auto hidden mb-6">
+          <div class="flex items-center gap-2 mb-3">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-700" fill="currentColor" viewBox="0 0 24 24"><path d="M18 6h-2c0-2.66-2.24-4.84-4.9-4.84S6.2 3.34 6.2 6H4c-1.1 0-1.99.9-1.99 2L2 19c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-7-2c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 11c2.33 0 7 1.17 7 3.5V19H4v-2.5c0-2.33 4.67-3.5 7-3.5z"/></svg>
+            <h3 class="text-lg font-semibold">Pending Sellers</h3>
+          </div>
+          <table class="min-w-full bg-white border border-gray-200 shadow-md rounded-lg text-sm">
+            <thead class="bg-amber-100 text-amber-800 sticky top-0">
+              <tr>
+                <th class="py-3 px-4 text-left">No.</th>
+                <th class="py-3 px-4 text-left">Name</th>
+                <th class="py-3 px-4 text-left">Email</th>
+                <th class="py-3 px-4 text-left">Business</th>
+                <th class="py-3 px-4 text-left">Phone</th>
+                <th class="py-3 px-4 text-left">Status</th>
+                <th class="py-3 px-4 text-left">View</th>
+                <th class="py-3 px-4 text-left">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for user in pending_users %}
+                {% if user.role == 'seller' %}
+                <tr class="border-t hover:bg-gray-50">
+                  <td class="py-2 px-4 text-gray-600 font-medium">{{ (pending_users | selectattr('role', 'equalto', 'seller') | list).index(user) + 1 }}</td>
+                  <td class="py-2 px-4 font-medium">{{ user.fullname }}</td>
+                  <td class="py-2 px-4">{{ user.email }}</td>
+                  <td class="py-2 px-4">{{ user.business_name or '-' }}</td>
+                  <td class="py-2 px-4">{{ user.phone or '-' }}</td>
+                  <td class="py-2 px-4"><span class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs font-medium">{{ user.status or 'pending' }}</span></td>
+                  <td class="py-2 px-4">
+                    <button onclick="viewUser('{{ user.id }}')" class="px-3 py-1 bg-blue-500 text-white rounded-lg text-xs hover:bg-blue-600">View</button>
+                  </td>
+                  <td class="py-2 px-4 space-x-2 flex gap-1">
+                    <form method="post" action="{{ url_for('update_user_status') }}" class="inline" data-admin-view="users-riders-approved">
+                      <input type="hidden" name="user_id" value="{{ user.id }}">
+                      <input type="hidden" name="action" value="approve">
+                      <button type="submit" class="px-3 py-1 bg-green-500 text-white rounded-lg text-xs hover:bg-green-600">Approve</button>
+                    </form>
+                    <form method="post" action="{{ url_for('reject_user') }}" class="inline" data-admin-view="archived-users">
+                      <input type="hidden" name="user_id" value="{{ user.id }}">
+                      <input type="hidden" name="action" value="reject">
+                      <button type="submit" class="px-3 py-1 bg-orange-500 text-white rounded-lg text-xs hover:bg-orange-600">Reject</button>
+                    </form>
+                  </td>
+                </tr>
+                {% endif %}
+              {% else %}
+              <tr>
+                <td colspan="9" class="text-center py-4 text-gray-500">No pending sellers.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Approved Sellers -->
+        <div id="approved-sellers-table" class="overflow-x-auto mb-6">
+          <div class="flex items-center gap-2 mb-3">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-600" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+            <h3 class="text-lg font-semibold">Approved Sellers</h3>
+          </div>
+          <table class="min-w-full bg-white border border-gray-200 shadow-md rounded-lg text-sm">
+            <thead class="bg-green-100 text-green-800 sticky top-0">
+              <tr>
+                <th class="py-3 px-4 text-left">No.</th>
+                <th class="py-3 px-4 text-left">Name</th>
+                <th class="py-3 px-4 text-left">Email</th>
+                <th class="py-3 px-4 text-left">Business</th>
+                <th class="py-3 px-4 text-left">Phone</th>
+                <th class="py-3 px-4 text-left">Status</th>
+                <th class="py-3 px-4 text-left">View</th>
+                <th class="py-3 px-4 text-left">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for user in approved_users %}
+                {% if user.role == 'seller' %}
+                <tr class="border-t hover:bg-gray-50">
+                  <td class="py-2 px-4 text-gray-600 font-medium">{{ (approved_users | selectattr('role', 'equalto', 'seller') | list).index(user) + 1 }}</td>
+                  <td class="py-2 px-4 font-medium">{{ user.fullname }}</td>
+                  <td class="py-2 px-4">{{ user.email }}</td>
+                  <td class="py-2 px-4">{{ user.business_name or '-' }}</td>
+                  <td class="py-2 px-4">{{ user.phone or '-' }}</td>
+                  <td class="py-2 px-4"><span class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">{{ user.status or 'approved' }}</span></td>
+                  <td class="py-2 px-4">
+                    <button onclick="viewUser('{{ user.id }}')" class="px-3 py-1 bg-blue-500 text-white rounded-lg text-xs hover:bg-blue-600">View</button>
+                  </td>
+                  <td class="py-2 px-4">
+                    <form method="post" action="{{ url_for('update_user_status') }}" class="inline" data-admin-view="archived-users">
+                      <input type="hidden" name="user_id" value="{{ user.id }}">
+                      <input type="hidden" name="action" value="archive">
+                      <button type="submit" class="px-3 py-1 bg-red-500 text-white rounded-lg text-xs hover:bg-red-600">Suspend</button>
+                    </form>
+                  </td>
+                </tr>
+                {% endif %}
+              {% else %}
+              <tr>
+                <td colspan="9" class="text-center py-4 text-gray-500">No approved sellers.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- RIDERS SECTION -->
+      <div id="riders-section" class="user-role-section hidden">
+        <div class="mb-4 flex flex-wrap gap-2">
+          <button onclick="showUserStatus('riders', 'pending')" class="user-status-btn px-3 py-1 rounded-full border-2 text-sm font-semibold focus:outline-none transition bg-white border-gray-300 text-gray-600 hover:bg-amber-100 hover:border-amber-400 hover:text-amber-600" data-role="riders" data-status="pending">Pending</button>
+          <button onclick="showUserStatus('riders', 'approved')" class="user-status-btn px-3 py-1 rounded-full border-2 text-sm font-semibold focus:outline-none transition bg-amber-500 border-amber-500 text-white" data-role="riders" data-status="approved">Approved</button>
+        </div>
+
+        <!-- Pending Riders -->
+        <div id="pending-riders-table" class="overflow-x-auto hidden mb-6">
+          <div class="flex items-center gap-2 mb-3">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-700" fill="currentColor" viewBox="0 0 24 24"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.22.42-1.42 1.01L3 12v8c0 .5.5 1 1 1h1c.5 0 1-.5 1-1v-1h12v1c0 .5.5 1 1 1h1c.5 0 1-.5 1-1v-8l-2.08-5.99zM6.5 16c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5zm11 0c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5zM5 11l1.5-4.5h11L19 11H5z"/></svg>
+            <h3 class="text-lg font-semibold">Pending Riders</h3>
+          </div>
+          <table class="min-w-full bg-white border border-gray-200 shadow-md rounded-lg text-sm">
+            <thead class="bg-amber-100 text-amber-800 sticky top-0">
+              <tr>
+                <th class="py-3 px-4 text-left">No.</th>
+                <th class="py-3 px-4 text-left">Name</th>
+                <th class="py-3 px-4 text-left">Email</th>
+                <th class="py-3 px-4 text-left">Phone</th>
+                <th class="py-3 px-4 text-left">Vehicle</th>
+                <th class="py-3 px-4 text-left">Plate #</th>
+                <th class="py-3 px-4 text-left">Status</th>
+                <th class="py-3 px-4 text-left">View</th>
+                <th class="py-3 px-4 text-left">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for user in pending_users %}
+                {% if user.role == 'rider' %}
+                <tr class="border-t hover:bg-gray-50">
+                  <td class="py-2 px-4 text-gray-600 font-medium">{{ (pending_users | selectattr('role', 'equalto', 'rider') | list).index(user) + 1 }}</td>
+                  <td class="py-2 px-4 font-medium">{{ user.fullname }}</td>
+                  <td class="py-2 px-4">{{ user.email }}</td>
+                  <td class="py-2 px-4">{{ user.phone or '-' }}</td>
+                  <td class="py-2 px-4">{{ user.vehicle_type or '-' }}</td>
+                  <td class="py-2 px-4">{{ user.plate_number or '-' }}</td>
+                  <td class="py-2 px-4"><span class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs font-medium">{{ user.status or 'pending' }}</span></td>
+                  <td class="py-2 px-4">
+                    <button onclick="viewUser('{{ user.id }}')" class="px-3 py-1 bg-blue-500 text-white rounded-lg text-xs hover:bg-blue-600">View</button>
+                  </td>
+                  <td class="py-2 px-4 space-x-2 flex gap-1">
+                    <form method="post" action="{{ url_for('update_user_status') }}" class="inline" data-admin-view="users-riders-approved">
+                      <input type="hidden" name="user_id" value="{{ user.id }}">
+                      <input type="hidden" name="action" value="approve">
+                      <button type="submit" class="px-3 py-1 bg-green-500 text-white rounded-lg text-xs hover:bg-green-600">Approve</button>
+                    </form>
+                    <form method="post" action="{{ url_for('reject_user') }}" class="inline" data-admin-view="archived-users">
+                      <input type="hidden" name="user_id" value="{{ user.id }}">
+                      <input type="hidden" name="action" value="reject">
+                      <button type="submit" class="px-3 py-1 bg-orange-500 text-white rounded-lg text-xs hover:bg-orange-600">Reject</button>
+                    </form>
+                  </td>
+                </tr>
+                {% endif %}
+              {% else %}
+              <tr>
+                <td colspan="9" class="text-center py-4 text-gray-500">No pending riders.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Approved Riders -->
+        <div id="approved-riders-table" class="overflow-x-auto mb-6">
+          <div class="flex items-center gap-2 mb-3">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-600" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+            <h3 class="text-lg font-semibold">Approved Riders</h3>
+          </div>
+          <table class="min-w-full bg-white border border-gray-200 shadow-md rounded-lg text-sm">
+            <thead class="bg-green-100 text-green-800 sticky top-0">
+              <tr>
+                <th class="py-3 px-4 text-left">No.</th>
+                <th class="py-3 px-4 text-left">Name</th>
+                <th class="py-3 px-4 text-left">Email</th>
+                <th class="py-3 px-4 text-left">Phone</th>
+                <th class="py-3 px-4 text-left">Vehicle</th>
+                <th class="py-3 px-4 text-left">Plate #</th>
+                <th class="py-3 px-4 text-left">Status</th>
+                <th class="py-3 px-4 text-left">View</th>
+                <th class="py-3 px-4 text-left">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for user in approved_users %}
+                {% if user.role == 'rider' %}
+                <tr class="border-t hover:bg-gray-50">
+                  <td class="py-2 px-4 text-gray-600 font-medium">{{ (approved_users | selectattr('role', 'equalto', 'rider') | list).index(user) + 1 }}</td>
+                  <td class="py-2 px-4 font-medium">{{ user.fullname }}</td>
+                  <td class="py-2 px-4">{{ user.email }}</td>
+                  <td class="py-2 px-4">{{ user.phone or '-' }}</td>
+                  <td class="py-2 px-4">{{ user.vehicle_type or '-' }}</td>
+                  <td class="py-2 px-4">{{ user.plate_number or '-' }}</td>
+                  <td class="py-2 px-4"><span class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">{{ user.status or 'approved' }}</span></td>
+                  <td class="py-2 px-4">
+                    <button onclick="viewUser('{{ user.id }}')" class="px-3 py-1 bg-blue-500 text-white rounded-lg text-xs hover:bg-blue-600">View</button>
+                  </td>
+                  <td class="py-2 px-4">
+                    <form method="post" action="{{ url_for('update_user_status') }}" class="inline" data-admin-view="archived-users">
+                      <input type="hidden" name="user_id" value="{{ user.id }}">
+                      <input type="hidden" name="action" value="archive">
+                      <button type="submit" class="px-3 py-1 bg-red-500 text-white rounded-lg text-xs hover:bg-red-600">Suspend</button>
+                    </form>
+                  </td>
+                </tr>
+                {% endif %}
+              {% else %}
+              <tr>
+                <td colspan="9" class="text-center py-4 text-gray-500">No approved riders.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Archived Page (Products + Users) -->
+  <section id="archived" class="section hidden p-6">
+    <div class="mb-4 flex flex-wrap gap-2">
+      <button id="btn-archived-products" class="archived-tab-btn px-3 py-1 rounded-full border-2 text-sm font-semibold focus:outline-none transition bg-white border-gray-300 text-gray-600 hover:bg-amber-100 hover:border-amber-400 hover:text-amber-600">Archived Products</button>
+      <button id="btn-archived-users" class="archived-tab-btn px-3 py-1 rounded-full border-2 text-sm font-semibold focus:outline-none transition bg-white border-gray-300 text-gray-600 hover:bg-amber-100 hover:border-amber-400 hover:text-amber-600">Archived Users</button>
+    </div>
+
+    <!-- Archived Products -->
+    <div id="archived-products-table" class="overflow-x-auto mb-10">
+    <div class="flex items-center gap-2 mb-4">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="currentColor" viewBox="0 0 24 24"><path d="M4 6h16V4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4v-2H4V6zm16-4v2h2c1.1 0 2-.9 2-2s-.9-2-2-2h-2zm-4 18h4v-2h-4v2zm-4 0h4v-2h-4v2zm-4 0h4v-2H8v2zM4 18h16v-2H4v2z"/></svg>
+      <h2 class="text-xl font-semibold">Archived Products</h2>
+    </div>
+    <table class="min-w-full bg-white border border-gray-200 shadow-md rounded-lg">
+      <thead class="bg-gray-100 text-gray-800">
+        <tr>
+          <th class="py-3 px-4 text-left">Product Name</th>
+          <th class="py-3 px-4 text-left">Category</th>
+          <th class="py-3 px-4 text-left">Archived At</th>
+          <th class="py-3 px-4 text-left">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for product in archived_products %}
+        <tr class="border-t">
+          <td class="py-2 px-4">{{ product.name }}</td>
+          <td class="py-2 px-4">{{ product.category or '—' }}</td>
+          <td class="py-2 px-4">
+            {{ product.archived_at.strftime('%Y-%m-%d %H:%M') if product.archived_at else '—' }}
+          </td>
+          <td class="py-2 px-4">
+            <form method="post" action="{{ url_for('update_product_status') }}" class="restore-product-form inline" data-product-name="{{ product.name }}" data-admin-view="products-approved">
+              <input type="hidden" name="product_id" value="{{ product.id }}">
+              <input type="hidden" name="action" value="restore">
+              <button type="submit" class="px-3 py-1 bg-green-500 text-white rounded-lg text-xs hover:bg-green-600">Restore</button>
+            </form>
+            <button onclick="viewProduct('{{ product.id }}')" class="px-3 py-1 bg-blue-500 text-white rounded-lg text-xs hover:bg-blue-600 ml-3">View</button>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="4" class="text-center py-4 text-gray-500">No archived products found.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Archived Users -->
+<div id="archived-users-table" class="overflow-x-auto hidden">
+<div class="flex items-center gap-2 mb-4">
+  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="currentColor" viewBox="0 0 24 24"><path d="M4 6h16V4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4v-2H4V6zm16-4v2h2c1.1 0 2-.9 2-2s-.9-2-2-2h-2zm-4 18h4v-2h-4v2zm-4 0h4v-2h-4v2zm-4 0h4v-2H8v2zM4 18h16v-2H4v2z"/></svg>
+  <h2 class="text-xl font-semibold">Archived Users</h2>
+</div>
+  <table class="min-w-full bg-white border border-gray-200 shadow-md rounded-lg">
+    <thead class="bg-gray-100 text-gray-800">
+      <tr>
+        <th class="py-3 px-4 text-left">Name</th>
+        <th class="py-3 px-4 text-left">Email</th>
+        <th class="py-3 px-4 text-left">Role</th>
+        <th class="py-3 px-4 text-left">Archived On</th>
+        <th class="py-3 px-4 text-left">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for user in archived_users %}
+      <tr class="border-t">
+        <td class="py-2 px-4">{{ user.fullname }}</td>
+        <td class="py-2 px-4">{{ user.email }}</td>
+        <td class="py-2 px-4">{{ user.role }}</td>
+        <td class="py-2 px-4">
+          {% if user.archived_at %}
+            {{ user.archived_at.strftime('%Y-%m-%d') }}
+          {% else %}
+            N/A
+          {% endif %}
+        </td>
+        <td class="py-2 px-4 space-x-2">
+          <!-- Restore button -->
+          <form method="post" action="{{ url_for('update_user_status') }}" class="restore-user-form inline" data-user-name="{{ user.fullname }}">
+            <input type="hidden" name="user_id" value="{{ user.id }}">
+            <input type="hidden" name="action" value="restore">
+            <button type="submit" class="px-3 py-1 bg-green-500 text-white rounded-lg text-xs hover:bg-green-600">Restore</button>
+          </form>
+
+          <!-- View button (modal) -->
+          <button onclick="viewUser('{{ user.id }}')" class="px-3 py-1 bg-blue-500 text-white rounded-lg text-xs hover:bg-blue-600 ml-3">View</button>
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="5" class="text-center py-4 text-gray-500">No archived users found.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+
+</section>
+
+
+    <!-- Reports -->
+    <section id="reports" class="section hidden p-6 space-y-6">
+      <!-- Filters -->
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+        <h3 class="text-lg font-semibold mb-4">📊 Sales & Income Report</h3>
+        
+        <!-- Filters -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Date Range</label>
+            <select id="admin-date-range" class="w-full border rounded px-3 py-2 text-sm" onchange="applyAdminDateRange()">
+              <option value="all">All Time</option>
+              <option value="today">Today</option>
+              <option value="week">This Week</option>
+              <option value="month">This Month</option>
+              <option value="year">This Year</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Seller Name</label>
+            <input type="text" id="admin-seller-filter" class="w-full border rounded px-3 py-2 text-sm" placeholder="Search seller..." onkeyup="filterAdminSalesReport()">
+          </div>
+          <div class="flex items-end">
+            <button onclick="resetAdminFilters()" class="w-full bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 text-sm font-medium">Reset All</button>
+          </div>
+        </div>
+        
+        <!-- Custom Date Range -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Custom From Date</label>
+            <input type="date" id="admin-date-from" class="w-full border rounded px-3 py-2 text-sm" onchange="filterAdminSalesReport()">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Custom To Date</label>
+            <input type="date" id="admin-date-to" class="w-full border rounded px-3 py-2 text-sm" onchange="filterAdminSalesReport()">
+          </div>
+        </div>
+      </div>
+
+      <!-- Summary Statistics -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-xl border border-green-200">
+          <div class="text-sm text-green-600 font-medium">Total Sales</div>
+          <div class="text-2xl font-bold text-green-700 mt-2" id="admin-total-sales">0</div>
+        </div>
+        <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-xl border border-blue-200">
+          <div class="text-sm text-blue-600 font-medium">Total Income</div>
+          <div class="text-2xl font-bold text-blue-700 mt-2" id="admin-total-income">₱0</div>
+        </div>
+        <div class="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-xl border border-purple-200">
+          <div class="text-sm text-purple-600 font-medium">Total Sellers</div>
+          <div class="text-2xl font-bold text-purple-700 mt-2" id="admin-total-sellers">0</div>
+        </div>
+      </div>
+
+      <!-- Sales Table -->
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm border-collapse">
+            <thead class="bg-amber-100 text-gray-700 uppercase text-xs">
+              <tr>
+                <th class="py-3 px-4 text-left">Seller Name</th>
+                <th class="py-3 px-4 text-right">Total Sales</th>
+                <th class="py-3 px-4 text-right">Completed Orders</th>
+                <th class="py-3 px-4 text-right">Seller Income</th>
+                <th class="py-3 px-4 text-right">Admin Commission</th>
+                <th class="py-3 px-4 text-right">Total Revenue</th>
+              </tr>
+            </thead>
+            <tbody id="admin-sales-tbody">
+              <tr><td colspan="6" class="text-center py-4 text-gray-500">Loading sales data...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <script>
+        // Store original sales data
+        window.adminSalesData = [];
+        
+        function applyAdminDateRange() {
+          const range = document.getElementById('admin-date-range').value;
+          const today = new Date();
+          let fromDate, toDate;
+          
+          if (range === 'today') {
+            fromDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+            toDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+          } else if (range === 'week') {
+            const day = today.getDay();
+            const diff = today.getDate() - day;
+            fromDate = new Date(today.getFullYear(), today.getMonth(), diff);
+            toDate = new Date(today.getFullYear(), today.getMonth(), diff + 6);
+          } else if (range === 'month') {
+            fromDate = new Date(today.getFullYear(), today.getMonth(), 1);
+            toDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+          } else if (range === 'year') {
+            fromDate = new Date(today.getFullYear(), 0, 1);
+            toDate = new Date(today.getFullYear(), 11, 31);
+          } else if (range === 'all') {
+            document.getElementById('admin-date-from').value = '';
+            document.getElementById('admin-date-to').value = '';
+            filterAdminSalesReport();
+            return;
+          }
+          
+          const pad = (num) => String(num).padStart(2, '0');
+          document.getElementById('admin-date-from').value = `${fromDate.getFullYear()}-${pad(fromDate.getMonth() + 1)}-${pad(fromDate.getDate())}`;
+          document.getElementById('admin-date-to').value = `${toDate.getFullYear()}-${pad(toDate.getMonth() + 1)}-${pad(toDate.getDate())}`;
+          filterAdminSalesReport();
+        }
+        
+        function resetAdminFilters() {
+          document.getElementById('admin-date-range').value = 'all';
+          document.getElementById('admin-date-from').value = '';
+          document.getElementById('admin-date-to').value = '';
+          document.getElementById('admin-seller-filter').value = '';
+          filterAdminSalesReport();
+        }
+        
+        function filterAdminSalesReport() {
+          const dateFrom = document.getElementById('admin-date-from').value;
+          const dateTo = document.getElementById('admin-date-to').value;
+          const sellerFilter = document.getElementById('admin-seller-filter').value.toLowerCase().trim();
+          
+          // Apply filters to table
+          let filteredData = [...window.adminAllSalesData];
+          
+          // Filter by date range if dates are provided
+          if (dateFrom) {
+            const fromDate = new Date(dateFrom + 'T00:00:00').getTime();
+            filteredData = filteredData.filter(row => {
+              if (row.last_sale_date) {
+                const rowDate = new Date(row.last_sale_date).getTime();
+                return rowDate >= fromDate;
+              }
+              return true;
+            });
+          }
+          
+          if (dateTo) {
+            const toDate = new Date(dateTo + 'T23:59:59').getTime();
+            filteredData = filteredData.filter(row => {
+              if (row.last_sale_date) {
+                const rowDate = new Date(row.last_sale_date).getTime();
+                return rowDate <= toDate;
+              }
+              return true;
+            });
+          }
+          
+          // Filter by seller name
+          if (sellerFilter) {
+            filteredData = filteredData.filter(row => 
+              row.seller_name && row.seller_name.toLowerCase().includes(sellerFilter)
+            );
+          }
+          
+          renderAdminSalesTable(filteredData);
+        }
+        
+        function renderAdminSalesTable(data) {
+          const tbody = document.getElementById('admin-sales-tbody');
+          
+          if (!data || data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-gray-500">No sales data available.</td></tr>';
+            document.getElementById('admin-total-sales').textContent = '0';
+            document.getElementById('admin-total-income').textContent = '₱0.00';
+            document.getElementById('admin-total-sellers').textContent = '0';
+            return;
+          }
+          
+          let totalSales = 0;
+          let totalIncome = 0;
+          let totalCommission = 0;
+          
+          const rows = data.map(item => {
+            totalSales += parseInt(item.total_sales || 0);
+            totalIncome += parseFloat(item.seller_income || 0);
+            totalCommission += parseFloat(item.admin_commission || 0);
+            
+            return `
+              <tr class="border-t hover:bg-gray-50">
+                <td class="py-3 px-4 font-medium">${item.seller_name || 'Unknown'}</td>
+                <td class="py-3 px-4 text-right">${item.total_sales || 0}</td>
+                <td class="py-3 px-4 text-right">${item.completed_orders || 0}</td>
+                <td class="py-3 px-4 text-right font-semibold text-green-600">₱${parseFloat(item.seller_income || 0).toFixed(2)}</td>
+                <td class="py-3 px-4 text-right font-semibold text-blue-600">₱${parseFloat(item.admin_commission || 0).toFixed(2)}</td>
+                <td class="py-3 px-4 text-right font-semibold text-purple-600">₱${parseFloat(item.total_revenue || 0).toFixed(2)}</td>
+              </tr>
+            `;
+          });
+          
+          // Add totals row
+          rows.push(`
+            <tr class="bg-amber-50 font-semibold">
+              <td class="py-3 px-4">TOTAL</td>
+              <td class="py-3 px-4 text-right">${totalSales}</td>
+              <td class="py-3 px-4 text-right">${data.reduce((sum, item) => sum + (parseInt(item.completed_orders || 0)), 0)}</td>
+              <td class="py-3 px-4 text-right text-green-600">₱${totalIncome.toFixed(2)}</td>
+              <td class="py-3 px-4 text-right text-blue-600">₱${totalCommission.toFixed(2)}</td>
+              <td class="py-3 px-4 text-right text-purple-600">₱${(totalIncome + totalCommission).toFixed(2)}</td>
+            </tr>
+          `);
+          
+          tbody.innerHTML = rows.join('');
+          
+          // Update summary statistics
+          document.getElementById('admin-total-sales').textContent = totalSales;
+          document.getElementById('admin-total-income').textContent = '₱' + (totalIncome + totalCommission).toFixed(2);
+          document.getElementById('admin-total-sellers').textContent = data.length;
+        }
+        
+        // Fetch sales data on page load
+        async function loadAdminSalesReport() {
+          try {
+            const response = await fetch('{{ url_for("api_admin_sales_report") }}');
+            if (!response.ok) throw new Error('Failed to fetch sales data');
+            
+            const result = await response.json();
+            if (result.success) {
+              window.adminAllSalesData = result.data || [];
+              window.adminSalesData = result.data || [];
+              filterAdminSalesReport();
+            }
+          } catch (error) {
+            console.error('Error loading sales report:', error);
+            document.getElementById('admin-sales-tbody').innerHTML = '<tr><td colspan="6" class="text-center py-4 text-red-500">Error loading data</td></tr>';
+          }
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+          loadAdminSalesReport();
+        });
+      </script>
+    </section>
+
+    <!-- Settings Section -->
+    <section id="settings" class="section hidden p-6">
+      <div class="max-w-3xl mx-auto">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <h2 class="text-2xl font-semibold text-gray-700 mb-6">
+            <i class="bx bx-lock"></i> Security Settings
+          </h2>
+          
+          <form action="{{ url_for('update_profile') }}" method="POST" class="space-y-4">
+            <div>
+              <label class="block text-gray-600 text-sm font-medium mb-2">Current Password</label>
+              <input
+                type="password"
+                name="current_password"
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                placeholder="Enter your current password"
+              />
+            </div>
+            <div>
+              <label class="block text-gray-600 text-sm font-medium mb-2">New Password</label>
+              <input
+                type="password"
+                name="new_password"
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                placeholder="Enter new password (minimum 6 characters)"
+              />
+            </div>
+            <div>
+              <label class="block text-gray-600 text-sm font-medium mb-2">Confirm New Password</label>
+              <input
+                type="password"
+                name="confirm_new_password"
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                placeholder="Confirm new password"
+              />
+            </div>
+            <button
+              type="submit"
+              class="mt-6 bg-amber-500 text-white px-6 py-2 rounded-lg hover:bg-amber-600 shadow-md transition font-medium"
+            >
+              Update Password
+            </button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- User Modal -->
+<div id="user-modal" class="fixed inset-0 bg-black bg-opacity-40 backdrop-blur-sm hidden flex items-center justify-center z-50">
+  <div class="bg-white p-6 rounded-xl w-11/12 max-w-2xl relative shadow-2xl mx-4">
+    <button onclick="closeModal()" class="absolute top-3 right-3 text-gray-500 hover:text-gray-700">✖</button>
+    <div id="user-modal-content" class="space-y-4 text-sm text-gray-800 max-h-[80vh] overflow-y-auto">
+      <!-- User info will be injected here -->
+    </div>
+  </div>
+</div>
+
+<!-- Image viewer/lightbox -->
+<div id="img-viewer" class="fixed inset-0 hidden z-50 flex items-center justify-center">
+  <!-- Dark semi-transparent backdrop -->
+  <div id="img-viewer-backdrop" class="absolute inset-0 bg-black/70 backdrop-blur-sm"></div>
+
+  <!-- Image container -->
+  <div class="relative z-50 max-w-3xl w-full mx-4">
+    <button id="img-viewer-close" class="absolute top-3 right-3 text-white text-2xl z-50">✖</button>
+    <img id="img-viewer-img" src="" class="w-full max-h-[80vh] object-contain rounded-lg shadow-2xl" alt="Zoomed Image">
+  </div>
+</div>
+
+  <!-- JavaScript -->
+  <script>
+    // Single showSection implementation
+    function scrollAdminPageToTop() {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }
+
+    function showSection(id, updateHash = true) {
+      document.querySelectorAll('.section').forEach(sec => sec.classList.add('hidden'));
+      const el = document.getElementById(id);
+      if (el) el.classList.remove('hidden');
+
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.remove('bg-amber-100', 'text-amber-600');
+        btn.classList.add('hover:bg-gray-100', 'text-gray-800');
+      });
+      document.querySelectorAll(`.nav-btn[onclick="showSection('${id}')"]`)
+        .forEach(btn => {
+          btn.classList.remove('hover:bg-gray-100', 'text-gray-800');
+          btn.classList.add('bg-amber-100', 'text-amber-600');
+        });
+
+      if (updateHash) {
+        window.location.hash = id;
+        sessionStorage.setItem('adminViewState', id);
+      }
+
+      requestAnimationFrame(scrollAdminPageToTop);
+    }
+
+    function applyAdminViewState(state) {
+      const normalizedState = (state || 'dashboard').replace(/^#/, '');
+      const parts = normalizedState.split('-');
+      const section = parts[0] || 'dashboard';
+
+      showSection(section, false);
+
+      if (section === 'products') {
+        const status = parts[1] === 'approved' ? 'approved' : 'pending';
+        const pendingTable = document.getElementById('pending-products-table');
+        const approvedTable = document.getElementById('approved-products-table');
+        if (pendingTable && approvedTable) {
+          pendingTable.classList.toggle('hidden', status !== 'pending');
+          approvedTable.classList.toggle('hidden', status !== 'approved');
+        }
+      }
+
+      if (section === 'users') {
+        const role = parts[1] || 'customers';
+        const status = parts[2] || 'pending';
+        window.__preserveUserStatus = true;
+        showUserRole(role);
+        showUserStatus(role, status);
+        window.__preserveUserStatus = false;
+      }
+
+      if (section === 'archived') {
+        const archivedTab = parts[1] === 'users' ? 'users' : 'products';
+        const archivedProductsTable = document.getElementById('archived-products-table');
+        const archivedUsersTable = document.getElementById('archived-users-table');
+        if (archivedProductsTable && archivedUsersTable) {
+          archivedProductsTable.classList.toggle('hidden', archivedTab !== 'products');
+          archivedUsersTable.classList.toggle('hidden', archivedTab !== 'users');
+        }
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const initialState = window.location.hash || sessionStorage.getItem('adminViewState') || '#dashboard';
+      applyAdminViewState(initialState);
+    });
+
+    window.addEventListener('hashchange', () => {
+      applyAdminViewState(window.location.hash || '#dashboard');
+    });
+  </script>
+
+  <script>
+  function rememberAdminViewState(state) {
+    sessionStorage.setItem('adminViewState', state);
+    if (window.location.hash !== `#${state}`) {
+      history.replaceState(null, '', `${window.location.pathname}${window.location.search}#${state}`);
+    }
+  }
+
+  // Users section: Role and Status switching
+  function showUserRole(role) {
+    // Hide all role sections
+    document.querySelectorAll('.user-role-section').forEach(sec => sec.classList.add('hidden'));
+    // Show selected role section
+    const section = document.getElementById(role + '-section');
+    if (section) section.classList.remove('hidden');
+    
+    // Update role tab styling
+    document.querySelectorAll('.user-role-btn').forEach(btn => {
+      btn.classList.remove('border-amber-600', 'text-amber-600');
+      btn.classList.add('border-transparent', 'text-gray-600');
+    });
+    const activeBtn = document.querySelector('.user-role-btn[data-role="' + role + '"]');
+    if (activeBtn) {
+      activeBtn.classList.add('border-amber-600', 'text-amber-600');
+      activeBtn.classList.remove('border-transparent', 'text-gray-600');
+    }
+    
+    if (!window.__preserveUserStatus) {
+      showUserStatus(role, 'pending');
+    }
+  }
+
+  function showUserStatus(role, status) {
+    const pendingTable = document.getElementById('pending-' + role + '-table');
+    const approvedTable = document.getElementById('approved-' + role + '-table');
+    
+    if (status === 'pending') {
+      if (pendingTable) pendingTable.classList.remove('hidden');
+      if (approvedTable) approvedTable.classList.add('hidden');
+    } else {
+      if (pendingTable) pendingTable.classList.add('hidden');
+      if (approvedTable) approvedTable.classList.remove('hidden');
+    }
+    
+    // Update button styling
+    document.querySelectorAll('.user-status-btn[data-role="' + role + '"]').forEach(btn => {
+      btn.classList.remove('bg-amber-500', 'border-amber-500', 'text-white');
+      btn.classList.add('bg-white', 'border-gray-300', 'text-gray-600');
+    });
+    const activeBtn = document.querySelector('.user-status-btn[data-role="' + role + '"][data-status="' + status + '"]');
+    if (activeBtn) {
+      activeBtn.classList.add('bg-amber-500', 'border-amber-500', 'text-white');
+      activeBtn.classList.remove('bg-white', 'border-gray-300', 'text-gray-600');
+    }
+
+    rememberAdminViewState(`users-${role}-${status}`);
+  }
+
+  // Initialize: show customers on load
+  document.addEventListener('DOMContentLoaded', () => {
+    if (!window.location.hash && !sessionStorage.getItem('adminViewState')) {
+      showUserRole('customers');
+    }
+  });
+  </script>
+
+<script>
+  // Products Pending/Approved toggle
+  const btnPendingProducts = document.getElementById('btn-pending-products');
+  const btnApprovedProducts = document.getElementById('btn-approved-products');
+  const pendingProductsTable = document.getElementById('pending-products-table');
+  const approvedProductsTable = document.getElementById('approved-products-table');
+
+  btnPendingProducts?.addEventListener('click', () => {
+    pendingProductsTable.classList.remove('hidden');
+    approvedProductsTable.classList.add('hidden');
+    rememberAdminViewState('products-pending');
+  });
+
+  btnApprovedProducts?.addEventListener('click', () => {
+    pendingProductsTable.classList.add('hidden');
+    approvedProductsTable.classList.remove('hidden');
+    rememberAdminViewState('products-approved');
+  });
+</script>
+
+<script>
+  // Product restore confirmation modal
+  document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.restore-product-form').forEach(form => {
+      form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const productName = this.dataset.productName;
+        
+        Swal.fire({
+          title: 'Restore Product?',
+          text: `Restore "${productName}"? It will be set to "Approved" and the seller will be notified.`,
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: 'Yes, Restore',
+          cancelButtonText: 'Cancel'
+        }).then(result => {
+          if (result.isConfirmed) {
+            this.submit();
+          }
+        });
+      });
+    });
+  });
+
+  // User restore confirmation modal
+  document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.restore-user-form').forEach(form => {
+      form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const userName = this.dataset.userName;
+        
+        Swal.fire({
+          title: 'Restore User?',
+          text: `Restore "${userName}"? They will be set to "Approved" and notified via email.`,
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: 'Yes, Restore',
+          cancelButtonText: 'Cancel'
+        }).then(result => {
+          if (result.isConfirmed) {
+            this.submit();
+          }
+        });
+      });
+    });
+  });
+</script>
+
+<script>
+  // Archived Products/Users toggle
+  const btnArchivedProducts = document.getElementById('btn-archived-products');
+  const btnArchivedUsers = document.getElementById('btn-archived-users');
+  const archivedProductsTable = document.getElementById('archived-products-table');
+  const archivedUsersTable = document.getElementById('archived-users-table');
+
+  btnArchivedProducts?.addEventListener('click', () => {
+    archivedProductsTable.classList.remove('hidden');
+    archivedUsersTable.classList.add('hidden');
+    rememberAdminViewState('archived-products');
+  });
+
+  btnArchivedUsers?.addEventListener('click', () => {
+    archivedProductsTable.classList.add('hidden');
+    archivedUsersTable.classList.remove('hidden');
+    rememberAdminViewState('archived-users');
+  });
+</script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('form[data-admin-view]').forEach(form => {
+      form.addEventListener('submit', () => {
+        rememberAdminViewState(form.dataset.adminView);
+      });
+    });
+  });
+</script>
+
+<script>
+function closeModal() {
+  document.getElementById('user-modal').classList.add('hidden');
+  document.body.classList.remove('overflow-hidden');
+}
+
+function openImageViewer(src) {
+  const viewer = document.getElementById('img-viewer');
+  const img = document.getElementById('img-viewer-img');
+  img.src = src;
+  viewer.classList.remove('hidden');
+  document.body.classList.add('overflow-hidden'); // Prevent scrolling behind
+}
+
+function closeImageViewer() {
+  const viewer = document.getElementById('img-viewer');
+  const img = document.getElementById('img-viewer-img');
+  img.src = '';
+  viewer.classList.add('hidden');
+  document.body.classList.remove('overflow-hidden');
+}
+
+// Close viewer when clicking the X button or backdrop
+document.getElementById('img-viewer-close').addEventListener('click', closeImageViewer);
+document.getElementById('img-viewer-backdrop').addEventListener('click', closeImageViewer);
+
+function viewUser(userId) {
+  fetch(`/admin/user-info/${userId}`)
+    .then(res => res.json())
+    .then(data => {
+      const modalContent = document.getElementById('user-modal-content');
+
+      // Build addresses HTML
+      let addressesHtml = '';
+      if (data.addresses && data.addresses.length) {
+        data.addresses.forEach(addr => {
+          addressesHtml += `<div class="p-3 bg-gray-50 rounded mb-2">
+            <p class="font-medium">${addr.fullname || ''}</p>
+            <p class="text-sm">${addr.street || ''} ${addr.barangay_name || ''}</p>
+            <p class="text-sm">${addr.city_name || ''}, ${addr.province_name || ''}</p>
+            <p class="text-sm">Region: ${addr.region_name || ''}</p>
+          </div>`;
+        });
+      } else {
+        addressesHtml = '<p class="text-sm text-gray-500">No addresses on file.</p>';
+      }
+
+      // Helper: set document images / links
+      function buildDocHtml(label, path) {
+        if (!path) return '';
+        const src = path;
+
+        // Check if the file is an image
+        const imgExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+        const ext = src.split('.').pop().toLowerCase();
+
+        if (imgExtensions.includes(ext)) {
+          return `<div class="doc-item">
+            <p class="text-xs text-gray-500 mb-1">${label}</p>
+            <img src="${src}" class="w-28 h-28 object-cover rounded cursor-zoom-in" onclick="openImageViewer('${src}')">
+          </div>`;
+        } else {
+          return `<div class="doc-item">
+            <p class="text-xs text-gray-500 mb-1">${label}</p>
+            <a href="${src}" target="_blank" class="text-sm text-blue-600 underline">Open file</a>
+          </div>`;
+        }
+      }
+
+      // Build modal content WITHOUT profile picture
+      modalContent.innerHTML = `
+        <div class="mb-4">
+          <h2 class="text-xl font-semibold mb-1">${data.fullname || '—'}</h2>
+          <p class="text-sm text-gray-600"><strong>Email:</strong> ${data.email || '—'}</p>
+          <p class="text-sm text-gray-600"><strong>Role:</strong> ${data.role || '—'}</p>
+          <p class="text-sm text-gray-600"><strong>Status:</strong> ${data.status || '—'}</p>
+          ${data.phone ? `<p class="text-sm text-gray-600"><strong>Phone:</strong> ${data.phone}</p>` : ''}
+          ${data.date_of_birth ? `<p class="text-sm text-gray-600"><strong>DOB:</strong> ${data.date_of_birth}</p>` : ''}
+          ${data.business_name ? `<p class="text-sm text-gray-600"><strong>Business:</strong> ${data.business_name}</p>` : ''}
+          ${data.vehicle_type ? `<p class="text-sm text-gray-600"><strong>Vehicle:</strong> ${data.vehicle_type}</p>` : ''}
+          ${data.plate_number ? `<p class="text-sm text-gray-600"><strong>Plate #:</strong> ${data.plate_number}</p>` : ''}
+        </div>
+
+        <div class="mb-4">
+          <h3 class="font-semibold mb-2">Addresses</h3>
+          ${addressesHtml}
+        </div>
+
+        <div>
+          <h3 class="font-semibold mb-2">Documents</h3>
+          <div class="flex gap-3 flex-wrap">
+            ${buildDocHtml('ID Picture', data.id_picture)}
+            ${buildDocHtml('Business Permit', data.business_permit)}
+            ${buildDocHtml("Driver's License", data.drivers_license)}
+          </div>
+        </div>
+      `;
+
+      // Show modal
+      document.getElementById('user-modal').classList.remove('hidden');
+      document.body.classList.add('overflow-hidden');
+    });
+}
+
+// View product details in the same modal
+function viewProduct(productId) {
+  fetch(`/admin/product-info/${productId}`)
+    .then(res => res.json())
+    .then(data => {
+      const modalContent = document.getElementById('user-modal-content');
+
+      // Build variants HTML
+      let variantsHtml = '';
+      if (data.variants && data.variants.length) {
+        data.variants.forEach(v => {
+          variantsHtml += `<div class="p-3 bg-gray-50 rounded mb-2">
+            <p class="font-medium">Variant: ${v.color || ''} ${v.size ? '- ' + v.size : ''}</p>
+            <p class="text-sm">Price: ₱${v.price || '0.00'} | Stock: ${v.stock || 0} | Weight: ${v.weight_kg || '—'} kg</p>
+            ${v.image ? `<img src="${v.image}" class="w-28 h-28 object-cover rounded mt-2 cursor-zoom-in" onclick="openImageViewer('${v.image}')">` : ''}
+          </div>`;
+        });
+      } else {
+        variantsHtml = '<p class="text-sm text-gray-500">No variants.</p>';
+      }
+
+      // Product image HTML
+      const prodImg = data.image ? `<img src="${data.image}" class="w-40 h-40 object-cover rounded cursor-zoom-in" onclick="openImageViewer('${data.image}')">` : '';
+
+      // Seller address
+      let sellerAddrHtml = '';
+      if (data.seller_address) {
+        const a = data.seller_address;
+        sellerAddrHtml = `<div class="p-3 bg-gray-50 rounded mb-2">
+          <p class="text-sm">${a.street || ''} ${a.barangay_name || ''}</p>
+          <p class="text-sm">${a.city_name || ''}, ${a.province_name || ''}</p>
+          <p class="text-sm">Region: ${a.region_name || ''}</p>
+        </div>`;
+      }
+
+      // Seller full name at the top
+      const sellerFullName = (data.seller && data.seller.fullname) ? data.seller.fullname : 'Unknown Seller';
+      modalContent.innerHTML = `
+        <div class="mb-4">
+          <h2 class="text-xl font-semibold mb-1">${data.name || ''}</h2>
+          <p class="text-xs text-gray-500 mb-2"><strong>Seller:</strong> ${sellerFullName}</p>
+          <div class="flex gap-4 items-start">
+            <div>${prodImg}</div>
+            <div>
+              <p class="text-sm text-gray-600"><strong>Category:</strong> ${data.category || ''}</p>
+              <p class="text-sm text-gray-600"><strong>Price:</strong> 1${data.price || '0.00'}</p>
+              <p class="text-sm text-gray-600"><strong>Stock:</strong> ${data.stock || 0}</p>
+              <p class="text-sm text-gray-600"><strong>Status:</strong> ${data.status || ''}</p>
+            </div>
+          </div>
+          <div id="product-description-html" class="mt-3 bg-gray-50 rounded-lg p-4 text-sm text-gray-700 whitespace-pre-line"></div>
+        </div>
+
+        <div class="mb-4">
+          <h3 class="font-semibold mb-2">Variants</h3>
+          ${variantsHtml}
+        </div>
+        <div class="mb-4">
+          <h3 class="font-semibold mb-2">Seller</h3>
+          <p class="text-sm text-gray-600"><strong>Store:</strong> ${data.seller.business_name || '—'}</p>
+          ${sellerAddrHtml}
+        </div>
+      `;
+      // Render HTML for product description (from TinyMCE)
+      const descDiv = document.getElementById('product-description-html');
+      if (descDiv) {
+        descDiv.innerHTML = data.description || '';
+      }
+
+      document.getElementById('user-modal').classList.remove('hidden');
+      document.body.classList.add('overflow-hidden');
+    })
+    .catch(err => {
+      console.error('Failed to fetch product info', err);
+      alert('Failed to load product information');
+    });
+}
+</script>
+<!-- Active tab behavior for admin filter buttons -->
+<script>
+  (function() {
+    function attachActiveToggles(selector) {
+      const buttons = document.querySelectorAll(selector);
+      if (!buttons || buttons.length === 0) return;
+      buttons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          buttons.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+        });
+      });
+      // Prefer any already amber (bg-amber-500) as initial active, otherwise first
+      const already = Array.from(buttons).find(b => b.classList.contains('bg-amber-500') || b.classList.contains('bg-amber-400'));
+      if (already) {
+        buttons.forEach(b => b.classList.remove('active'));
+        already.classList.add('active');
+      } else {
+        buttons[0].classList.add('active');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      attachActiveToggles('.product-tab-btn');
+      attachActiveToggles('.user-tab-btn');
+      attachActiveToggles('.archived-tab-btn');
+    });
+  })();
+</script>
+
+<!-- Approve Confirmation Modal -->
+<div
+  id="approve-modal"
+  class="fixed inset-0 bg-black/40 hidden z-[100] flex items-center justify-center"
+>
+  <div
+    class="bg-white rounded-xl p-6 w-[90%] max-w-sm text-center shadow-lg transform scale-95 opacity-0 transition-all duration-300"
+  >
+    <i class="bx bx-check-circle text-5xl text-green-500 mb-3"></i>
+    <h2 class="text-xl font-semibold mb-2">Approve User</h2>
+    <p class="text-gray-600 mb-6">
+      Are you sure you want to approve this user? They will gain access to their account.
+    </p>
+
+    <div class="flex justify-center gap-3">
+      <button
+        id="cancel-approve"
+        class="px-5 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition"
+      >
+        Cancel
+      </button>
+      <button
+        id="confirm-approve"
+        class="px-5 py-2 rounded-lg bg-green-500 text-white hover:bg-green-600 transition"
+      >
+        Yes, Approve
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Suspend Confirmation Modal -->
+<div
+  id="suspend-modal"
+  class="fixed inset-0 bg-black/40 hidden z-[100] flex items-center justify-center"
+>
+  <div
+    class="bg-white rounded-xl p-6 w-[90%] max-w-sm text-center shadow-lg transform scale-95 opacity-0 transition-all duration-300"
+  >
+    <i class="bx bx-block text-5xl text-red-500 mb-3"></i>
+    <h2 class="text-xl font-semibold mb-2">Suspend User</h2>
+    <p class="text-gray-600 mb-6">
+      Are you sure you want to suspend this user? Their account will be suspended for 30 days and then automatically deleted.
+    </p>
+
+    <div class="flex justify-center gap-3">
+      <button
+        id="cancel-suspend"
+        class="px-5 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition"
+      >
+        Cancel
+      </button>
+      <button
+        id="confirm-suspend"
+        class="px-5 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition"
+      >
+        Yes, Suspend
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Logout Confirmation Modal -->
+<div
+  id="logout-modal"
+  class="fixed inset-0 bg-black/40 hidden z-[100] flex items-center justify-center"
+>
+  <div
+    class="bg-white rounded-xl p-6 w-[90%] max-w-sm text-center shadow-lg transform scale-95 opacity-0 transition-all duration-300"
+  >
+    <i class="bx bx-log-out text-5xl text-amber-500 mb-3"></i>
+    <h2 class="text-xl font-semibold mb-2">Confirm Logout</h2>
+    <p class="text-gray-600 mb-6">
+      Are you sure you want to log out of your account?
+    </p>
+
+    <div class="flex justify-center gap-3">
+      <button
+        id="cancel-logout"
+        class="px-5 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition"
+      >
+        Cancel
+      </button>
+      <a
+        href="{{ url_for('adminlogout') }}"
+        id="confirm-logout"
+        class="px-5 py-2 rounded-lg bg-amber-500 text-white hover:bg-amber-600 transition"
+      >
+        Yes, Logout
+      </a>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    // Approve Modal Handler
+    const approveModal = document.getElementById("approve-modal");
+    const approveModalBox = approveModal ? approveModal.querySelector("div") : null;
+    const cancelApproveBtn = document.getElementById("cancel-approve");
+    const confirmApproveBtn = document.getElementById("confirm-approve");
+    let approveForm = null;
+
+    // Suspend Modal Handler
+    const suspendModal = document.getElementById("suspend-modal");
+    const suspendModalBox = suspendModal ? suspendModal.querySelector("div") : null;
+    const cancelSuspendBtn = document.getElementById("cancel-suspend");
+    const confirmSuspendBtn = document.getElementById("confirm-suspend");
+    let suspendForm = null;
+
+    // Restore Modal Handler
+    const restoreModal = document.getElementById("restore-modal");
+    const restoreModalBox = restoreModal ? restoreModal.querySelector("div") : null;
+    const cancelRestoreBtn = document.getElementById("cancel-restore");
+    const confirmRestoreBtn = document.getElementById("confirm-restore");
+    let restoreForm = null;
+
+    // Reject Modal Handler
+    const rejectModal = document.getElementById("reject-modal");
+    const rejectModalBox = rejectModal ? rejectModal.querySelector("div") : null;
+    const cancelRejectBtn = document.getElementById("cancel-reject");
+    const confirmRejectBtn = document.getElementById("confirm-reject");
+    let rejectForm = null;
+
+    // Function to show modal with animation
+    function showModal(modal, modalBox) {
+      if (!modal) return;
+      modal.classList.remove("hidden");
+      setTimeout(() => {
+        modalBox.classList.remove("opacity-0", "scale-95");
+        modalBox.classList.add("opacity-100", "scale-100");
+      }, 10);
+    }
+
+    // Function to hide modal with animation
+    function hideModal(modal, modalBox, callback) {
+      if (!modal) return;
+      modalBox.classList.add("opacity-0", "scale-95");
+      modalBox.classList.remove("opacity-100", "scale-100");
+      setTimeout(() => {
+        modal.classList.add("hidden");
+        if (callback) callback();
+      }, 300);
+    }
+
+    // Intercept form submissions for approve, suspend, and restore actions
+    document.addEventListener("submit", function(e) {
+      const form = e.target;
+      const actionInput = form.querySelector('input[name="action"]');
+      const actionType = actionInput ? actionInput.value : null;
+
+      if (actionType === "approve") {
+        e.preventDefault();
+        approveForm = form;
+        showModal(approveModal, approveModalBox);
+      } else if (actionType === "archive") {
+        e.preventDefault();
+        suspendForm = form;
+        showModal(suspendModal, suspendModalBox);
+      }
+    }, true); // Use capture phase to intercept early
+
+    // Approve Modal - Cancel
+    if (cancelApproveBtn) {
+      cancelApproveBtn.addEventListener("click", () => {
+        hideModal(approveModal, approveModalBox, () => {
+          approveForm = null;
+        });
+      });
+    }
+
+    // Approve Modal - Confirm
+    if (confirmApproveBtn) {
+      confirmApproveBtn.addEventListener("click", () => {
+        if (approveForm) {
+          hideModal(approveModal, approveModalBox, () => {
+            approveForm.submit();
+          });
+        }
+      });
+    }
+
+    // Close approve modal when clicking outside
+    if (approveModal) {
+      approveModal.addEventListener("click", (e) => {
+        if (e.target === approveModal) {
+          if (cancelApproveBtn) cancelApproveBtn.click();
+        }
+      });
+    }
+
+    // Suspend Modal - Cancel
+    if (cancelSuspendBtn) {
+      cancelSuspendBtn.addEventListener("click", () => {
+        hideModal(suspendModal, suspendModalBox, () => {
+          suspendForm = null;
+        });
+      });
+    }
+
+    // Suspend Modal - Confirm
+    if (confirmSuspendBtn) {
+      confirmSuspendBtn.addEventListener("click", () => {
+        if (suspendForm) {
+          hideModal(suspendModal, suspendModalBox, () => {
+            suspendForm.submit();
+          });
+        }
+      });
+    }
+
+    // Close suspend modal when clicking outside
+    if (suspendModal) {
+      suspendModal.addEventListener("click", (e) => {
+        if (e.target === suspendModal) {
+          if (cancelSuspendBtn) cancelSuspendBtn.click();
+        }
+      });
+    }
+  });
+</script>
+
+<script>
+  const logoutBtn = document.getElementById("logout-btn");
+  const modal = document.getElementById("logout-modal");
+  const modalBox = modal.querySelector("div");
+  const cancelBtn = document.getElementById("cancel-logout");
+  const confirmBtn = document.getElementById("confirm-logout");
+
+  // Show modal on logout link click
+  logoutBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    modal.classList.remove("hidden");
+    setTimeout(() => {
+      modalBox.classList.remove("opacity-0", "scale-95");
+      modalBox.classList.add("opacity-100", "scale-100");
+    }, 10);
+  });
+
+  // Hide modal on cancel
+  cancelBtn.addEventListener("click", () => {
+    modalBox.classList.remove("opacity-100", "scale-100");
+    modalBox.classList.add("opacity-0", "scale-95");
+    setTimeout(() => modal.classList.add("hidden"), 200);
+  });
+
+  // Hide modal when clicking outside the box
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) cancelBtn.click();
+  });
+
+  // Proceed with logout when confirmed
+  confirmBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    window.location.href = confirmBtn.href;
+  });
+
+</script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+</body>
+</html>

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Petopia icon">
+  <defs>
+    <linearGradient id="petopiaRoof" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffb347" />
+      <stop offset="100%" stop-color="#f97316" />
+    </linearGradient>
+    <linearGradient id="petopiaBody" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fff8dc" />
+      <stop offset="100%" stop-color="#fde68a" />
+    </linearGradient>
+  </defs>
+
+  <path d="M16 54 64 18l48 36" fill="none" stroke="url(#petopiaRoof)" stroke-linecap="round" stroke-linejoin="round" stroke-width="10"/>
+  <path d="M28 50h72l-7 56H35z" fill="url(#petopiaBody)" stroke="#f97316" stroke-linejoin="round" stroke-width="6"/>
+  <path d="M52 84c0-10 6-18 12-18s12 8 12 18v22H52z" fill="#ea580c"/>
+</svg>

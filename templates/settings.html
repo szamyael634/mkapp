@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Petopia | Settings</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/lucide-static/font/lucide.css"
+    />
+    <link
+      href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='image/petopia-favicon.svg') }}" />
+    <style>
+      html {
+        scrollbar-gutter: stable;
+      }
+    </style>
+  </head>
+  <body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col">
+    <!-- Header -->
+    <header
+      class="flex items-center justify-between px-6 md:px-20 py-4 bg-white shadow-md sticky top-0 z-50"
+    >
+      <!-- Logo -->
+      <a href="{{ url_for('homepage') }}" class="flex items-center">
+        <img src="{{ url_for('static', filename='image/petopia-logo.png') }}" alt="Petopia" class="h-24 w-auto max-w-none" />
+      </a>
+
+      <!-- Search Bar -->
+      <div class="hidden md:flex items-center w-1/2">
+        <div class="w-full relative">
+          <input
+            id="main-search-input"
+            type="text"
+            autocomplete="off"
+            placeholder="Search for products, brands..."
+            class="w-full px-4 py-2.5 pr-14 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-amber-500 transition"
+          />
+          <button
+            id="main-search-btn"
+            type="button"
+            class="absolute right-1.5 top-1/2 -translate-y-1/2 bg-amber-500 text-white w-10 h-10 rounded-full hover:bg-amber-600 transition flex items-center justify-center shadow-md hover:shadow-lg"
+          >
+            <i class="fas fa-paw text-sm"></i>
+          </button>
+        </div>
+    </div>
+    <script src="{{ url_for('static', filename='search.js') }}"></script>
+      </div>
+
+      <!-- Icons -->
+      <div class="flex items-center gap-6 text-2xl relative">
+
+        <!-- Cart -->
+        <button id="cart-btn" class="hover:text-amber-600 relative">
+          <i class="bx bx-cart-add"></i>
+          <span
+            id="cart-count"
+            class="absolute -top-2 -right-2 bg-amber-500 text-white text-xs px-1.5 py-0.5 rounded-full hidden"
+          ></span>
+        </button>
+
+        <!-- 🔔 Notifications (customer) -->
+        <div class="relative">
+          <button id="cust-notif-btn" class="text-2xl relative">
+            <i class="bx bxs-bell"></i>
+            {% set cust_unread = notifications|selectattr('is_read', 'equalto', False)|list|length if notifications else 0 %}
+            {% if cust_unread > 0 %}
+              <span class="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">{{ cust_unread }}</span>
+            {% endif %}
+          </button>
+          <div id="cust-notif-dropdown" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-gray-100 z-50">
+            <div class="p-4 border-b flex items-center justify-between">
+              <div class="font-semibold text-gray-700">Notifications</div>
+              <form method="post" action="{{ url_for('mark_all_notifications_read') }}">
+                <button type="submit" class="text-xs text-blue-600 hover:underline">Mark all as read</button>
+              </form>
+            </div>
+            <ul class="max-h-80 overflow-y-auto">
+              {% for notif in notifications|sort(attribute='created_at', reverse=True) %}
+                <li data-notif-id="{{ notif.id }}" data-target="{{ notif.target_url or '#' }}" class="px-4 py-3 border-b last:border-b-0 {{ 'bg-amber-50' if not notif.is_read else '' }} flex items-center justify-between gap-2 cursor-pointer">
+                  <div>
+                    <div class="text-sm text-gray-800">{{ notif.message }}</div>
+                    <div class="text-xs text-gray-400 mt-1">{{ notif.created_at.strftime('%b %d, %Y %I:%M %p') }}</div>
+                  </div>
+                  {% if not notif.is_read %}
+                    <form class="mark-notif-form" method="post" action="{{ url_for('mark_notification_read') }}">
+                      <input type="hidden" name="notification_id" value="{{ notif.id }}">
+                      <button type="submit" class="text-xs text-blue-600 hover:underline ml-2">Mark as read</button>
+                    </form>
+                  {% endif %}
+                </li>
+              {% else %}
+                <li class="px-4 py-3 text-gray-500 text-sm">No notifications.</li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+
+        <!-- User -->
+        <div class="relative text-2xl" id="user-btn-container">
+          {% if user %}
+          <button
+            id="user-btn"
+            class="flex items-center gap-2 hover:text-amber-600"
+          >
+            {% if user.profile_pic %}
+            <img
+              src="{{ media_url(user.profile_pic, 'image/default-avatar.png') }}"
+              alt="Profile"
+              class="w-10 h-10 rounded-full object-cover border-2 border-amber-400 profile-pic"
+            />
+            {% else %}
+            <i class="bx bx-user-circle text-3xl"></i>
+            {% endif %}
+          </button>
+
+          <!-- Dropdown Menu -->
+          <div
+            id="user-pane"
+            class="hidden absolute right-0 top-12 w-48 bg-white rounded-xl shadow-xl border border-gray-100 p-4 z-50"
+          >
+            <p class="text-sm text-gray-700 mb-2">
+              <strong>{{ user.fullname }}</strong>
+            </p>
+            <hr class="my-2" />
+            <a
+              href="{{ url_for('settings') }}"
+              class="flex items-center gap-3 text-sm text-gray-700 hover:bg-gray-100 px-2 py-1 rounded"
+            >
+              <i class="icon-settings text-lg"></i> Settings
+            </a>
+            <a
+              href="{{ url_for('orders') }}"
+              class="flex items-center gap-3 text-sm text-gray-700 hover:bg-gray-100 px-2 py-1 rounded"
+            >
+              <i class="icon-package text-lg"></i> Orders
+            </a>
+            <a
+              href="{{ url_for('wishlist') }}"
+              class="flex items-center gap-3 text-sm text-gray-700 hover:bg-gray-100 px-2 py-1 rounded"
+            >
+              <i class="icon-heart text-lg"></i> Wishlist
+            </a>
+            <a
+              href="{{ url_for('logout') }}"
+              class="flex items-center gap-3 text-sm text-red-600 hover:bg-red-50 px-2 py-1 rounded pt-1"
+            >
+              <i class="icon-log-out text-lg"></i> Logout
+            </a>
+          </div>
+          {% else %}
+          <a
+            href="{{ url_for('loginreg') }}"
+            class="bg-amber-500 text-white px-3 py-1 text-sm rounded-full hover:bg-amber-600 transition shadow-sm font-medium"
+          >
+            Login
+          </a>
+          {% endif %}
+        </div>
+
+        <!-- 🛍️ Cart Pane -->
+        <div
+          id="cart-pane"
+          class="hidden absolute right-0 top-12 w-80 bg-white rounded-xl shadow-xl border border-gray-100 p-4 transition-all duration-300"
+        >
+          <h3 class="text-lg font-semibold text-gray-700 mb-3">Your Cart</h3>
+
+          <!-- Cart Items -->
+          <div class="space-y-4">
+            <!-- Item 1 -->
+            <div class="flex justify-between items-center">
+              <div class="flex items-center gap-3">
+                <img
+                  src="static/image/dog.webp"
+                  alt="Item"
+                  class="w-10 h-10 rounded-lg object-cover"
+                />
+                <div>
+                  <p class="text-sm font-medium text-gray-700">Dog Dry Food</p>
+                  <p class="text-xs text-gray-500">₱499</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-1">
+                <button
+                  onclick="updateQty(this, -1)"
+                  class="px-2 py-1 bg-gray-100 rounded hover:bg-gray-200"
+                >
+                  −
+                </button>
+                <span class="w-6 text-center text-sm qty">2</span>
+                <button
+                  onclick="updateQty(this, 1)"
+                  class="px-2 py-1 bg-gray-100 rounded hover:bg-gray-200"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+
+            <!-- Item 2 -->
+            <div class="flex justify-between items-center">
+              <div class="flex items-center gap-3">
+                <img
+                  src="static/image/cat.jpg"
+                  alt="Item"
+                  class="w-10 h-10 rounded-lg object-cover"
+                />
+                <div>
+                  <p class="text-sm font-medium text-gray-700">Cat Toy Mouse</p>
+                  <p class="text-xs text-gray-500">₱199</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-1">
+                <button
+                  onclick="updateQty(this, -1)"
+                  class="px-2 py-1 bg-gray-100 rounded hover:bg-gray-200"
+                >
+                  −
+                </button>
+                <span class="w-6 text-center text-sm qty">1</span>
+                <button
+                  onclick="updateQty(this, 1)"
+                  class="px-2 py-1 bg-gray-100 rounded hover:bg-gray-200"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <hr class="my-3" />
+
+          <div class="flex justify-between items-center mb-3">
+            <p class="text-gray-600 text-sm">Total:</p>
+            <p id="cart-total" class="text-amber-600 font-semibold">₱1,197</p>
+          </div>
+
+          <a
+            href="{{ url_for('cart') }}"
+            class="block text-center bg-amber-500 text-white py-2 rounded-lg hover:bg-amber-600 transition"
+          >
+            View Cart
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <script>
+      // Toggle customer notifications dropdown
+      const custNotifBtn = document.getElementById('cust-notif-btn');
+      const custNotifDropdown = document.getElementById('cust-notif-dropdown');
+      custNotifBtn?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        custNotifDropdown.classList.toggle('hidden');
+      });
+      window.addEventListener('click', (e) => {
+        if (custNotifDropdown && !custNotifDropdown.classList.contains('hidden')) {
+          custNotifDropdown.classList.add('hidden');
+        }
+      });
+    </script>
+
+    <!-- Category Navigation -->
+    <nav class="bg-amber-100 py-3 shadow-inner">
+      <ul
+        class="flex flex-wrap justify-center gap-6 font-medium text-amber-700"
+      >
+        <li>
+          <a
+            href="{{ url_for('products_page', category='Dog') }}"
+            class="hover:text-amber-900"
+            >Dog</a
+          >
+        </li>
+        <li>
+          <a
+            href="{{ url_for('products_page', category='Cat') }}"
+            class="hover:text-amber-900"
+            >Cat</a
+          >
+        </li>
+        <li>
+          <a
+            href="{{ url_for('products_page', category='Fish') }}"
+            class="hover:text-amber-900"
+            >Fish</a
+          >
+        </li>
+        <li>
+          <a
+            href="{{ url_for('products_page', category='Bird') }}"
+            class="hover:text-amber-900"
+            >Bird</a
+          >
+        </li>
+        <li>
+          <a
+            href="{{ url_for('products_page', category='Grooming') }}"
+            class="hover:text-amber-900"
+            >Grooming</a
+          >
+        </li>
+        <li>
+          <a
+            href="{{ url_for('products_page', category='Pet Health') }}"
+            class="hover:text-amber-900"
+            >Pet Health</a
+          >
+        </li>
+      </ul>
+    </nav>
+
+    <!-- Settings Section -->
+    <main class="flex-1 max-w-5xl mx-auto w-full px-6 md:px-20 py-10 flex flex-col md:flex-row gap-6 min-h-[120vh]">
+  <!-- Sidebar Navigation -->
+  <aside class="w-full md:w-64 bg-white p-6 rounded-xl shadow-sm border border-gray-200 h-fit">
+    <h2 class="text-xl font-semibold mb-4 text-gray-700">Settings</h2>
+    <ul class="space-y-2 text-gray-700 text-sm font-medium">
+      <li>
+        <button
+          class="w-full text-left flex items-center gap-2 py-2 px-2 rounded hover:bg-amber-100 active:bg-amber-200 sidebar-btn"
+          data-target="profile-section"
+        >
+          <i class="bx bx-user"></i> Profile
+        </button>
+      </li>
+      <li>
+        <button
+          class="w-full text-left flex items-center gap-2 py-2 px-2 rounded hover:bg-amber-100 sidebar-btn"
+          data-target="security-section"
+        >
+          <i class="bx bx-lock"></i> Security
+        </button>
+      </li>
+      <li>
+        <button
+          class="w-full text-left flex items-center gap-2 py-2 px-2 rounded hover:bg-amber-100 sidebar-btn"
+          data-target="address-section"
+        >
+          <i class="bx bx-map"></i> Addresses
+        </button>
+      </li>
+      <li>
+        <button
+          class="w-full text-left flex items-center gap-2 py-2 px-2 rounded hover:bg-red-100 text-red-600 sidebar-btn"
+          data-target="danger-zone"
+        >
+          <i class="bx bx-trash"></i> Danger Zone
+        </button>
+      </li>
+    </ul>
+  </aside>
+
+  <!-- Content Area -->
+  <section class="flex-1 flex flex-col gap-6">
+    <!-- Profile Section -->
+    <div
+      id="profile-section"
+      class="settings-section bg-white p-6 rounded-xl shadow-sm border border-gray-100 min-h-[400px]"
+    >
+      <h2 class="text-2xl font-semibold text-gray-700 mb-4">
+        Profile Information
+      </h2>
+      <form
+        action="{{ url_for('update_profile') }}"
+        method="POST"
+        enctype="multipart/form-data"
+        class="space-y-6"
+      >
+        <div>
+          <label class="text-gray-600 text-sm font-medium">Full Name</label>
+          <input
+            type="text"
+            name="fullname"
+            value="{{ user.fullname or '' }}"
+            class="w-full border-gray-300 rounded-lg mt-1 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500"
+          />
+        </div>
+        <div>
+          <label class="text-gray-600 text-sm font-medium">Phone Number</label>
+          <input
+            type="text"
+            name="phone"
+            value="{{ user.phone or '' }}"
+            class="w-full border-gray-300 rounded-lg mt-1 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500"
+            placeholder="09XXXXXXXXX"
+          />
+        </div>
+        <div>
+          <label class="text-gray-600 text-sm font-medium">Profile Picture</label>
+          <div class="flex items-center gap-4 mt-2">
+            <img
+              id="profile-preview"
+              src="{{ media_url(user.profile_pic, 'image/default-avatar.png') if user.profile_pic else 'https://placehold.co/100x100?text=Avatar' }}"
+              class="w-20 h-20 rounded-full object-cover border"
+            />
+            <input
+              type="file"
+              id="profile_pic"
+              name="profile_pic"
+              accept="image/*"
+              class="text-sm text-gray-600 cursor-pointer focus:outline-none"
+            />
+          </div>
+        </div>
+        <button
+          type="button"
+          onclick="showConfirmation('Are you sure you want to update your profile?', () => document.querySelector('#profile-section form').submit())"
+          class="bg-amber-500 text-white px-6 py-2 rounded-lg hover:bg-amber-600 shadow-md transition"
+        >
+          Save Changes
+        </button>
+      </form>
+    </div>
+
+    <!-- Security Section -->
+    <div
+      id="security-section"
+      class="settings-section hidden bg-white p-6 rounded-xl shadow-sm border border-gray-100 min-h-[400px]"
+    >
+      <h2 class="text-2xl font-semibold text-gray-700 mb-4">
+        Security Settings
+      </h2>
+      <form action="{{ url_for('update_profile') }}" method="POST" class="space-y-4">
+        <div>
+          <label class="text-gray-600 text-sm font-medium">Current Password</label>
+          <input
+            type="password"
+            name="current_password"
+            class="w-full border-gray-300 rounded-lg mt-1 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500"
+          />
+        </div>
+        <div>
+          <label class="text-gray-600 text-sm font-medium">New Password</label>
+          <input
+            type="password"
+            name="new_password"
+            class="w-full border-gray-300 rounded-lg mt-1 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500"
+          />
+        </div>
+        <div>
+          <label class="text-gray-600 text-sm font-medium">Confirm New Password</label>
+          <input
+            type="password"
+            name="confirm_new_password"
+            class="w-full border-gray-300 rounded-lg mt-1 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500"
+          />
+        </div>
+        <button
+          type="button"
+          onclick="showConfirmation('Are you sure you want to change your password?', () => document.querySelector('#security-section form').submit())"
+          class="mt-6 bg-amber-500 text-white px-6 py-2 rounded-lg hover:bg-amber-600 shadow-md transition"
+        >
+          Update Password
+        </button>
+      </form>
+    </div>
+
+    <!-- Address Section -->
+    <div
+      id="address-section"
+      class="settings-section hidden bg-white p-6 rounded-xl shadow-sm border border-gray-100 min-h-[400px]"
+    >
+      <h2 class="text-2xl font-semibold text-gray-700 mb-4">
+        Address Information
+      </h2>
+
+      {% if addresses %}
+      <div class="space-y-3 mb-4">
+        {% for a in addresses %}
+        <div class="p-4 border rounded-lg bg-gray-50 flex justify-between items-start">
+          <div>
+            <p class="font-medium">{{ a.street }}</p>
+            <p class="text-sm text-gray-600">
+              {{ a.barangay_name }}, {{ a.city_name }}, {{ a.province_name }}, {{ a.region_name }}
+            </p>
+            {% if a.is_default %}
+            <span class="text-green-600 text-xs font-semibold">Default</span>
+            {% endif %}
+          </div>
+          <div class="flex gap-2">
+            {% if not a.is_default %}
+            <form action="{{ url_for('setdefault_address', address_id=a.id) }}" method="POST">
+              <button type="submit" class="text-blue-600 text-sm hover:underline">Set as default</button>
+            </form>
+            {% endif %}
+            <form action="{{ url_for('delete_address', address_id=a.id) }}" method="POST" onsubmit="return confirm('Delete this address?');">
+              <button type="submit" class="text-red-500 text-sm hover:underline">Delete</button>
+            </form>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="text-gray-500 text-sm mb-4">No addresses saved yet.</p>
+      {% endif %}
+
+      <button
+        id="open-address-btn"
+        type="button"
+        class="bg-amber-500 text-white px-4 py-2 rounded hover:bg-amber-600 shadow-md transition"
+      >
+        Add / Edit Address
+      </button>
+
+      <!-- Address Modal -->
+      <div
+        id="address-modal"
+        class="fixed inset-0 hidden flex items-center justify-center z-50"
+      >
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
+        <div class="relative bg-white rounded-xl w-11/12 max-w-2xl p-6 shadow-2xl">
+          <button id="close-address-btn" type="button" class="absolute top-3 right-3 text-gray-600">✖</button>
+          <form action="{{ url_for('save_address') }}" id="addressForm" method="POST" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <!-- Region -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700">Region</label>
+                <select id="region" name="region" class="mt-1 w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"></select>
+                <input type="hidden" id="region_name" name="region_name" />
+              </div>
+              <!-- Province -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700">Province</label>
+                <select id="province" name="province" class="mt-1 w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"></select>
+                <input type="hidden" id="province_name" name="province_name" />
+              </div>
+              <!-- City -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700">City / Municipality</label>
+                <select id="city" name="city" class="mt-1 w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"></select>
+                <input type="hidden" id="city_name" name="city_name" />
+              </div>
+              <!-- Barangay -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700">Barangay</label>
+                <select id="barangay" name="barangay" class="mt-1 w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"></select>
+                <input type="hidden" id="barangay_name" name="barangay_name" />
+              </div>
+              <!-- Street -->
+              <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700">Street</label>
+                <input type="text" name="street" class="mt-1 w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="Street name" />
+              </div>
+            </div>
+            <input type="hidden" id="address_id" name="address_id" />
+            <div class="mt-4 flex justify-end gap-3">
+              <button type="button" id="cancel-save-address" class="px-4 py-2 rounded border">Cancel</button>
+              <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Save Address</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Danger Zone Section -->
+    <div
+      id="danger-zone"
+      class="settings-section hidden bg-white p-6 rounded-xl shadow-sm border border-gray-100 min-h-[400px]"
+    >
+      <h2 class="text-2xl font-semibold text-red-600 mb-4">Danger Zone</h2>
+      <p class="text-gray-600 mb-4">Deleting your account is permanent and cannot be undone.</p>
+      <button class="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 shadow-md transition">
+        Delete My Account
+      </button>
+    </div>
+  </section>
+</main>
+
+<!-- Confirmation Dialog -->
+<div id="confirmationModal" class="hidden fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
+  <div class="bg-white rounded-xl shadow-2xl p-6 max-w-sm">
+    <p id="confirmationMessage" class="text-gray-700 mb-6"></p>
+    <div class="flex gap-3 justify-end">
+      <button onclick="closeConfirmation()" class="px-4 py-2 rounded-lg bg-gray-300 text-gray-800 hover:bg-gray-400 transition">
+        Cancel
+      </button>
+      <button id="confirmButton" onclick="confirmAction()" class="px-4 py-2 rounded-lg bg-amber-500 text-white hover:bg-amber-600 transition">
+        Confirm
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+let confirmationAction = null;
+
+function showConfirmation(message, action) {
+  document.getElementById('confirmationMessage').textContent = message;
+  confirmationAction = action;
+  document.getElementById('confirmationModal').classList.remove('hidden');
+}
+
+function closeConfirmation() {
+  document.getElementById('confirmationModal').classList.add('hidden');
+  confirmationAction = null;
+}
+
+function confirmAction() {
+  if (confirmationAction) {
+    confirmationAction();
+  }
+  closeConfirmation();
+}
+</script>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-gray-300 py-10">
+      <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 px-6">
+        <div>
+          <h4 class="font-semibold text-white mb-3">Customer Service</h4>
+          <ul class="space-y-2">
+            <li><a href="#" class="hover:text-white">Help</a></li>
+            <li><a href="#" class="hover:text-white">Delivery</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="font-semibold text-white mb-3">Company</h4>
+          <ul class="space-y-2">
+            <li><a href="#" class="hover:text-white">About Us</a></li>
+            <li><a href="#" class="hover:text-white">Contact</a></li>
+            <li><a href="#" class="hover:text-white">Careers</a></li>
+            <li><a href="#" class="hover:text-white">Legal Info</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="font-semibold text-white mb-3">Follow Us</h4>
+          <div class="flex items-center gap-4">
+            <a href="#" aria-label="Facebook" class="text-white hover:text-amber-300 text-2xl">
+              <i class="bx bxl-facebook-square"></i>
+            </a>
+            <a href="#" aria-label="Instagram" class="text-white hover:text-amber-300 text-2xl">
+              <i class="bx bxl-instagram"></i>
+            </a>
+            <a href="#" aria-label="Twitter" class="text-white hover:text-amber-300 text-2xl">
+              <i class="bx bxl-twitter"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+      <p class="text-center text-sm text-gray-400 mt-10">
+        © 2025 Petopia. Inspired by Zooplus.
+      </p>
+    </footer>
+    </footer>
+
+    <!-- Sidebar Script -->
+    <script>
+      // Make showSection global so other scripts can call it
+      window.showSection = function (id) {
+        const buttons = document.querySelectorAll(".sidebar-btn");
+        const sections = document.querySelectorAll(".settings-section");
+        sections.forEach((s) => s.classList.add("hidden"));
+        const section = document.getElementById(id);
+        if (section) section.classList.remove("hidden");
+
+        buttons.forEach((b) => b.classList.remove("bg-amber-200"));
+        const btn = document.querySelector(`.sidebar-btn[data-target="${id}"]`);
+        if (btn) btn.classList.add("bg-amber-200");
+
+        // Save current section in localStorage
+        localStorage.setItem("currentSection", id);
+      };
+
+      document.addEventListener("DOMContentLoaded", () => {
+        const buttons = document.querySelectorAll(".sidebar-btn");
+        // Sidebar button click
+        buttons.forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const target = btn.dataset.target;
+            window.showSection(target);
+          });
+        });
+
+        // Restore last section from localStorage
+        const savedSection = localStorage.getItem("currentSection");
+        if (savedSection && document.getElementById(savedSection)) {
+          window.showSection(savedSection);
+        } else {
+          window.showSection("profile-section"); // default on first open
+        }
+      });
+    </script>
+
+    <!-- Profile Image Preview -->
+    <script>
+      document.getElementById("profile_pic").addEventListener("change", (e) => {
+        const file = e.target.files[0];
+        if (file)
+          document.getElementById("profile-preview").src =
+            URL.createObjectURL(file);
+      });
+    </script>
+
+    <!-- Address Script -->
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const baseURL = "https://psgc.gitlab.io/api/";
+        const region = document.getElementById("region");
+        const province = document.getElementById("province");
+        const city = document.getElementById("city");
+        const barangay = document.getElementById("barangay");
+
+        const regionName = document.getElementById("region_name");
+        const provinceName = document.getElementById("province_name");
+        const cityName = document.getElementById("city_name");
+        const barangayName = document.getElementById("barangay_name");
+
+        const street = document.getElementById("street");
+        const addressId = document.getElementById("address_id");
+
+        async function loadRegions(selectedCode = "") {
+          const res = await fetch(baseURL + "regions/");
+          const data = await res.json();
+          region.innerHTML = "<option value=''>Select Region</option>";
+          data.forEach((r) => {
+            const opt = document.createElement("option");
+            opt.value = r.code;
+            opt.textContent = r.name;
+            if (r.code === selectedCode) opt.selected = true;
+            region.appendChild(opt);
+          });
+        }
+
+        async function loadProvinces(regionCode, selectedCode = "") {
+          if (!regionCode) return;
+          const res = await fetch(`${baseURL}regions/${regionCode}/provinces/`);
+          const data = await res.json();
+          province.innerHTML = "<option value=''>Select Province</option>";
+          province.disabled = false;
+          data.forEach((p) => {
+            const opt = document.createElement("option");
+            opt.value = p.code;
+            opt.textContent = p.name;
+            if (p.code === selectedCode) opt.selected = true;
+            province.appendChild(opt);
+          });
+        }
+
+        async function loadCities(provinceCode, selectedCode = "") {
+          if (!provinceCode) return;
+          const res = await fetch(
+            `${baseURL}provinces/${provinceCode}/cities-municipalities/`
+          );
+          const data = await res.json();
+          city.innerHTML = "<option value=''>Select City/Municipality</option>";
+          city.disabled = false;
+          data.forEach((c) => {
+            const opt = document.createElement("option");
+            opt.value = c.code;
+            opt.textContent = c.name;
+            if (c.code === selectedCode) opt.selected = true;
+            city.appendChild(opt);
+          });
+        }
+
+        async function loadBarangays(cityCode, selectedCode = "") {
+          if (!cityCode) return;
+          const res = await fetch(
+            `${baseURL}cities-municipalities/${cityCode}/barangays/`
+          );
+          const data = await res.json();
+          barangay.innerHTML = "<option value=''>Select Barangay</option>";
+          barangay.disabled = false;
+          data.forEach((b) => {
+            const opt = document.createElement("option");
+            opt.value = b.code;
+            opt.textContent = b.name;
+            if (b.code === selectedCode) opt.selected = true;
+            barangay.appendChild(opt);
+          });
+        }
+
+        region.addEventListener("change", async (e) => {
+          const selected = e.target.options[e.target.selectedIndex];
+          regionName.value = selected.textContent || "";
+          provinceName.value = cityName.value = barangayName.value = "";
+          province.innerHTML = "<option value=''>Select Province</option>";
+          province.disabled = true;
+          city.innerHTML = "<option value=''>Select City/Municipality</option>";
+          city.disabled = true;
+          barangay.innerHTML = "<option value=''>Select Barangay</option>";
+          barangay.disabled = true;
+          await loadProvinces(e.target.value);
+        });
+
+        province.addEventListener("change", async (e) => {
+          const selected = e.target.options[e.target.selectedIndex];
+          provinceName.value = selected.textContent || "";
+          cityName.value = barangayName.value = "";
+          city.innerHTML = "<option value=''>Select City/Municipality</option>";
+          city.disabled = true;
+          barangay.innerHTML = "<option value=''>Select Barangay</option>";
+          barangay.disabled = true;
+          await loadCities(e.target.value);
+        });
+
+        city.addEventListener("change", async (e) => {
+          const selected = e.target.options[e.target.selectedIndex];
+          cityName.value = selected.textContent || "";
+          barangayName.value = "";
+          barangay.innerHTML = "<option value=''>Select Barangay</option>";
+          barangay.disabled = true;
+          await loadBarangays(e.target.value);
+        });
+
+        barangay.addEventListener("change", (e) => {
+          const selected = e.target.options[e.target.selectedIndex];
+          barangayName.value = selected.textContent || "";
+        });
+
+        window.editAddress = function (addr) {
+          addressId.value = addr.id;
+          street.value = addr.street;
+          loadRegions(addr.region_code).then(() =>
+            loadProvinces(addr.region_code, addr.province_code).then(() =>
+              loadCities(addr.province_code, addr.city_code).then(() =>
+                loadBarangays(addr.city_code, addr.barangay_code)
+              )
+            )
+          );
+        };
+
+        loadRegions();
+      });
+    </script>
+
+    <script>
+      // Address modal open/close handlers
+      document.addEventListener("DOMContentLoaded", () => {
+        const openBtn = document.getElementById("open-address-btn");
+        const closeBtn = document.getElementById("close-address-btn");
+        const cancelBtn = document.getElementById("cancel-save-address");
+        const modal = document.getElementById("address-modal");
+
+        function openModal() {
+          modal.classList.remove("hidden");
+          document.body.classList.add("overflow-hidden");
+        }
+        function closeModal() {
+          modal.classList.add("hidden");
+          document.body.classList.remove("overflow-hidden");
+        }
+
+        openBtn?.addEventListener("click", openModal);
+        closeBtn?.addEventListener("click", closeModal);
+        cancelBtn?.addEventListener("click", closeModal);
+
+        // close modal when clicking backdrop
+        modal?.addEventListener("click", (e) => {
+          if (e.target === modal) closeModal();
+        });
+      });
+    </script>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const section = urlParams.get("section");
+        if (section === "address") {
+          showSection("address-section"); // your existing function to show section
+        }
+      });
+    </script>
+
+    <script>
+      const cartBtn = document.getElementById("cart-btn");
+      const cartCount = document.getElementById("cart-count");
+
+      // Redirect to cart page on click
+      cartBtn.addEventListener("click", () => {
+        window.location.href = "/cart";
+      });
+
+      // Function to update cart count from backend
+      async function updateCartCount() {
+        try {
+          const response = await fetch("/cart_count");
+          const data = await response.json();
+
+          if (data.count > 0) {
+            cartCount.textContent = data.count;
+            cartCount.classList.remove("hidden");
+          } else {
+            cartCount.classList.add("hidden");
+          }
+        } catch (error) {
+          console.error("Failed to update cart count:", error);
+        }
+      }
+
+      // Update count on page load
+      updateCartCount();
+    </script>
+
+    <script>
+      const userBtn = document.getElementById("user-btn");
+      const userPane = document.getElementById("user-pane");
+
+      // Toggle user pane
+      userBtn?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        userPane.classList.toggle("hidden");
+      });
+
+      // Close user pane if clicked outside
+      window.addEventListener("click", (e) => {
+        if (!userPane.contains(e.target) && !userBtn.contains(e.target)) {
+          userPane.classList.add("hidden");
+        }
+      });
+    </script>
+  </body>
+<script>
+  (function(){
+    const notifDropdown = document.getElementById('cust-notif-dropdown');
+    if (!notifDropdown) return;
+    notifDropdown.addEventListener('click', async (ev) => {
+      const li = ev.target.closest('li[data-notif-id]');
+      if (!li) return;
+      if (ev.target.closest('form.mark-notif-form')) return;
+      const notifId = li.getAttribute('data-notif-id');
+      const target = li.getAttribute('data-target');
+      if (notifId) {
+        try {
+          await fetch("{{ url_for('mark_notification_read') }}", { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' }, body: 'notification_id=' + encodeURIComponent(notifId) });
+        } catch (e) {}
+      }
+      if (target && target !== '#') {
+        window.location.href = target;
+      }
+    });
+  })();
+</script>
+</html>
