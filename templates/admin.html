@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Petopia Admin Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="{{ url_for('static', filename='js/report_pdf_export.js') }}"></script>
   <style>
     /* Custom style for product description HTML */
     #product-description-html ul {
@@ -1568,6 +1569,11 @@
 
     <!-- Reports -->
     <section id="reports" class="section hidden p-6 space-y-6">
+      <div class="flex justify-end">
+        <button type="button" onclick="exportAdminSalesPdf()" class="inline-flex items-center justify-center gap-2 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 text-sm font-medium">
+          Export PDF
+        </button>
+      </div>
       <!-- Filters -->
       <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
         <h3 class="text-lg font-semibold mb-4">📊 Sales & Income Report</h3>
@@ -1725,6 +1731,7 @@
             );
           }
           
+          window.adminSalesData = filteredData;
           renderAdminSalesTable(filteredData);
         }
         
@@ -1780,6 +1787,54 @@
           document.getElementById('admin-total-sellers').textContent = data.length;
         }
         
+        function formatAdminReportMoney(value) {
+          return 'PHP ' + (parseFloat(value || 0)).toFixed(2);
+        }
+
+        function getAdminReportFiltersLabel() {
+          const parts = [];
+          const from = document.getElementById('admin-date-from').value;
+          const to = document.getElementById('admin-date-to').value;
+          const seller = document.getElementById('admin-seller-filter').value.trim();
+          if (from || to) parts.push(`Date: ${from || 'start'} to ${to || 'today'}`);
+          if (seller) parts.push(`Seller: ${seller}`);
+          return parts.length ? parts.join(' | ') : 'All sellers and dates';
+        }
+
+        function exportAdminSalesPdf() {
+          const data = window.adminSalesData || [];
+          const totalSales = data.reduce((sum, item) => sum + parseInt(item.total_sales || 0), 0);
+          const completedOrders = data.reduce((sum, item) => sum + parseInt(item.completed_orders || 0), 0);
+          const sellerIncome = data.reduce((sum, item) => sum + parseFloat(item.seller_income || 0), 0);
+          const adminCommission = data.reduce((sum, item) => sum + parseFloat(item.admin_commission || 0), 0);
+
+          window.PetopiaReports.exportPdf({
+            title: 'Petopia Admin Sales & Income Report',
+            subtitle: getAdminReportFiltersLabel(),
+            summary: [
+              { label: 'Total Sales', value: totalSales },
+              { label: 'Completed Orders', value: completedOrders },
+              { label: 'Total Revenue', value: formatAdminReportMoney(sellerIncome + adminCommission) },
+            ],
+            columns: [
+              { key: 'seller_name', label: 'Seller Name' },
+              { key: 'total_sales', label: 'Total Sales', align: 'right' },
+              { key: 'completed_orders', label: 'Completed Orders', align: 'right' },
+              { key: 'seller_income_display', label: 'Seller Income', align: 'right' },
+              { key: 'admin_commission_display', label: 'Admin Commission', align: 'right' },
+              { key: 'total_revenue_display', label: 'Total Revenue', align: 'right' },
+            ],
+            rows: data.map((item) => ({
+              seller_name: item.seller_name || 'Unknown',
+              total_sales: item.total_sales || 0,
+              completed_orders: item.completed_orders || 0,
+              seller_income_display: formatAdminReportMoney(item.seller_income),
+              admin_commission_display: formatAdminReportMoney(item.admin_commission),
+              total_revenue_display: formatAdminReportMoney(item.total_revenue),
+            })),
+          });
+        }
+
         // Fetch sales data on page load
         async function loadAdminSalesReport() {
           try {

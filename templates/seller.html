@@ -10,6 +10,7 @@
         rel="stylesheet"
       />
       <script src="{{ url_for('static', filename='js/richtext.js') }}"></script>
+      <script src="{{ url_for('static', filename='js/report_pdf_export.js') }}"></script>
       <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='image/petopia-favicon.svg') }}" />
     </head>
     <body class="bg-gray-50 text-gray-800 flex min-h-screen">
@@ -237,6 +238,12 @@
 
           <!-- REPORTS SECTION -->
           <section id="reports" class="section hidden space-y-6">
+            <div class="flex justify-end">
+              <button type="button" onclick="exportSellerSalesPdf()" class="inline-flex items-center justify-center gap-2 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 text-sm font-medium">
+                <i class="bx bxs-file-pdf"></i>
+                Export PDF
+              </button>
+            </div>
             <!-- Filters -->
             <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
               <h3 class="text-lg font-semibold mb-4">📊 Sales Report</h3>
@@ -397,6 +404,7 @@
                   });
                 }
                 
+                window.sellerSalesData = filteredData;
                 renderSellerSalesTable(filteredData);
               }
               
@@ -438,6 +446,53 @@
                 `);
                 
                 tbody.innerHTML = rows.join('');
+              }
+
+              function formatSellerReportMoney(value) {
+                return 'PHP ' + (parseFloat(value || 0)).toFixed(2);
+              }
+
+              function getSellerReportFiltersLabel() {
+                const parts = [];
+                const from = document.getElementById('seller-date-from').value;
+                const to = document.getElementById('seller-date-to').value;
+                const product = document.getElementById('seller-product-filter').value.trim();
+                const category = document.getElementById('seller-category-filter').value.trim();
+                if (from || to) parts.push(`Date: ${from || 'start'} to ${to || 'today'}`);
+                if (product) parts.push(`Product: ${product}`);
+                if (category) parts.push(`Category: ${category}`);
+                return parts.length ? parts.join(' | ') : 'All products and dates';
+              }
+
+              function exportSellerSalesPdf() {
+                const data = window.sellerSalesData || [];
+                const totalUnits = data.reduce((sum, item) => sum + parseInt(item.units_sold || 0), 0);
+                const totalSales = data.reduce((sum, item) => sum + parseInt(item.total_sales || 0), 0);
+                const totalRevenue = data.reduce((sum, item) => sum + parseFloat(item.revenue || 0), 0);
+
+                window.PetopiaReports.exportPdf({
+                  title: 'Petopia Seller Sales Report',
+                  subtitle: getSellerReportFiltersLabel(),
+                  summary: [
+                    { label: 'Products', value: data.length },
+                    { label: 'Units Sold', value: totalUnits },
+                    { label: 'Revenue', value: formatSellerReportMoney(totalRevenue) },
+                  ],
+                  columns: [
+                    { key: 'name', label: 'Product Name' },
+                    { key: 'category', label: 'Category' },
+                    { key: 'units_sold', label: 'Units Sold', align: 'right' },
+                    { key: 'total_sales', label: 'Total Sales', align: 'right' },
+                    { key: 'revenue_display', label: 'Revenue', align: 'right' },
+                  ],
+                  rows: data.map((item) => ({
+                    name: item.name || '-',
+                    category: item.category || '-',
+                    units_sold: item.units_sold || 0,
+                    total_sales: item.total_sales || 0,
+                    revenue_display: formatSellerReportMoney(item.revenue),
+                  })),
+                });
               }
               
               // Fetch sales data on page load
