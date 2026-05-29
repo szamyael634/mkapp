@@ -576,6 +576,67 @@
       });
     </script>
 
+    <!-- AJAX Filtering and Pagination -->
+    <script>
+      (function(){
+        const productsSectionSelector = 'section.py-16';
+        const filterForm = document.querySelector('form[action^="/products/"]');
+
+        async function fetchAndReplace(url, push=true){
+          try{
+            const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+            if (!res.ok) throw new Error('Network error');
+            const html = await res.text();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newSection = doc.querySelector(productsSectionSelector);
+            const currentSection = document.querySelector(productsSectionSelector);
+            if (newSection && currentSection){
+              currentSection.innerHTML = newSection.innerHTML;
+            }
+            // update URL and history
+            if (push) history.pushState(null, '', url);
+            // re-bind pagination links inside replaced content
+            bindPaginationLinks();
+          }catch(e){
+            console.error('AJAX load failed, falling back to full navigation', e);
+            window.location.href = url;
+          }
+        }
+
+        function bindPaginationLinks(){
+          document.querySelectorAll('a[href*="?page="]').forEach(a => {
+            // ensure we only bind once
+            if (a.dataset.ajaxBound) return;
+            a.dataset.ajaxBound = '1';
+            a.addEventListener('click', function(ev){
+              ev.preventDefault();
+              const url = a.href;
+              fetchAndReplace(url);
+            });
+          });
+        }
+
+        if (filterForm){
+          filterForm.addEventListener('submit', function(ev){
+            ev.preventDefault();
+            const params = new URLSearchParams(new FormData(filterForm));
+            const action = filterForm.getAttribute('action') || window.location.pathname;
+            const url = action + '?' + params.toString();
+            fetchAndReplace(url);
+          });
+        }
+
+        // Bind existing pagination links on initial load
+        bindPaginationLinks();
+
+        // handle back/forward
+        window.addEventListener('popstate', function(){
+          fetchAndReplace(window.location.href, false);
+        });
+      })();
+    </script>
+
     <script>
   const cartBtn = document.getElementById("cart-btn");
   const cartCount = document.getElementById("cart-count");
