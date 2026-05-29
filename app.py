@@ -3366,6 +3366,15 @@ def products_page(category):
     # If a search query is provided, ignore the category filter and search across
     # name, category and description. Otherwise, filter by category as before.
     q = request.args.get('q', '').strip()
+    # Additional food filters
+    cuisine = request.args.get('cuisine', '').strip()
+    dietary_filters = request.args.getlist('dietary') or []
+    # allow comma-separated dietary in single param as fallback
+    if not dietary_filters and request.args.get('dietary'):
+        dietary_filters = [d.strip() for d in request.args.get('dietary').split(',') if d.strip()]
+    exclude_allergens = request.args.getlist('exclude_allergens') or []
+    if not exclude_allergens and request.args.get('exclude_allergens'):
+        exclude_allergens = [a.strip() for a in request.args.get('exclude_allergens').split(',') if a.strip()]
     # Pagination params
     try:
         page = int(request.args.get('page', 1))
@@ -3378,38 +3387,52 @@ def products_page(category):
 
     # total count (for pagination)
     total_products = 0
+    # Build dynamic WHERE clauses and parameters for filters
+    where_clauses = ["status='approved'"]
+    params = []
+
     if q:
         like_q = f"%{q}%"
-        count_query = "SELECT COUNT(*) AS cnt FROM products WHERE status='approved' AND (name LIKE %s OR category LIKE %s OR description LIKE %s)"
-        cursor.execute(count_query, (like_q, like_q, like_q))
-        total_products = int(cursor.fetchone().get('cnt') or 0)
-        total_pages = math.ceil(total_products / per_page) if per_page > 0 else 1
-        if total_pages < 1:
-            total_pages = 1
-        # clamp page
-        if page > total_pages:
-            page = total_pages
-        offset = (page - 1) * per_page
-        fetch_query = "SELECT * FROM products WHERE status='approved' AND (name LIKE %s OR category LIKE %s OR description LIKE %s) ORDER BY created_at DESC LIMIT %s OFFSET %s"
-        cursor.execute(fetch_query, (like_q, like_q, like_q, per_page, offset))
+        where_clauses.append("(name LIKE %s OR category LIKE %s OR description LIKE %s)")
+        params.extend([like_q, like_q, like_q])
+
     else:
         search_category = category_map.get(category, "%")
-        # count
-        cursor.execute("SELECT COUNT(*) AS cnt FROM products WHERE category LIKE %s AND status='approved'", (search_category,))
-        total_products = int(cursor.fetchone().get('cnt') or 0)
-        total_pages = math.ceil(total_products / per_page) if per_page > 0 else 1
-        if total_pages < 1:
-            total_pages = 1
-        if page > total_pages:
-            page = total_pages
-        offset = (page - 1) * per_page
-        # Fetch products by category (limit for pagination)
-        cursor.execute("""
-            SELECT * FROM products
-            WHERE category LIKE %s AND status='approved'
-            ORDER BY created_at DESC
-            LIMIT %s OFFSET %s
-        """, (search_category, per_page, offset))
+        where_clauses.append("category LIKE %s")
+        params.append(search_category)
+
+    # cuisine filter
+    if cuisine:
+        where_clauses.append("LOWER(cuisine_type) LIKE %s")
+        params.append(f"%{cuisine.lower()}%")
+
+    # dietary filters (require product to include all selected dietary tags)
+    for d in dietary_filters:
+        if d:
+            where_clauses.append("LOWER(COALESCE(dietary_options, '')) LIKE %s")
+            params.append(f"%{d.lower()}%")
+
+    # exclude allergens (exclude any product that lists these allergens)
+    for a in exclude_allergens:
+        if a:
+            where_clauses.append("NOT (LOWER(COALESCE(allergens, '')) LIKE %s)")
+            params.append(f"%{a.lower()}%")
+
+    # Compose count and fetch queries
+    where_sql = " AND ".join(where_clauses)
+    count_query = f"SELECT COUNT(*) AS cnt FROM products WHERE {where_sql}"
+    cursor.execute(count_query, tuple(params))
+    total_products = int(cursor.fetchone().get('cnt') or 0)
+    total_pages = math.ceil(total_products / per_page) if per_page > 0 else 1
+    if total_pages < 1:
+        total_pages = 1
+    if page > total_pages:
+        page = total_pages
+    offset = (page - 1) * per_page
+
+    fetch_query = f"SELECT * FROM products WHERE {where_sql} ORDER BY created_at DESC LIMIT %s OFFSET %s"
+    fetch_params = tuple(params) + (per_page, offset)
+    cursor.execute(fetch_query, fetch_params)
     products = cursor.fetchall()
 
     # Set display image (fallback to default)
