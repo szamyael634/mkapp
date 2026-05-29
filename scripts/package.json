@@ -1,0 +1,12 @@
+{
+  "name": "mk-webhook-forwarder",
+  "version": "0.1.0",
+  "type": "module",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.0.0",
+    "node-fetch": "^3.0.0"
+  },
+  "scripts": {
+    "start": "node webhook_forwarder.js"
+  }
+}
