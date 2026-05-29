@@ -303,6 +303,30 @@
     <p class="text-sm text-gray-500 mb-4">{{ count }} product{{ '' if count == 1 else 's' }}</p>
   {% endif %}
 
+  <!-- Filter Controls -->
+  <div class="max-w-6xl mx-auto mb-6">
+    <form method="get" action="{{ url_for('products_page', category=category) }}" class="flex flex-col md:flex-row items-start md:items-end gap-3 md:gap-4">
+      <input type="text" name="q" placeholder="Search within {{ display_category }}" value="{{ request.args.get('q','') }}" class="flex-1 border rounded px-3 py-2" />
+
+      <input type="text" name="cuisine" placeholder="Cuisine (e.g. Filipino)" value="{{ request.args.get('cuisine','') }}" class="w-48 border rounded px-3 py-2" />
+
+      <div class="flex gap-2 items-center">
+        <label class="text-sm">Dietary:</label>
+        <label class="inline-flex items-center"><input type="checkbox" name="dietary" value="vegetarian" {% if 'vegetarian' in request.args.getlist('dietary') %}checked{% endif %} class="mr-1">🥬</label>
+        <label class="inline-flex items-center"><input type="checkbox" name="dietary" value="vegan" {% if 'vegan' in request.args.getlist('dietary') %}checked{% endif %} class="mr-1">🌱</label>
+        <label class="inline-flex items-center"><input type="checkbox" name="dietary" value="gluten-free" {% if 'gluten-free' in request.args.getlist('dietary') %}checked{% endif %} class="mr-1">🌾</label>
+        <label class="inline-flex items-center"><input type="checkbox" name="dietary" value="keto" {% if 'keto' in request.args.getlist('dietary') %}checked{% endif %} class="mr-1">⚡</label>
+      </div>
+
+      <input type="text" name="exclude_allergens" placeholder="Exclude allergens (comma-separated)" value="{{ request.args.get('exclude_allergens','') }}" class="w-56 border rounded px-3 py-2" />
+
+      <div class="flex gap-2">
+        <button type="submit" class="px-4 py-2 bg-amber-500 text-white rounded">Apply</button>
+        <a href="{{ url_for('products_page', category=category) }}" class="px-4 py-2 bg-white border rounded">Reset</a>
+      </div>
+    </form>
+  </div>
+
   <div class="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-6xl mx-auto">
     {% for product in products %}
     <div class="group bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition relative flex flex-col">
@@ -401,29 +425,29 @@
       {% set end_page = total_pages if page+3 > total_pages else page+3 %}
 
       {% if page > 1 %}
-      <a href="{{ url_for('products_page', category=category) }}?page={{ page-1 }}{% if q %}&q={{ q|urlencode }}{% endif %}" class="px-3 py-2 bg-white border rounded hover:bg-gray-50">Prev</a>
+      <a href="{{ url_for('products_page', category=category) }}?page={{ page-1 }}{% if q %}&q={{ q|urlencode }}{% endif %}{% if request.args.get('cuisine') %}&cuisine={{ request.args.get('cuisine')|urlencode }}{% endif %}{% for d in request.args.getlist('dietary') %}&dietary={{ d|urlencode }}{% endfor %}{% if request.args.get('exclude_allergens') %}&exclude_allergens={{ request.args.get('exclude_allergens')|urlencode }}{% endif %}" class="px-3 py-2 bg-white border rounded hover:bg-gray-50">Prev</a>
       {% endif %}
 
       {% if start_page > 1 %}
-        <a href="{{ url_for('products_page', category=category) }}?page=1{% if q %}&q={{ q|urlencode }}{% endif %}" class="px-3 py-2 bg-white border rounded hover:bg-gray-50">1</a>
+        <a href="{{ url_for('products_page', category=category) }}?page=1{% if q %}&q={{ q|urlencode }}{% endif %}{% if request.args.get('cuisine') %}&cuisine={{ request.args.get('cuisine')|urlencode }}{% endif %}{% for d in request.args.getlist('dietary') %}&dietary={{ d|urlencode }}{% endfor %}{% if request.args.get('exclude_allergens') %}&exclude_allergens={{ request.args.get('exclude_allergens')|urlencode }}{% endif %}" class="px-3 py-2 bg-white border rounded hover:bg-gray-50">1</a>
         {% if start_page > 2 %}
           <span class="px-2">…</span>
         {% endif %}
       {% endif %}
 
       {% for p in range(start_page, end_page+1) %}
-        <a href="{{ url_for('products_page', category=category) }}?page={{ p }}{% if q %}&q={{ q|urlencode }}{% endif %}" class="px-3 py-2 rounded {{ 'bg-amber-500 text-white' if p == page else 'bg-white border hover:bg-gray-50' }}">{{ p }}</a>
+        <a href="{{ url_for('products_page', category=category) }}?page={{ p }}{% if q %}&q={{ q|urlencode }}{% endif %}{% if request.args.get('cuisine') %}&cuisine={{ request.args.get('cuisine')|urlencode }}{% endif %}{% for d in request.args.getlist('dietary') %}&dietary={{ d|urlencode }}{% endfor %}{% if request.args.get('exclude_allergens') %}&exclude_allergens={{ request.args.get('exclude_allergens')|urlencode }}{% endif %}" class="px-3 py-2 rounded {{ 'bg-amber-500 text-white' if p == page else 'bg-white border hover:bg-gray-50' }}">{{ p }}</a>
       {% endfor %}
 
       {% if end_page < total_pages %}
         {% if end_page < total_pages-1 %}
           <span class="px-2">…</span>
         {% endif %}
-        <a href="{{ url_for('products_page', category=category) }}?page={{ total_pages }}{% if q %}&q={{ q|urlencode }}{% endif %}" class="px-3 py-2 bg-white border rounded hover:bg-gray-50">{{ total_pages }}</a>
+        <a href="{{ url_for('products_page', category=category) }}?page={{ total_pages }}{% if q %}&q={{ q|urlencode }}{% endif %}{% if request.args.get('cuisine') %}&cuisine={{ request.args.get('cuisine')|urlencode }}{% endif %}{% for d in request.args.getlist('dietary') %}&dietary={{ d|urlencode }}{% endfor %}{% if request.args.get('exclude_allergens') %}&exclude_allergens={{ request.args.get('exclude_allergens')|urlencode }}{% endif %}" class="px-3 py-2 bg-white border rounded hover:bg-gray-50">{{ total_pages }}</a>
       {% endif %}
 
       {% if page < total_pages %}
-      <a href="{{ url_for('products_page', category=category) }}?page={{ page+1 }}{% if q %}&q={{ q|urlencode }}{% endif %}" class="px-3 py-2 bg-white border rounded hover:bg-gray-50">Next</a>
+      <a href="{{ url_for('products_page', category=category) }}?page={{ page+1 }}{% if q %}&q={{ q|urlencode }}{% endif %}{% if request.args.get('cuisine') %}&cuisine={{ request.args.get('cuisine')|urlencode }}{% endif %}{% for d in request.args.getlist('dietary') %}&dietary={{ d|urlencode }}{% endfor %}{% if request.args.get('exclude_allergens') %}&exclude_allergens={{ request.args.get('exclude_allergens')|urlencode }}{% endif %}" class="px-3 py-2 bg-white border rounded hover:bg-gray-50">Next</a>
       {% endif %}
     </div>
   </div>
