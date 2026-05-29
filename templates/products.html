@@ -263,12 +263,14 @@
 <!-- Category Navigation -->
 <nav class="bg-amber-100 py-3 shadow-inner">
   <ul class="flex flex-wrap justify-center gap-6 font-medium text-amber-700">
-    <li><a href="{{ url_for('products_page', category='Dog') }}" class="hover:text-amber-900">Dog</a></li>
-    <li><a href="{{ url_for('products_page', category='Cat') }}" class="hover:text-amber-900">Cat</a></li>
-    <li><a href="{{ url_for('products_page', category='Fish') }}" class="hover:text-amber-900">Fish</a></li>
-    <li><a href="{{ url_for('products_page', category='Bird') }}" class="hover:text-amber-900">Bird</a></li>
-    <li><a href="{{ url_for('products_page', category='Grooming') }}" class="hover:text-amber-900">Grooming</a></li>
-    <li><a href="{{ url_for('products_page', category='Pet Health') }}" class="hover:text-amber-900">Pet Health</a></li>
+    <li><a href="{{ url_for('products_page', category='Main Dishes') }}" class="hover:text-amber-900">🍲 Main Dishes</a></li>
+    <li><a href="{{ url_for('products_page', category='Desserts') }}" class="hover:text-amber-900">🍰 Desserts</a></li>
+    <li><a href="{{ url_for('products_page', category='Beverages') }}" class="hover:text-amber-900">🥤 Beverages</a></li>
+    <li><a href="{{ url_for('products_page', category='Sides') }}" class="hover:text-amber-900">🍟 Sides</a></li>
+    <li><a href="{{ url_for('products_page', category='Appetizers') }}" class="hover:text-amber-900">🥟 Appetizers</a></li>
+    <li><a href="{{ url_for('products_page', category='Soups') }}" class="hover:text-amber-900">🍜 Soups</a></li>
+    <li><a href="{{ url_for('products_page', category='Salads') }}" class="hover:text-amber-900">🥗 Salads</a></li>
+    <li><a href="{{ url_for('products_page', category='Seasonal') }}" class="hover:text-amber-900">⭐ Seasonal</a></li>
   </ul>
 </nav>
 
@@ -305,32 +307,79 @@
     {% for product in products %}
     <div class="group bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition relative flex flex-col">
       
-      <!-- Image Container -->
+      <!-- Image Container with Badges -->
       <div class="w-full h-64 flex items-center justify-center bg-gray-100 relative">
         <a href="{{ url_for('product_detail', product_id=product.id) }}" class="w-full h-64 flex items-center justify-center bg-gray-100 relative">
-    <img 
-      src="{{ media_url(product.image, 'image/dog.webp') }}"  
-      alt="{{ product.name }}"  
-      class="max-w-full max-h-full object-contain rounded-lg"
-    />
-  </a>
+          <img 
+            src="{{ media_url(product.image, 'image/food-placeholder.webp') }}"  
+            alt="{{ product.name }}"  
+            class="max-w-full max-h-full object-contain rounded-lg"
+          />
+        </a>
+        
+        <!-- Badges -->
+        <div class="absolute top-2 left-2 space-y-2">
+          {% if product.is_bestseller %}
+            <span class="inline-block bg-red-500 text-white text-xs px-2 py-1 rounded-full">⭐ Bestseller</span>
+          {% endif %}
+          {% if product.is_spicy %}
+            <span class="inline-block bg-orange-500 text-white text-xs px-2 py-1 rounded-full">🌶️ Spicy</span>
+          {% endif %}
+        </div>
+        
+        <!-- Dietary Options -->
+        {% if product.dietary_options %}
+          <div class="absolute top-2 right-2 space-y-1 text-right">
+            {% set diets = product.dietary_options.split(',') if product.dietary_options else [] %}
+            {% if 'vegetarian' in product.dietary_options|lower %}
+              <span class="inline-block text-sm">🥬</span>
+            {% endif %}
+            {% if 'vegan' in product.dietary_options|lower %}
+              <span class="inline-block text-sm">🌱</span>
+            {% endif %}
+            {% if 'gluten-free' in product.dietary_options|lower %}
+              <span class="inline-block text-sm">🌾</span>
+            {% endif %}
+          </div>
+        {% endif %}
       </div>
 
       <!-- Product Info -->
       <div class="p-4 flex-1 flex flex-col justify-between">
-        <h3 class="text-lg font-medium text-gray-700 truncate">{{ product.name }}</h3>
-        <p class="text-amber-600 font-semibold mt-1">₱{{ product.price }}</p>
-        <div class="mt-2 flex items-center gap-3">
-          <div class="flex items-center" style="line-height:0">
-            {% set filled = (product.rating|default(0)|round(0))|int %}
-            {% for i in range(filled) %}
-              <i class="bx bxs-star text-amber-400"></i>
-            {% endfor %}
-            {% for i in range(5 - filled) %}
-              <i class="bx bx-star text-gray-300"></i>
-            {% endfor %}
+        <div>
+          <h3 class="text-lg font-medium text-gray-700 truncate">{{ product.name }}</h3>
+          
+          <!-- Cuisine Type -->
+          {% if product.cuisine_type %}
+            <p class="text-xs text-amber-600 font-semibold">{{ product.cuisine_type }}</p>
+          {% endif %}
+          
+          <!-- Price & Prep Time -->
+          <div class="mt-2 flex items-center justify-between">
+            <p class="text-amber-600 font-semibold">₱{{ product.price }}</p>
+            {% if product.preparation_time %}
+              <span class="text-xs text-gray-500">⏱️ {{ product.preparation_time }}m</span>
+            {% endif %}
           </div>
-          <div class="text-sm text-gray-500">{{ product.rating|default(0)|round(1) }} ({{ product.rating_count|default(0) }})</div>
+          
+          <!-- Rating -->
+          <div class="mt-2 flex items-center gap-3">
+            <div class="flex items-center" style="line-height:0">
+              {% set filled = (product.average_rating|default(0)|round(0))|int %}
+              {% for i in range(filled) %}
+                <i class="bx bxs-star text-amber-400"></i>
+              {% endfor %}
+              {% for i in range(5 - filled) %}
+                <i class="bx bx-star text-gray-300"></i>
+              {% endfor %}
+            </div>
+            <div class="text-sm text-gray-500">({{ product.rating_count|default(0) }})</div>
+          </div>
+          
+          <!-- Allergen Warning -->
+          {% if product.allergens %}
+            <p class="text-xs text-red-600 mt-2">⚠️ Contains: {{ product.allergens[:30] }}...</p>
+          {% endif %}
         </div>
       </div>
     </div>

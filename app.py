@@ -2895,9 +2895,9 @@ def homepage():
             customer_notifications = []
 
 
-    # Fetch products with average rating
+    # Fetch products with average rating (include food-specific fields)
     cursor = db.cursor(dictionary=True)
-    cursor.execute("SELECT id, name, price, image FROM products WHERE status='approved' ORDER BY created_at DESC LIMIT 12")
+    cursor.execute("SELECT id, name, price, image, cuisine_type, preparation_time, servings, allergens, dietary_options, is_spicy, spice_level, is_bestseller FROM products WHERE status='approved' ORDER BY created_at DESC LIMIT 12")
     products = cursor.fetchall()
     product_ids = [p['id'] for p in products]
     ratings_map = {}
@@ -6315,11 +6315,11 @@ def random_products():
         
         # Build query based on category
         if category:
-            # Select up to 8 random approved products from the same category
-            cursor.execute("SELECT id, name, price, image, seller_id FROM products WHERE status='approved' AND category=%s ORDER BY RAND() LIMIT 8", (category,))
+            # Select up to 8 random approved products from the same category (include food fields)
+            cursor.execute("SELECT id, name, price, image, seller_id, cuisine_type, preparation_time, servings, allergens, dietary_options, is_spicy, spice_level, is_bestseller FROM products WHERE status='approved' AND category=%s ORDER BY RAND() LIMIT 8", (category,))
         else:
-            # Fallback: select random approved products from all categories
-            cursor.execute("SELECT id, name, price, image, seller_id FROM products WHERE status='approved' ORDER BY RAND() LIMIT 8")
+            # Fallback: select random approved products from all categories (include food fields)
+            cursor.execute("SELECT id, name, price, image, seller_id, cuisine_type, preparation_time, servings, allergens, dietary_options, is_spicy, spice_level, is_bestseller FROM products WHERE status='approved' ORDER BY RAND() LIMIT 8")
         
         prods = cursor.fetchall()
         results = []
@@ -6333,7 +6333,15 @@ def random_products():
                 'name': p.get('name'),
                 'price': float(p.get('price') or 0),
                 'image_url': image_url,
-                'seller_id': p.get('seller_id')
+                'seller_id': p.get('seller_id'),
+                'cuisine_type': p.get('cuisine_type'),
+                'preparation_time': p.get('preparation_time'),
+                'servings': p.get('servings'),
+                'allergens': p.get('allergens'),
+                'dietary_options': p.get('dietary_options'),
+                'is_spicy': bool(p.get('is_spicy')),
+                'spice_level': p.get('spice_level'),
+                'is_bestseller': bool(p.get('is_bestseller'))
             }
             # attach average rating and count if reviews table exists
             if has_reviews_table:
@@ -7528,6 +7536,33 @@ def add_product():
     description = request.form.get("description")
     price = float(request.form.get("price") or 0)
     stock = int(request.form.get("stock") or 0)
+    # Food-specific fields (optional)
+    cuisine_type = request.form.get("cuisine_type")
+    try:
+        preparation_time = int(request.form.get("preparation_time")) if request.form.get("preparation_time") else None
+    except ValueError:
+        preparation_time = None
+    try:
+        servings = int(request.form.get("servings")) if request.form.get("servings") else None
+    except ValueError:
+        servings = None
+    ingredients = request.form.get("ingredients")
+    allergens = request.form.get("allergens")
+    is_spicy = True if (request.form.get("is_spicy") in ("on", "true", "1")) else False
+    try:
+        spice_level = int(request.form.get("spice_level")) if request.form.get("spice_level") else None
+    except ValueError:
+        spice_level = None
+    # dietary_options may be submitted as a list of checkboxes
+    dietary_list = request.form.getlist("dietary_options[]") or request.form.getlist("dietary_options") or []
+    dietary_options = ",".join(dietary_list) if dietary_list else request.form.get("dietary_options")
+    storage_instructions = request.form.get("storage_instructions")
+    reheating_instructions = request.form.get("reheating_instructions")
+    is_bestseller = True if (request.form.get("is_bestseller") in ("on", "true", "1")) else False
+    origin_location = request.form.get("origin_location")
+    nutritional_info = request.form.get("nutritional_info")
+    is_available_today = True if (request.form.get("is_available_today") in ("on", "true", "1")) else True
+    expiration_date = request.form.get("expiration_date")
     # (removed base product weight handling)
 
     # Main product image
@@ -7539,9 +7574,19 @@ def add_product():
 
     # Insert main product with temporary stock
     cursor.execute("""
-        INSERT INTO products (seller_id, name, category, description, price, stock, image, status)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, 'pending')
-    """, (seller_id, name, category, description, price, stock, image_filename))
+        INSERT INTO products (
+            seller_id, name, category, description, price, stock, image, status,
+            cuisine_type, preparation_time, servings, ingredients, allergens, is_spicy, spice_level,
+            dietary_options, storage_instructions, reheating_instructions, is_bestseller, origin_location,
+            nutritional_info, is_available_today, expiration_date
+        )
+        VALUES (%s, %s, %s, %s, %s, %s, %s, 'pending', %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    """, (
+        seller_id, name, category, description, price, stock, image_filename,
+        cuisine_type, preparation_time, servings, ingredients, allergens, is_spicy, spice_level,
+        dietary_options, storage_instructions, reheating_instructions, is_bestseller, origin_location,
+        nutritional_info, is_available_today, expiration_date
+    ))
     product_id = cursor.lastrowid
 
     total_variant_stock = 0  # sum of all variant stocks
@@ -7940,6 +7985,32 @@ def edit_product():
     stock = request.form.get("stock")
     # removed main product weight from edit flow
     image = request.files.get("image")
+    # Food-specific fields
+    cuisine_type = request.form.get("cuisine_type")
+    try:
+        preparation_time = int(request.form.get("preparation_time")) if request.form.get("preparation_time") else None
+    except ValueError:
+        preparation_time = None
+    try:
+        servings = int(request.form.get("servings")) if request.form.get("servings") else None
+    except ValueError:
+        servings = None
+    ingredients = request.form.get("ingredients")
+    allergens = request.form.get("allergens")
+    is_spicy = True if (request.form.get("is_spicy") in ("on", "true", "1")) else False
+    try:
+        spice_level = int(request.form.get("spice_level")) if request.form.get("spice_level") else None
+    except ValueError:
+        spice_level = None
+    dietary_list = request.form.getlist("dietary_options[]") or request.form.getlist("dietary_options") or []
+    dietary_options = ",".join(dietary_list) if dietary_list else request.form.get("dietary_options")
+    storage_instructions = request.form.get("storage_instructions")
+    reheating_instructions = request.form.get("reheating_instructions")
+    is_bestseller = True if (request.form.get("is_bestseller") in ("on", "true", "1")) else False
+    origin_location = request.form.get("origin_location")
+    nutritional_info = request.form.get("nutritional_info")
+    is_available_today = True if (request.form.get("is_available_today") in ("on", "true", "1")) else True
+    expiration_date = request.form.get("expiration_date")
 
     cursor = db.cursor(dictionary=True)
     cursor.execute("SELECT * FROM products WHERE id=%s AND seller_id=%s", (product_id, user_id))
@@ -7969,6 +8040,7 @@ def edit_product():
     new_status = "pending" if (
         name != product["name"] or
         category != product["category"] or
+        cuisine_type != (product.get("cuisine_type") or None) or
         is_major_change(product["price"], price) or
         image_path != product["image"]
     ) else product["status"]
@@ -8037,9 +8109,20 @@ def edit_product():
     cursor.execute("""
         UPDATE products
         SET name=%s, category=%s, description=%s, price=%s, stock=%s,
-            image=%s, status=%s
+            image=%s, status=%s,
+            cuisine_type=%s, preparation_time=%s, servings=%s, ingredients=%s, allergens=%s,
+            is_spicy=%s, spice_level=%s, dietary_options=%s, storage_instructions=%s,
+            reheating_instructions=%s, is_bestseller=%s, origin_location=%s,
+            nutritional_info=%s, is_available_today=%s, expiration_date=%s
         WHERE id=%s AND seller_id=%s
-    """, (name, category, description, price, final_stock, image_path, new_status, product_id, user_id))
+    """, (
+        name, category, description, price, final_stock, image_path, new_status,
+        cuisine_type, preparation_time, servings, ingredients, allergens,
+        is_spicy, spice_level, dietary_options, storage_instructions,
+        reheating_instructions, is_bestseller, origin_location,
+        nutritional_info, is_available_today, expiration_date,
+        product_id, user_id
+    ))
 
     if new_status == "pending" and (product.get("status") or "").lower() != "pending":
         create_notification(

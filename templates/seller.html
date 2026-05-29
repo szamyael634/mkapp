@@ -889,6 +889,34 @@
                 </select>
                 <textarea name="description" rows="2" placeholder="Description" class="w-full border rounded px-3 py-2"></textarea>
 
+                <!-- Food-specific fields -->
+                <input type="text" name="cuisine_type" placeholder="Cuisine Type (e.g. Filipino, Italian)" class="w-full border rounded px-3 py-2">
+                <div class="grid grid-cols-2 gap-2">
+                  <input type="number" name="preparation_time" placeholder="Prep time (mins)" class="border rounded px-3 py-2">
+                  <input type="number" name="servings" placeholder="Servings" class="border rounded px-3 py-2">
+                </div>
+                <textarea name="ingredients" rows="2" placeholder="Ingredients (comma-separated)" class="w-full border rounded px-3 py-2"></textarea>
+                <input type="text" name="allergens" placeholder="Allergens (comma-separated)" class="w-full border rounded px-3 py-2">
+                <div class="flex items-center gap-3">
+                  <label class="inline-flex items-center"><input type="checkbox" name="is_spicy" class="mr-2"> Spicy</label>
+                  <label class="inline-flex items-center"><input type="number" name="spice_level" min="1" max="5" placeholder="1-5" class="w-16 border rounded px-2 py-1"></label>
+                </div>
+                <div class="flex gap-2 flex-wrap">
+                  <label class="inline-flex items-center"><input type="checkbox" name="dietary_options[]" value="vegetarian" class="mr-2"> Vegetarian</label>
+                  <label class="inline-flex items-center"><input type="checkbox" name="dietary_options[]" value="vegan" class="mr-2"> Vegan</label>
+                  <label class="inline-flex items-center"><input type="checkbox" name="dietary_options[]" value="gluten-free" class="mr-2"> Gluten-Free</label>
+                  <label class="inline-flex items-center"><input type="checkbox" name="dietary_options[]" value="keto" class="mr-2"> Keto</label>
+                </div>
+                <textarea name="storage_instructions" rows="2" placeholder="Storage instructions" class="w-full border rounded px-3 py-2"></textarea>
+                <textarea name="reheating_instructions" rows="2" placeholder="Reheating instructions" class="w-full border rounded px-3 py-2"></textarea>
+                <input type="text" name="origin_location" placeholder="Origin / Kitchen location" class="w-full border rounded px-3 py-2">
+                <textarea name="nutritional_info" rows="2" placeholder="Nutritional info (JSON or text)" class="w-full border rounded px-3 py-2"></textarea>
+                <div class="flex items-center gap-3">
+                  <label class="inline-flex items-center"><input type="checkbox" name="is_bestseller" class="mr-2"> Mark as Bestseller</label>
+                  <label class="inline-flex items-center"><input type="checkbox" name="is_available_today" checked class="mr-2"> Available Today</label>
+                </div>
+                <input type="date" name="expiration_date" class="w-full border rounded px-3 py-2">
+
                 <!-- Base Price & Stock -->
                 <input type="number" name="price" step="0.01" placeholder="Base Price (₱)" class="w-full border rounded px-3 py-2" required>
                 <input type="number" id="baseStockInput" name="stock" placeholder="Base Stock" class="w-full border rounded px-3 py-2" required>

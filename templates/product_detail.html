@@ -149,12 +149,14 @@
 <!-- Category Navigation -->
 <nav class="bg-amber-100 py-3 shadow-inner">
   <ul class="flex flex-wrap justify-center gap-6 font-medium text-amber-700">
-    <li><a href="{{ url_for('products_page', category='Dog') }}" class="hover:text-amber-900">Dog</a></li>
-    <li><a href="{{ url_for('products_page', category='Cat') }}" class="hover:text-amber-900">Cat</a></li>
-    <li><a href="{{ url_for('products_page', category='Fish') }}" class="hover:text-amber-900">Fish</a></li>
-    <li><a href="{{ url_for('products_page', category='Bird') }}" class="hover:text-amber-900">Bird</a></li>
-    <li><a href="{{ url_for('products_page', category='Grooming') }}" class="hover:text-amber-900">Grooming</a></li>
-    <li><a href="{{ url_for('products_page', category='Pet Health') }}" class="hover:text-amber-900">Pet Health</a></li>
+    <li><a href="{{ url_for('products_page', category='Main Dishes') }}" class="hover:text-amber-900">🍲 Main Dishes</a></li>
+    <li><a href="{{ url_for('products_page', category='Desserts') }}" class="hover:text-amber-900">🍰 Desserts</a></li>
+    <li><a href="{{ url_for('products_page', category='Beverages') }}" class="hover:text-amber-900">🥤 Beverages</a></li>
+    <li><a href="{{ url_for('products_page', category='Sides') }}" class="hover:text-amber-900">🍟 Sides</a></li>
+    <li><a href="{{ url_for('products_page', category='Appetizers') }}" class="hover:text-amber-900">🥟 Appetizers</a></li>
+    <li><a href="{{ url_for('products_page', category='Soups') }}" class="hover:text-amber-900">🍜 Soups</a></li>
+    <li><a href="{{ url_for('products_page', category='Salads') }}" class="hover:text-amber-900">🥗 Salads</a></li>
+    <li><a href="{{ url_for('products_page', category='Seasonal') }}" class="hover:text-amber-900">⭐ Seasonal</a></li>
   </ul>
 </nav>
 
@@ -286,6 +288,93 @@
   {% if has_stock %}Choose an item to see available stock.{% else %}Out of stock{% endif %}
 </p>
 {% endif %}
+
+<!-- Food-Specific Details -->
+<div class="mt-6 border-t pt-6 space-y-4">
+  <!-- Cuisine Type & Prep Time -->
+  <div class="grid grid-cols-2 gap-4">
+    {% if product.cuisine_type %}
+      <div class="bg-amber-50 p-3 rounded-lg">
+        <div class="text-xs text-amber-700 font-semibold uppercase">Cuisine</div>
+        <div class="text-lg font-semibold text-gray-800">{{ product.cuisine_type }}</div>
+      </div>
+    {% endif %}
+    
+    {% if product.preparation_time %}
+      <div class="bg-amber-50 p-3 rounded-lg">
+        <div class="text-xs text-amber-700 font-semibold uppercase">Prep Time</div>
+        <div class="text-lg font-semibold text-gray-800">⏱️ {{ product.preparation_time }} min</div>
+      </div>
+    {% endif %}
+
+    {% if product.servings %}
+      <div class="bg-amber-50 p-3 rounded-lg">
+        <div class="text-xs text-amber-700 font-semibold uppercase">Servings</div>
+        <div class="text-lg font-semibold text-gray-800">{{ product.servings }}</div>
+      </div>
+    {% endif %}
+
+    {% if product.is_spicy %}
+      <div class="bg-red-50 p-3 rounded-lg">
+        <div class="text-xs text-red-700 font-semibold uppercase">Heat Level</div>
+        <div class="text-lg font-semibold text-red-800">🌶️ {{ product.spice_level | default('Spicy') }}/5</div>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Dietary Options -->
+  {% if product.dietary_options %}
+    <div class="bg-green-50 p-3 rounded-lg">
+      <div class="text-xs text-green-700 font-semibold uppercase mb-2">Dietary Options</div>
+      <div class="flex flex-wrap gap-2">
+        {% if 'vegetarian' in product.dietary_options|lower %}
+          <span class="bg-green-200 text-green-800 px-3 py-1 rounded-full text-sm">🥬 Vegetarian</span>
+        {% endif %}
+        {% if 'vegan' in product.dietary_options|lower %}
+          <span class="bg-green-200 text-green-800 px-3 py-1 rounded-full text-sm">🌱 Vegan</span>
+        {% endif %}
+        {% if 'gluten-free' in product.dietary_options|lower %}
+          <span class="bg-blue-200 text-blue-800 px-3 py-1 rounded-full text-sm">🌾 Gluten-Free</span>
+        {% endif %}
+        {% if 'keto' in product.dietary_options|lower %}
+          <span class="bg-purple-200 text-purple-800 px-3 py-1 rounded-full text-sm">⚡ Keto</span>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+
+  <!-- Allergens Warning -->
+  {% if product.allergens %}
+    <div class="bg-red-50 border-2 border-red-300 p-3 rounded-lg">
+      <div class="text-xs text-red-700 font-semibold uppercase mb-2">⚠️ Contains Allergens</div>
+      <div class="text-sm text-red-800">{{ product.allergens }}</div>
+    </div>
+  {% endif %}
+
+  <!-- Ingredients -->
+  {% if product.ingredients %}
+    <div class="bg-gray-50 p-3 rounded-lg">
+      <div class="text-xs text-gray-700 font-semibold uppercase mb-2">Ingredients</div>
+      <div class="text-sm text-gray-800">{{ product.ingredients }}</div>
+    </div>
+  {% endif %}
+
+  <!-- Storage Instructions -->
+  {% if product.storage_instructions %}
+    <div class="bg-blue-50 p-3 rounded-lg">
+      <div class="text-xs text-blue-700 font-semibold uppercase mb-2">📦 Storage Instructions</div>
+      <div class="text-sm text-blue-800">{{ product.storage_instructions }}</div>
+    </div>
+  {% endif %}
+
+  <!-- Reheating Instructions -->
+  {% if product.reheating_instructions %}
+    <div class="bg-yellow-50 p-3 rounded-lg">
+      <div class="text-xs text-yellow-700 font-semibold uppercase mb-2">🔥 Reheating Instructions</div>
+      <div class="text-sm text-yellow-800">{{ product.reheating_instructions }}</div>
+    </div>
+  {% endif %}
+</div>
 </div>
 
 </section>
