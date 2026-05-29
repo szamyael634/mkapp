@@ -1,4 +1,4 @@
-## Petopia Supabase Setup
+## Mama's Kitchen Supabase Setup
 
 This project is now set up to use Supabase Postgres.
 
@@ -71,7 +71,7 @@ This project uploads files to Supabase Storage, not to the database itself.
 Create these buckets in `Storage` inside your Supabase project:
 
 - `product-images`
-- `petopia-documents`
+- `mamas_kitchen-documents`
 
 If you want different bucket names, set them in `.env`:
 
@@ -83,7 +83,7 @@ SUPABASE_DOCUMENT_BUCKET=your-document-bucket
 The website uses them like this:
 
 - `product-images`: product and variant images
-- `petopia-documents`: profile pictures, valid IDs, business permits, driver's licenses, delivery proofs
+- `mamas_kitchen-documents`: profile pictures, valid IDs, business permits, driver's licenses, delivery proofs
 
 ### 6. Start the app
 

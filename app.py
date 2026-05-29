@@ -93,14 +93,14 @@ SUPABASE_URL = os.getenv("SUPABASE_URL", "").strip()
 SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "").strip()
 SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY", "").strip()
 SUPABASE_PRODUCT_IMAGE_BUCKET = os.getenv("SUPABASE_PRODUCT_IMAGE_BUCKET", "product-images").strip() or "product-images"
-SUPABASE_DOCUMENT_BUCKET = os.getenv("SUPABASE_DOCUMENT_BUCKET", "petopia-documents").strip() or "petopia-documents"
+SUPABASE_DOCUMENT_BUCKET = os.getenv("SUPABASE_DOCUMENT_BUCKET", "mamas-kitchen-documents").strip() or "mamas-kitchen-documents"
 try:
-    LOW_STOCK_THRESHOLD = max(int(os.getenv("PETOPIA_LOW_STOCK_THRESHOLD", "5") or 5), 0)
+    LOW_STOCK_THRESHOLD = max(int(os.getenv("MAMAS_KITCHEN_LOW_STOCK_THRESHOLD", "5") or 5), 0)
 except ValueError:
     LOW_STOCK_THRESHOLD = 5
 
 # Gmail SMTP Configuration
-GMAIL_USER = os.getenv("GMAIL_USER", "petopia922@gmail.com")
+GMAIL_USER = os.getenv("GMAIL_USER", "mamaskitchen@gmail.com")
 GMAIL_PASSWORD = os.getenv("GMAIL_PASSWORD", "gget hsmt vtye vsso")
 
 # Print email config on startup for debugging
@@ -208,7 +208,7 @@ DB_CONFIG = {
     'host': 'localhost',
     'user': 'root',
     'password': '',
-    'database': 'petopia_d',
+    'database': 'mamas_kitchen_d',
     'autocommit': False
 }
 
@@ -1657,7 +1657,7 @@ def save_file(file, folder):
         if not _storage_enabled():
             raise RuntimeError(
                 "Supabase Storage is not configured for server uploads. "
-                "Set SUPABASE_URL and a valid SUPABASE_SERVICE_ROLE_KEY in Petopia/.env."
+                "Set SUPABASE_URL and a valid SUPABASE_SERVICE_ROLE_KEY in Mama's Kitchen/.env."
             )
 
         content_type = getattr(file, "mimetype", None) or mimetypes.guess_type(filename)[0] or "application/octet-stream"
@@ -1722,15 +1722,15 @@ def send_approval_email(email, fullname, role, status):
         msg = MIMEMultipart('alternative')
         msg['From'] = GMAIL_USER
         msg['To'] = email
-        msg['Subject'] = f"Petopia Account {status.title()} - {role.title()}"
+        msg['Subject'] = f"Mama's Kitchen Account {status.title()} - {role.title()}"
         
         # Determine message content based on status
         if status == 'approved':
-            subject_text = f"Welcome to Petopia, {fullname}!"
+            subject_text = f"Welcome to Mama's Kitchen, {fullname}!"
             body_text = f"""
 Hello {fullname},
 
-Great news! Your {role} account on Petopia has been approved by our admin team.
+Great news! Your {role} account on Mama's Kitchen has been approved by our admin team.
 
 You can now log in and start using our platform:
 - {role.title()}s can manage their inventory and orders
@@ -1742,33 +1742,33 @@ Please visit our website: http://127.0.0.1:5000
 If you have any questions, feel free to contact our support team.
 
 Best regards,
-Petopia Team
+Mama's Kitchen Team
             """
             html_body = f"""
 <html>
   <body style="font-family: Arial, sans-serif; color: #333;">
     <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-      <h2 style="color: #FFA500;">Welcome to Petopia, {fullname}!</h2>
-      <p>Great news! Your <strong>{role}</strong> account on Petopia has been <strong style="color: green;">APPROVED</strong> by our admin team.</p>
+      <h2 style="color: #FFA500;">Welcome to Mama's Kitchen, {fullname}!</h2>
+      <p>Great news! Your <strong>{role}</strong> account on Mama's Kitchen has been <strong style="color: green;">APPROVED</strong> by our admin team.</p>
       <p>You can now log in and start using our platform:</p>
       <ul>
         <li>{role.title()}s can manage their inventory and orders</li>
         <li>Customers can browse and purchase products</li>
         <li>Riders can accept delivery orders</li>
       </ul>
-      <p><a href="http://127.0.0.1:5000" style="background-color: #FFA500; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Visit Petopia</a></p>
+      <p><a href="http://127.0.0.1:5000" style="background-color: #FFA500; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Visit Mama's Kitchen</a></p>
       <p>If you have any questions, feel free to contact our support team.</p>
-      <p>Best regards,<br><strong>Petopia Team</strong></p>
+      <p>Best regards,<br><strong>Mama's Kitchen Team</strong></p>
     </div>
   </body>
 </html>
             """
         else:  # rejected
-            subject_text = f"Petopia Account Application - Information Needed"
+            subject_text = f"Mama's Kitchen Account Application - Information Needed"
             body_text = f"""
 Hello {fullname},
 
-Thank you for your interest in joining Petopia as a {role}.
+Thank you for your interest in joining Mama's Kitchen as a {role}.
 
 Unfortunately, your account application could not be approved at this time. This may be due to incomplete information or documentation issues.
 
@@ -1777,15 +1777,15 @@ Please review your submission and try again with complete and accurate informati
 If you believe this is an error, please contact our support team.
 
 Best regards,
-Petopia Team
+Mama's Kitchen Team
             """
             html_body = f"""
 <html>
   <body style="font-family: Arial, sans-serif; color: #333;">
     <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-      <h2 style="color: #FFA500;">Petopia Account Application Status</h2>
+      <h2 style="color: #FFA500;">Mama's Kitchen Account Application Status</h2>
       <p>Hello {fullname},</p>
-      <p>Thank you for your interest in joining Petopia as a <strong>{role}</strong>.</p>
+      <p>Thank you for your interest in joining Mama's Kitchen as a <strong>{role}</strong>.</p>
       <p>Unfortunately, your account application could not be approved at this time. This may be due to:</p>
       <ul>
         <li>Incomplete information or documentation</li>
@@ -1794,7 +1794,7 @@ Petopia Team
       </ul>
       <p>Please review your submission and try again with complete and accurate information.</p>
       <p>If you believe this is an error, please contact our support team.</p>
-      <p>Best regards,<br><strong>Petopia Team</strong></p>
+      <p>Best regards,<br><strong>Mama's Kitchen Team</strong></p>
     </div>
   </body>
 </html>
@@ -1857,12 +1857,12 @@ def send_suspension_email(email, fullname, role):
         msg = MIMEMultipart('alternative')
         msg['From'] = GMAIL_USER
         msg['To'] = email
-        msg['Subject'] = f"Petopia Account Suspended - {role.title()}"
+        msg['Subject'] = f"Mama's Kitchen Account Suspended - {role.title()}"
         
         body_text = f"""
 Hello {fullname},
 
-We regret to inform you that your {role} account on Petopia has been suspended by our admin team.
+We regret to inform you that your {role} account on Mama's Kitchen has been suspended by our admin team.
 
 Account Suspension Reason:
 Your account has been suspended due to violation of our platform policies or other administrative reasons. This is a temporary measure to protect the integrity of our platform and its community.
@@ -1877,8 +1877,8 @@ How to Appeal:
 If you believe this suspension is a mistake or would like to dispute it, please contact our support team immediately with details about your case. We will review your appeal and take appropriate action.
 
 Support Contact:
-Email: support@petopia.com
-Phone: +1-800-PETOPIA
+Email: support@mamas_kitchen.com
+Phone: +1-800-MAMAS_KITCHEN
 
 Suspension Details:
 - Suspended On: Today's Date
@@ -1888,7 +1888,7 @@ Suspension Details:
 We appreciate your understanding. If you have any questions, please reach out to our support team.
 
 Best regards,
-Petopia Support Team
+Mama's Kitchen Support Team
         """
         
         html_body = f"""
@@ -1897,7 +1897,7 @@ Petopia Support Team
     <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
       <h2 style="color: #DC2626;">⚠️ Account Suspension Notice</h2>
       <p>Hello {fullname},</p>
-      <p>We regret to inform you that your <strong>{role}</strong> account on Petopia has been <strong style="color: #DC2626;">SUSPENDED</strong> by our admin team.</p>
+      <p>We regret to inform you that your <strong>{role}</strong> account on Mama's Kitchen has been <strong style="color: #DC2626;">SUSPENDED</strong> by our admin team.</p>
       
       <h3 style="color: #374151;">Account Suspension Reason</h3>
       <p>Your account has been suspended due to violation of our platform policies or other administrative reasons. This is a temporary measure to protect the integrity of our platform and its community.</p>
@@ -1931,13 +1931,13 @@ Petopia Support Team
       
       <h3 style="color: #374151;">Support Contact</h3>
       <p style="color: #666;">
-        Email: <strong>support@petopia.com</strong><br>
-        Phone: <strong>+1-800-PETOPIA</strong>
+        Email: <strong>support@mamas_kitchen.com</strong><br>
+        Phone: <strong>+1-800-MAMAS_KITCHEN</strong>
       </p>
       
       <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #E5E7EB; color: #9CA3AF; font-size: 12px;">
         We appreciate your understanding. If you have any questions, please reach out to our support team.<br>
-        <strong>Petopia Support Team</strong>
+        <strong>Mama's Kitchen Support Team</strong>
       </p>
     </div>
   </body>
@@ -2001,12 +2001,12 @@ def send_restore_email(email, fullname, role):
         msg = MIMEMultipart('alternative')
         msg['From'] = GMAIL_USER
         msg['To'] = email
-        msg['Subject'] = f"Petopia Account Restored - {role.title()}"
+        msg['Subject'] = f"Mama's Kitchen Account Restored - {role.title()}"
         
         body_text = f"""
 Hello {fullname},
 
-We are pleased to inform you that your {role} account on Petopia has been restored and is now active!
+We are pleased to inform you that your {role} account on Mama's Kitchen has been restored and is now active!
 
 Account Restoration Details:
 Your account has been successfully restored by our admin team. Your account is now fully operational and you can resume all normal activities on the platform.
@@ -2019,7 +2019,7 @@ What You Can Now Do:
 - View your account settings and profile
 
 Getting Started Again:
-1. Visit https://petopia.com and log in with your credentials
+1. Visit https://mamas_kitchen.com and log in with your credentials
 2. Review your account to ensure all information is current
 3. Check if any of your listings need updating
 4. Start managing your activities
@@ -2028,18 +2028,18 @@ Important Reminder:
 Please ensure that your account activities comply with our community guidelines and platform policies. Violation of these policies may result in future suspension.
 
 Support Contact:
-Email: support@petopia.com
-Phone: +1-800-PETOPIA
+Email: support@mamas_kitchen.com
+Phone: +1-800-MAMAS_KITCHEN
 
 Restoration Details:
 - Restored On: Today's Date
 - Account Role: {role.title()}
 - Status: Active
 
-Welcome back to Petopia! We're excited to have you back in our community.
+Welcome back to Mama's Kitchen! We're excited to have you back in our community.
 
 Best regards,
-Petopia Support Team
+Mama's Kitchen Support Team
         """
         
         html_body = f"""
@@ -2048,7 +2048,7 @@ Petopia Support Team
     <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
       <h2 style="color: #16A34A;">✅ Account Restoration Successful</h2>
       <p>Hello {fullname},</p>
-      <p>We are pleased to inform you that your <strong>{role}</strong> account on Petopia has been <strong style="color: #16A34A;">RESTORED</strong> and is now active!</p>
+      <p>We are pleased to inform you that your <strong>{role}</strong> account on Mama's Kitchen has been <strong style="color: #16A34A;">RESTORED</strong> and is now active!</p>
       
       <h3 style="color: #374151;">Account Restoration Details</h3>
       <p>Your account has been successfully restored by our admin team. Your account is now fully operational and you can resume all normal activities on the platform.</p>
@@ -2064,7 +2064,7 @@ Petopia Support Team
       
       <h3 style="color: #374151;">Getting Started Again</h3>
       <ol style="color: #666;">
-        <li>Visit <strong>https://petopia.com</strong> and log in with your credentials</li>
+        <li>Visit <strong>https://mamas_kitchen.com</strong> and log in with your credentials</li>
         <li>Review your account to ensure all information is current</li>
         <li>Check if any of your listings need updating</li>
         <li>Start managing your activities</li>
@@ -2093,13 +2093,13 @@ Petopia Support Team
       
       <h3 style="color: #374151;">Support Contact</h3>
       <p style="color: #666;">
-        Email: <strong>support@petopia.com</strong><br>
-        Phone: <strong>+1-800-PETOPIA</strong>
+        Email: <strong>support@mamas_kitchen.com</strong><br>
+        Phone: <strong>+1-800-MAMAS_KITCHEN</strong>
       </p>
       
       <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #E5E7EB; color: #9CA3AF; font-size: 12px;">
-        Welcome back to Petopia! We're excited to have you back in our community.<br>
-        <strong>Petopia Support Team</strong>
+        Welcome back to Mama's Kitchen! We're excited to have you back in our community.<br>
+        <strong>Mama's Kitchen Support Team</strong>
       </p>
     </div>
   </body>
@@ -2162,12 +2162,12 @@ def send_forgot_password_email(email, fullname, reset_link):
         msg = MIMEMultipart('alternative')
         msg['From'] = GMAIL_USER
         msg['To'] = email
-        msg['Subject'] = "Reset Your Petopia Password"
+        msg['Subject'] = "Reset Your Mama's Kitchen Password"
         
         body_text = f"""
 Hello {fullname},
 
-We received a request to reset your Petopia password. If you did not make this request, you can safely ignore this email.
+We received a request to reset your Mama's Kitchen password. If you did not make this request, you can safely ignore this email.
 
 To reset your password, click the link below:
 {reset_link}
@@ -2177,16 +2177,16 @@ This link will expire in 24 hours. If it has expired, you can request a new pass
 If you did not request a password reset, please contact our support team immediately.
 
 Best regards,
-Petopia Support Team
+Mama's Kitchen Support Team
         """
         
         html_body = f"""
 <html>
   <body style="font-family: Arial, sans-serif; color: #333;">
     <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-      <h2 style="color: #FFA500;">Reset Your Petopia Password</h2>
+      <h2 style="color: #FFA500;">Reset Your Mama's Kitchen Password</h2>
       <p>Hello {fullname},</p>
-      <p>We received a request to reset your Petopia password. If you did not make this request, you can safely ignore this email.</p>
+      <p>We received a request to reset your Mama's Kitchen password. If you did not make this request, you can safely ignore this email.</p>
       
       <h3 style="color: #374151;">Reset Your Password</h3>
       <p>Click the button below to reset your password:</p>
@@ -2204,12 +2204,12 @@ Petopia Support Team
       
       <h3 style="color: #374151;">Security Notice</h3>
       <p style="background-color: #FEE2E2; border-left: 4px solid #DC2626; padding: 12px; border-radius: 4px; color: #991B1B;">
-        If you did not request this password reset, please contact our support team immediately at support@petopia.com
+        If you did not request this password reset, please contact our support team immediately at support@mamas_kitchen.com
       </p>
       
       <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #E5E7EB; color: #9CA3AF; font-size: 12px;">
-        <strong>Petopia Support Team</strong><br>
-        Email: support@petopia.com
+        <strong>Mama's Kitchen Support Team</strong><br>
+        Email: support@mamas_kitchen.com
       </p>
     </div>
   </body>
@@ -2277,19 +2277,19 @@ def send_product_approval_email(email, seller_name, product_name):
         body_text = f"""
 Hello {seller_name},
 
-Great news! Your product has been approved and is now live on Petopia!
+Great news! Your product has been approved and is now live on Mama's Kitchen!
 
 Product Approval Details:
 Your product '{product_name}' has been reviewed and approved by our admin team. It is now visible to all customers on the platform.
 
 What Happens Next:
-- Your product is now live on Petopia
+- Your product is now live on Mama's Kitchen
 - Customers can view, search, and purchase your product
 - You'll receive notifications for new orders
 - You can track sales and manage your inventory from your seller dashboard
 
 Managing Your Product:
-1. Log in to your seller account on Petopia
+1. Log in to your seller account on Mama's Kitchen
 2. Go to your Products section
 3. View sales, customer reviews, and order updates
 4. Update product details or pricing as needed
@@ -2303,18 +2303,18 @@ Tips for Success:
 
 Support:
 If you have any questions or need assistance, contact us at:
-Email: support@petopia.com
-Phone: +1-800-PETOPIA
+Email: support@mamas_kitchen.com
+Phone: +1-800-MAMAS_KITCHEN
 
 Product Information:
 - Product Name: {product_name}
 - Status: APPROVED
 - Next Step: Monitor sales and customer feedback
 
-Thank you for choosing Petopia as your selling platform!
+Thank you for choosing Mama's Kitchen as your selling platform!
 
 Best regards,
-Petopia Admin Team
+Mama's Kitchen Admin Team
         """
         
         html_body = f"""
@@ -2323,14 +2323,14 @@ Petopia Admin Team
     <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
       <h2 style="color: #16A34A;">🎉 Your Product Has Been Approved!</h2>
       <p>Hello {seller_name},</p>
-      <p>Great news! Your product <strong>"{product_name}"</strong> has been <strong style="color: #16A34A;">APPROVED</strong> and is now live on Petopia!</p>
+      <p>Great news! Your product <strong>"{product_name}"</strong> has been <strong style="color: #16A34A;">APPROVED</strong> and is now live on Mama's Kitchen!</p>
       
       <h3 style="color: #374151;">Product Approval Details</h3>
       <p>Your product has been reviewed and approved by our admin team. It is now visible to all customers on the platform and ready for sales.</p>
       
       <h3 style="color: #374151;">What Happens Next</h3>
       <ul style="color: #666;">
-        <li>Your product is now live on Petopia</li>
+        <li>Your product is now live on Mama's Kitchen</li>
         <li>Customers can view, search, and purchase your product</li>
         <li>You'll receive notifications for new orders</li>
         <li>You can track sales and manage your inventory from your seller dashboard</li>
@@ -2338,7 +2338,7 @@ Petopia Admin Team
       
       <h3 style="color: #374151;">Managing Your Product</h3>
       <ol style="color: #666;">
-        <li>Log in to your seller account on Petopia</li>
+        <li>Log in to your seller account on Mama's Kitchen</li>
         <li>Go to your Products section</li>
         <li>View sales, customer reviews, and order updates</li>
         <li>Update product details or pricing as needed</li>
@@ -2374,13 +2374,13 @@ Petopia Admin Team
       <h3 style="color: #374151;">Support</h3>
       <p style="color: #666;">
         If you have any questions or need assistance, contact us at:<br>
-        Email: <strong>support@petopia.com</strong><br>
-        Phone: <strong>+1-800-PETOPIA</strong>
+        Email: <strong>support@mamas_kitchen.com</strong><br>
+        Phone: <strong>+1-800-MAMAS_KITCHEN</strong>
       </p>
       
       <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #E5E7EB; color: #9CA3AF; font-size: 12px;">
-        Thank you for choosing Petopia as your selling platform!<br>
-        <strong>Petopia Admin Team</strong>
+        Thank you for choosing Mama's Kitchen as your selling platform!<br>
+        <strong>Mama's Kitchen Admin Team</strong>
       </p>
     </div>
   </body>
@@ -2430,7 +2430,7 @@ def send_product_rejection_email(email, seller_name, product_name, reason=""):
         body_text = f"""
 Hello {seller_name},
 
-Unfortunately, your product '{product_name}' has been rejected and cannot be listed on Petopia at this time.
+Unfortunately, your product '{product_name}' has been rejected and cannot be listed on Mama's Kitchen at this time.
 
 Product Rejection Details:
 After review by our admin team, your product did not meet our platform guidelines or quality standards.
@@ -2455,13 +2455,13 @@ Once you've made the necessary corrections, you can resubmit your product. Our t
 
 Need Help?
 If you have questions about why your product was rejected or need clarification on our guidelines, please contact:
-Email: support@petopia.com
-Phone: +1-800-PETOPIA
+Email: support@mamas_kitchen.com
+Phone: +1-800-MAMAS_KITCHEN
 
 We appreciate your understanding and encourage you to resubmit your product after making the required improvements.
 
 Best regards,
-Petopia Admin Team
+Mama's Kitchen Admin Team
         """
         
         html_body = f"""
@@ -2470,7 +2470,7 @@ Petopia Admin Team
     <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
       <h2 style="color: #DC2626;">❌ Product Rejected</h2>
       <p>Hello {seller_name},</p>
-      <p>Unfortunately, your product <strong>"{product_name}"</strong> has been <strong style="color: #DC2626;">REJECTED</strong> and cannot be listed on Petopia at this time.</p>
+      <p>Unfortunately, your product <strong>"{product_name}"</strong> has been <strong style="color: #DC2626;">REJECTED</strong> and cannot be listed on Mama's Kitchen at this time.</p>
       
       <h3 style="color: #374151;">Product Rejection Details</h3>
       <p>After review by our admin team, your product did not meet our platform guidelines or quality standards.</p>
@@ -2502,13 +2502,13 @@ Petopia Admin Team
       <h3 style="color: #374151;">Need Help?</h3>
       <p style="color: #666;">
         If you have questions about why your product was rejected or need clarification on our guidelines, please contact:<br>
-        Email: <strong>support@petopia.com</strong><br>
-        Phone: <strong>+1-800-PETOPIA</strong>
+        Email: <strong>support@mamas_kitchen.com</strong><br>
+        Phone: <strong>+1-800-MAMAS_KITCHEN</strong>
       </p>
       
       <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #E5E7EB; color: #9CA3AF; font-size: 12px;">
         We appreciate your understanding and encourage you to resubmit your product after making the required improvements.<br>
-        <strong>Petopia Admin Team</strong>
+        <strong>Mama's Kitchen Admin Team</strong>
       </p>
     </div>
   </body>
@@ -2558,7 +2558,7 @@ def send_product_suspension_email(email, seller_name, product_name):
         body_text = f"""
 Hello {seller_name},
 
-We regret to inform you that your product '{product_name}' has been suspended from Petopia.
+We regret to inform you that your product '{product_name}' has been suspended from Mama's Kitchen.
 
 Product Suspension Details:
 Your product has been temporarily removed from the platform due to policy violations, customer complaints, or quality issues. The product will be archived for 30 days before automatic removal.
@@ -2579,8 +2579,8 @@ What Happens Now:
 
 How to Appeal:
 If you believe this suspension is a mistake or would like to dispute it, please contact our support team within 7 days:
-Email: support@petopia.com
-Phone: +1-800-PETOPIA
+Email: support@mamas_kitchen.com
+Phone: +1-800-MAMAS_KITCHEN
 
 Removing the Suspension:
 1. Correct the issues that led to suspension
@@ -2589,8 +2589,8 @@ Removing the Suspension:
 
 Support:
 For questions or assistance, please reach out to:
-Email: support@petopia.com
-Phone: +1-800-PETOPIA
+Email: support@mamas_kitchen.com
+Phone: +1-800-MAMAS_KITCHEN
 
 Suspension Details:
 - Product Name: {product_name}
@@ -2600,7 +2600,7 @@ Suspension Details:
 We appreciate your understanding. Please take immediate action to resolve the issues.
 
 Best regards,
-Petopia Admin Team
+Mama's Kitchen Admin Team
         """
         
         html_body = f"""
@@ -2609,7 +2609,7 @@ Petopia Admin Team
     <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
       <h2 style="color: #DC2626;">⚠️ Product Suspended</h2>
       <p>Hello {seller_name},</p>
-      <p>We regret to inform you that your product <strong>"{product_name}"</strong> has been <strong style="color: #DC2626;">SUSPENDED</strong> from Petopia.</p>
+      <p>We regret to inform you that your product <strong>"{product_name}"</strong> has been <strong style="color: #DC2626;">SUSPENDED</strong> from Mama's Kitchen.</p>
       
       <h3 style="color: #374151;">Product Suspension Details</h3>
       <p>Your product has been temporarily removed from the platform due to policy violations, customer complaints, or quality issues. The product will be archived for 30 days before automatic removal.</p>
@@ -2663,13 +2663,13 @@ Petopia Admin Team
       <h3 style="color: #374151;">Support</h3>
       <p style="color: #666;">
         For questions or assistance, please reach out to:<br>
-        Email: <strong>support@petopia.com</strong><br>
-        Phone: <strong>+1-800-PETOPIA</strong>
+        Email: <strong>support@mamas_kitchen.com</strong><br>
+        Phone: <strong>+1-800-MAMAS_KITCHEN</strong>
       </p>
       
       <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #E5E7EB; color: #9CA3AF; font-size: 12px;">
         We appreciate your understanding. Please take immediate action to resolve the issues.<br>
-        <strong>Petopia Admin Team</strong>
+        <strong>Mama's Kitchen Admin Team</strong>
       </p>
     </div>
   </body>
@@ -2719,7 +2719,7 @@ def send_product_restore_email(email, seller_name, product_name):
         body_text = f"""
 Hello {seller_name},
 
-Great news! Your product '{product_name}' has been restored and is now live on Petopia again!
+Great news! Your product '{product_name}' has been restored and is now live on Mama's Kitchen again!
 
 Product Restoration Details:
 Your product has been restored by our admin team and is now visible to customers. You can resume selling this product on the platform.
@@ -2732,7 +2732,7 @@ What You Can Do Now:
 - Monitor sales and customer feedback
 
 Managing Your Restored Product:
-1. Log in to your seller account on Petopia
+1. Log in to your seller account on Mama's Kitchen
 2. Go to your Products section
 3. Verify all product information is current
 4. Check inventory levels
@@ -2748,18 +2748,18 @@ Please ensure that your product continues to comply with our platform policies. 
 
 Support:
 If you have any questions or need assistance, contact us at:
-Email: support@petopia.com
-Phone: +1-800-PETOPIA
+Email: support@mamas_kitchen.com
+Phone: +1-800-MAMAS_KITCHEN
 
 Restoration Details:
 - Product Name: {product_name}
 - Status: RESTORED AND ACTIVE
 - Next Step: Resume sales and monitor performance
 
-Welcome back to Petopia! Thank you for your commitment to maintaining quality standards.
+Welcome back to Mama's Kitchen! Thank you for your commitment to maintaining quality standards.
 
 Best regards,
-Petopia Admin Team
+Mama's Kitchen Admin Team
         """
         
         html_body = f"""
@@ -2768,7 +2768,7 @@ Petopia Admin Team
     <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
       <h2 style="color: #16A34A;">✅ Product Restored!</h2>
       <p>Hello {seller_name},</p>
-      <p>Great news! Your product <strong>"{product_name}"</strong> has been <strong style="color: #16A34A;">RESTORED</strong> and is now live on Petopia again!</p>
+      <p>Great news! Your product <strong>"{product_name}"</strong> has been <strong style="color: #16A34A;">RESTORED</strong> and is now live on Mama's Kitchen again!</p>
       
       <h3 style="color: #374151;">Product Restoration Details</h3>
       <p>Your product has been restored by our admin team and is now visible to customers. You can resume selling this product on the platform.</p>
@@ -2784,7 +2784,7 @@ Petopia Admin Team
       
       <h3 style="color: #374151;">Managing Your Restored Product</h3>
       <ol style="color: #666;">
-        <li>Log in to your seller account on Petopia</li>
+        <li>Log in to your seller account on Mama's Kitchen</li>
         <li>Go to your Products section</li>
         <li>Verify all product information is current</li>
         <li>Check inventory levels</li>
@@ -2822,13 +2822,13 @@ Petopia Admin Team
       <h3 style="color: #374151;">Support</h3>
       <p style="color: #666;">
         If you have any questions or need assistance, contact us at:<br>
-        Email: <strong>support@petopia.com</strong><br>
-        Phone: <strong>+1-800-PETOPIA</strong>
+        Email: <strong>support@mamas_kitchen.com</strong><br>
+        Phone: <strong>+1-800-MAMAS_KITCHEN</strong>
       </p>
       
       <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #E5E7EB; color: #9CA3AF; font-size: 12px;">
-        Welcome back to Petopia! Thank you for your commitment to maintaining quality standards.<br>
-        <strong>Petopia Admin Team</strong>
+        Welcome back to Mama's Kitchen! Thank you for your commitment to maintaining quality standards.<br>
+        <strong>Mama's Kitchen Admin Team</strong>
       </p>
     </div>
   </body>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Petopia Admin Dashboard</title>
+  <title>Mama's Kitchen Admin Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="{{ url_for('static', filename='js/report_pdf_export.js') }}"></script>
   <style>
@@ -34,7 +34,7 @@
     }
   </style>
   <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
-  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='image/petopia-favicon.svg') }}" />
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='image/mamas_kitchen-favicon.svg') }}" />
 
 
 </head>
@@ -43,7 +43,7 @@
   <!-- Sidebar -->
   <aside class="w-64 bg-white shadow-lg hidden md:flex flex-col p-6">
   <a href="{{ url_for('homepage') }}" class="mb-4 inline-flex">
-    <img src="{{ url_for('static', filename='image/petopia-logo.png') }}" alt="Petopia" class="h-28 w-auto max-w-none" />
+    <img src="{{ url_for('static', filename='image/mamas_kitchen-logo.png') }}" alt="Mama's Kitchen" class="h-28 w-auto max-w-none" />
   </a>
 
   {% if session.get("fullname") %}<div class="text-center mb-6"><p class="text-lg font-semibold text-gray-700">{{ session.fullname }}</p></div>{% endif %}
@@ -1809,7 +1809,7 @@
           const adminCommission = data.reduce((sum, item) => sum + parseFloat(item.admin_commission || 0), 0);
 
           window.PetopiaReports.exportPdf({
-            title: 'Petopia Admin Sales & Income Report',
+            title: 'Mama's Kitchen Admin Sales & Income Report',
             subtitle: getAdminReportFiltersLabel(),
             summary: [
               { label: 'Total Sales', value: totalSales },

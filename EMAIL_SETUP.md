@@ -1,7 +1,7 @@
-# Petopia Email Setup Guide
+# Mama's Kitchen Email Setup Guide
 
 ## Overview
-The Petopia application now sends automatic emails to users when their account is approved or rejected by the admin.
+The Mama's Kitchen application now sends automatic emails to users when their account is approved or rejected by the admin.
 
 ## Email Features
 - ✅ **Approval Email**: Sent when admin clicks "Approve" button
@@ -38,7 +38,7 @@ set GMAIL_PASSWORD=your-16-char-app-password
 ```
 
 **Alternative: Create a `.env` file**
-Create a `.env` file in your Petopia root directory:
+Create a `.env` file in your Mama's Kitchen root directory:
 ```
 GMAIL_USER=your-email@gmail.com
 GMAIL_PASSWORD=your-16-char-app-password
@@ -72,11 +72,11 @@ python app.py
 ## Email Templates
 
 ### Approval Email
-- **Subject**: "Petopia Account Approved - [User Role]"
+- **Subject**: "Mama's Kitchen Account Approved - [User Role]"
 - **Content**: Welcome message with link to login
 
 ### Rejection Email
-- **Subject**: "Petopia Account Approved - [User Role]"
+- **Subject**: "Mama's Kitchen Account Approved - [User Role]"
 - **Content**: Explanation of rejection and instructions to reapply
 
 ## Troubleshooting

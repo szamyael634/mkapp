@@ -1,7 +1,7 @@
 import re
 import ast
 
-FNAME = 'c:\\Users\\Jeon\\Documents\\Ptry\\Petopia\\app.py'
+FNAME = 'c:\\Users\\Jeon\\Documents\\Ptry\\Mama's Kitchen\\app.py'
 
 pattern = re.compile(r"cursor\.execute\s*\(\s*(?P<sql>r?['\"]{3}.*?['\"]{3}|r?['\"].*?['\"])\s*,\s*(?P<params>\(.+?\)|[a-zA-Z0-9_\.\[\]]+)\s*\)", re.DOTALL)
 

@@ -1,6 +1,6 @@
-# Petopia Setup Guide
+# Mama's Kitchen Setup Guide
 
-Follow these steps to set up Petopia on a new machine.
+Follow these steps to set up Mama's Kitchen on a new machine.
 
 ## Prerequisites
 
@@ -70,7 +70,7 @@ The app will be available at: **http://localhost:5000**
 ## Project Structure
 
 ```
-Petopia/
+Mama's Kitchen/
 ├── app.py                 # Main Flask application
 ├── requirements.txt       # Python dependencies
 ├── .env                   # Environment variables (don't share!)

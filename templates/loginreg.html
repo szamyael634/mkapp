@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Petopia | Login & Register</title>
+  <title>Mama's Kitchen | Login & Register</title>
 
   <!-- Tailwind CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
-  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='image/petopia-favicon.svg') }}" />
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='image/mamas_kitchen-favicon.svg') }}" />
 
   <style>
     html { 
@@ -87,7 +87,7 @@
     </a>
 
     <a href="{{ url_for('homepage') }}" class="flex items-center">
-      <img src="{{ url_for('static', filename='image/petopia-logo.png') }}" alt="Petopia" class="h-24 w-auto max-w-none" />
+      <img src="{{ url_for('static', filename='image/mamas_kitchen-logo.png') }}" alt="Mama's Kitchen" class="h-24 w-auto max-w-none" />
     </a>
   </header>
 
@@ -98,7 +98,7 @@
     <div class="relative md:w-[50%] bg-[url('/static/image/loginbg.jpg')] bg-cover bg-center hidden md:flex items-center justify-center">
       <div class="absolute inset-0 bg-gradient-to-br from-black/60 to-black/40"></div>
       <div class="relative text-center text-white px-6 fade-in">
-        <h1 class="text-5xl font-extrabold mb-4 tracking-wide">Welcome to Petopia</h1>
+        <h1 class="text-5xl font-extrabold mb-4 tracking-wide">Welcome to Mama's Kitchen</h1>
         <p class="text-lg text-gray-200 max-w-md mx-auto">
           Your one-stop place for everything pets — where love and loyalty meet
         </p>
@@ -113,7 +113,7 @@
         <div id="login-form">
           <div class="text-center mb-8">
             <h2 class="text-3xl font-extrabold text-amber-600 mb-2">Welcome Back!</h2>
-            <p class="text-gray-600 text-sm">Log in to continue your Petopia journey</p>
+            <p class="text-gray-600 text-sm">Log in to continue your Mama's Kitchen journey</p>
           </div>
 
           <form method="POST" class="space-y-5">
@@ -155,7 +155,7 @@
       <div id="register-form" class="hidden">
         <div class="text-center mb-8">
           <h2 class="text-3xl font-extrabold text-amber-600 mb-2">Create an Account</h2>
-          <p class="text-gray-600 text-sm">Join Petopia as a Customer, Seller, or Rider</p>
+          <p class="text-gray-600 text-sm">Join Mama's Kitchen as a Customer, Seller, or Rider</p>
         </div>
 
         <!-- ROLE SELECT BUTTONS -->
@@ -374,7 +374,7 @@
             <label class="block text-sm font-semibold text-gray-700 mb-1">Store / Business Name</label>
             <div class="input-box">
               <i class='bx bx-store input-icon'></i>
-              <input type="text" name="business_name" placeholder="Petopia Shop" required class="input-field">
+              <input type="text" name="business_name" placeholder="Mama's Kitchen Shop" required class="input-field">
             </div>
           </div>
 

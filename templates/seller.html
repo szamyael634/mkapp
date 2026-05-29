@@ -3,7 +3,7 @@
     <head>
       <meta charset="UTF-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>Petopia Seller Dashboard</title>
+      <title>Mama's Kitchen Seller Dashboard</title>
       <script src="https://cdn.tailwindcss.com"></script>
       <link
         href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css"
@@ -11,13 +11,13 @@
       />
       <script src="{{ url_for('static', filename='js/richtext.js') }}"></script>
       <script src="{{ url_for('static', filename='js/report_pdf_export.js') }}"></script>
-      <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='image/petopia-favicon.svg') }}" />
+      <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='image/mamas_kitchen-favicon.svg') }}" />
     </head>
     <body class="bg-gray-50 text-gray-800 flex min-h-screen">
       <!-- 🧭 DESKTOP SIDEBAR -->
       <aside class="sidebar w-64 bg-white shadow-lg hidden md:flex flex-col p-6">
         <a href="{{ url_for('homepage') }}" class="mb-6 inline-flex">
-          <img src="{{ url_for('static', filename='image/petopia-logo.png') }}" alt="Petopia" class="h-28 w-auto max-w-none" />
+          <img src="{{ url_for('static', filename='image/mamas_kitchen-logo.png') }}" alt="Mama's Kitchen" class="h-28 w-auto max-w-none" />
         </a>
         {% if session.get("fullname") %}
           <div class="text-center mb-6">
@@ -471,7 +471,7 @@
                 const totalRevenue = data.reduce((sum, item) => sum + parseFloat(item.revenue || 0), 0);
 
                 window.PetopiaReports.exportPdf({
-                  title: 'Petopia Seller Sales Report',
+                  title: 'Mama's Kitchen Seller Sales Report',
                   subtitle: getSellerReportFiltersLabel(),
                   summary: [
                     { label: 'Products', value: data.length },
@@ -1094,8 +1094,8 @@
                 if (storagePublicMatch) {
                   return `/media/${encodeURIComponent(storagePublicMatch[1])}/${encodeObjectPath(storagePublicMatch[2].split('?')[0])}`;
                 }
-                if (normalized.startsWith('petopia-documents/')) {
-                  return `/media/petopia-documents/${encodeObjectPath(normalized.slice('petopia-documents/'.length))}`;
+                if (normalized.startsWith('mamas_kitchen-documents/')) {
+                  return `/media/mamas_kitchen-documents/${encodeObjectPath(normalized.slice('mamas_kitchen-documents/'.length))}`;
                 }
                 if (normalized.startsWith('static/')) return `/${normalized}`;
                 return `/static/${normalized}`;

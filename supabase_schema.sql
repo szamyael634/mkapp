@@ -1,4 +1,4 @@
--- Petopia Supabase/Postgres schema
+-- Mama's Kitchen Supabase/Postgres schema
 -- This schema is based on the tables and columns referenced by the current app code.
 -- Run this in Supabase SQL Editor before starting the Flask app.
 

@@ -9,7 +9,7 @@
   }
 
   function exportPdf(options) {
-    const title = options.title || 'Petopia Report';
+    const title = options.title || 'Mama's Kitchen Report';
     const subtitle = options.subtitle || '';
     const columns = options.columns || [];
     const rows = options.rows || [];
